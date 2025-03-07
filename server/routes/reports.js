@@ -114,78 +114,57 @@ router.put('/:reportId', upload.single('image'), (req, res) => {
     });
 });
 
+router.delete('/admin/report/:id', (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body; 
 
-// // Delete Report
-// router.delete('/:id', (req, res) => {
-//     const { id, userId } = req.params;
-    
-//     db.query('SELECT image_path FROM tbl_reports WHERE id = ?', [id], (err, rows) => {
-//         if (err) {
-//             console.error("Error fetching report:", err);
-//             return res.status(500).json({ success: false, message: 'Failed to fetch report' });
-//         }
-//         const imagePath = rows[0]?.image_path;
-        
-//         if (imagePath) {
-//             const filePath = path.join('uploads', imagePath);
-//             if (fs.existsSync(filePath)) {
-//                 fs.unlinkSync(filePath);
-//             }
-//         }
-        
-//         db.query('DELETE FROM tbl_reports WHERE id = ?', [id], (err) => {
-//             if (err) {
-//                 console.error("Error deleting report:", err);
-//                 return res.status(500).json({ success: false, message: 'Failed to delete report' });
-//             }
-//             res.json({ success: true, message: 'Report deleted successfully' });
-//         });
-//     });
-// });
+    if ( role !== 'admin') {
+        return res.status(400).json({ success: false, message: `Unauthorized: You cannot delete this report`  });
+    }
 
-// Delete Report (Ensure the user is authorized)
-// router.delete('/:id', (req, res) => {
-//     const { id } = req.params;
-//     const { userId } = req.body; // Get userId from request body
+    db.query('SELECT image_path FROM tbl_reports WHERE id = ?', [id], (err, rows) => {
+        if (err) {
+            console.error("Error fetching report:", err);
+            return res.status(500).json({ success: false, message: 'Failed to fetch report' });
+        }
+        if (rows.length === 0) {
+            return res.status(403).json({ success: false, message: "Unauthorized: You cannot delete this report" });
+        }
 
-//     if (!userId) {
-//         return res.status(400).json({ success: false, message: "User ID is required" });
-//     }
+        const imagePath = rows[0].image_path;
+        if (imagePath) {
+            const filePath = path.join(__dirname, '../uploads', imagePath);
+            
+            console.log("Attempting to delete file:", filePath);
+            if (fs.existsSync(filePath)) {
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error("Error deleting file:", err);
+                    } else {
+                        console.log("File deleted successfully:", filePath);
+                    }
+                });
+            } else {
+                console.warn("File not found:", filePath);
+            }
+        }
 
-//     // Check if the report belongs to the user before deleting
-//     db.query('SELECT image_path FROM tbl_reports WHERE id = ? AND user_id = ?', [id, userId], (err, rows) => {
-//         if (err) {
-//             console.error("Error fetching report:", err);
-//             return res.status(500).json({ success: false, message: 'Failed to fetch report' });
-//         }
-//         if (rows.length === 0) {
-//             return res.status(403).json({ success: false, message: "Unauthorized: You cannot delete this report" });
-//         }
+        db.query('DELETE FROM tbl_reports WHERE id = ?', [id], (err) => {
+            if (err) {
+                console.error("Error deleting report:", err);
+                return res.status(500).json({ success: false, message: 'Failed to delete report' });
+            }
+            res.json({ success: true, message: 'Report deleted successfully' });
+        });
+    });
+});
 
-//         const imagePath = rows[0].image_path;
-//         if (imagePath) {
-//             const filePath = path.join('uploads', imagePath);
-//             if (fs.existsSync(filePath)) {
-//                 fs.unlinkSync(filePath);
-//             }
-//         }
-
-//         db.query('DELETE FROM tbl_reports WHERE id = ? AND user_id = ?', [id, userId], (err) => {
-//             if (err) {
-//                 console.error("Error deleting report:", err);
-//                 return res.status(500).json({ success: false, message: 'Failed to delete report' });
-//             }
-//             res.json({ success: true, message: 'Report deleted successfully' });
-//         });
-//     });
-// });
-
-router.delete('/:id', (req, res) => {
+router.delete('/report/:id', (req, res) => {
     const { id } = req.params;
     const { userId } = req.body; 
 
     if (!userId) {
-        return res.status(400).json({ success: false, message: "User ID is required" });
+        return res.status(400).json({ success: false, message: `User ID is required ${userId}`  });
     }
 
     db.query('SELECT image_path FROM tbl_reports WHERE id = ? AND user_id = ?', [id, userId], (err, rows) => {

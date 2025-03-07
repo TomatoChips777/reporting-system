@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Table, Card, Form, Button, Badge, Modal } from "react-bootstrap";
-import { FaFileAlt, FaClock, FaTasks, FaCheckCircle, FaChevronRight, FaPlusCircle, FaSearch } from 'react-icons/fa';
-
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
@@ -36,26 +34,12 @@ function Reports() {
 
 
     useEffect(() => {
-        let updatedReports = reports.filter(report => {
-            const search = searchTerm.toLowerCase();
-            return (
-                (report.description.toLowerCase().includes(search) ||
-                report.reporter_name.toLowerCase().includes(search) ||
-                report.location.toLowerCase().includes(search) ||
-                report.issue_type.toLowerCase().includes(search)) &&
-                (statusFilter === "all" || report.status === statusFilter)
-            );
-        });
+        let updatedReports = reports.filter(report =>
+            report.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (statusFilter === "all" || report.status === statusFilter)
+        );
         setFilteredReports(updatedReports);
     }, [searchTerm, statusFilter, reports]);
-    
-    // useEffect(() => {
-    //     let updatedReports = reports.filter(report =>
-    //         report.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    //         (statusFilter === "all" || report.status === statusFilter)
-    //     );
-    //     setFilteredReports(updatedReports);
-    // }, [searchTerm, statusFilter, reports]);
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
@@ -143,45 +127,41 @@ function Reports() {
     const indexOfFirstReport = indexOfLastReport - pageSize;
     const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
 
-    const totalReports = reports.length;
-    const pendingCount = reports.filter(r => r.status === 'pending').length;
-    const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
-    const resolvedCount = reports.filter(r => r.status === 'resolved').length;
-
-
     return (
         <div className="container mt-4">
-            {/* <h1 className="mb-4">Reports</h1> */}
+            <h1 className="mb-4">Reports</h1>
+
             {/* Report Summary Cards */}
-            <div className="row mb-3">
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaFileAlt className="text-success mb-2" size={30} />
-                        <h6>Total Reports</h6>
-                        <strong className='fs-1'>{totalReports}</strong>
+            <div className="row mb-4">
+                {["Pending", "In Progress", "Resolved"].map((status, index) => (
+                    <div key={index} className="col-md-4 mb-3">
+                        <Card className="h-100 shadow-sm border-0">
+                            <Card.Body className="d-flex align-items-center">
+                                {/* <div className="me-3 p-3 rounded bg-opacity-10" style={{ backgroundColor: status === "Pending" ? "#ffc107" : status === "In Progress" ? "#007bff" : "#28a745" }}> */}
+                                <div
+                                    className="me-3 p-3 rounded"
+                                    style={{
+                                        backgroundColor: status === "Pending" ? "rgba(255, 193, 7, 0.2)"  // Yellow with 20% opacity
+                                            : status === "In Progress" ? "rgba(0, 123, 255, 0.2)" // Blue with 20% opacity
+                                                : "rgba(40, 167, 69, 0.2)" // Green with 20% opacity
+                                    }}
+                                >
+
+                                    <i className={`bi ${status === "Pending" ? "bi-exclamation-circle text-warning" : status === "In Progress" ? "bi-gear text-primary" : "bi-check-circle text-success"} fs-4`} />
+                                </div>
+                                <div>
+                                    <h6 className="mb-1">{status}</h6>
+                                    <h3 className="mb-0">
+                                        {/* {reports.filter(r => r.status.toLowerCase() === status.toLowerCase()).length} */}
+                                        {reports.filter(r => r.status === status.toLowerCase().replace(" ", "_")).length}
+
+                                    </h3>
+
+                                </div>
+                            </Card.Body>
+                        </Card>
                     </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaClock className="text-warning mb-2" size={30} />
-                        <h6>Pending</h6>
-                        <strong className='fs-1'>{pendingCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaTasks className="text-primary mb-2" size={30} />
-                        <h6>In Progress</h6>
-                        <strong className='fs-1'>{inProgressCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaCheckCircle className="text-success mb-2" size={30} />
-                        <h6>Resolved</h6>
-                        <strong className='fs-1'>{resolvedCount}</strong>
-                    </div>
-                </div>
+                ))}
             </div>
 
             {/* Reports Table */}
@@ -191,27 +171,21 @@ function Reports() {
                         <div className="col">
                             <h5 className="mb-0">All Reports</h5>
                         </div>
-                        <div className="col-auto d-flex align-items-center ">
-                        <div className="input-group me-4" style={{ maxWidth: "300px" }}>
-                                <Form.Control type="text" className="rounded-0" placeholder="Search reports..." value={searchTerm} onChange={handleSearch} />
-                                <span className="input-group-text rounded-0">
-                                    <FaSearch />
-                                </span>
-                            </div>
-
-                            <Form.Select value={viewType} onChange={(e) => setViewType(e.target.value)} className="me-2 rounded-0">
+                        <div className="col-auto d-flex align-items-center">
+                            <Form.Select value={viewType} onChange={(e) => setViewType(e.target.value)} className="me-2">
                                 <option value="table">Table View</option>
                                 <option value="list">List View</option>
                             </Form.Select>
+                            <Form.Control type="text" placeholder="Search reports..." value={searchTerm} onChange={handleSearch} />
                         </div>
 
                         {/* <div className="col-auto">
                             <Form.Control type="text" placeholder="Search reports..." value={searchTerm} onChange={handleSearch} />
                         </div> */}
                         <div className="col-auto">
-                            <div className="btn-group ">
+                            <div className="btn-group">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
-                                    <Button key={status} variant="outline-dark" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
+                                    <Button key={status} variant="outline-dark" className={statusFilter === status ? "active" : ""} onClick={() => handleFilterChange(status)}>
                                         {/* {status.charAt(0).toUpperCase() + status.slice(1)} */}
                                         {status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
 
@@ -222,8 +196,8 @@ function Reports() {
                     </div>
                 </Card.Header>
                 <Card.Body>
-                    <div className="table-responsive">
-                        {viewType === "table" ? (
+                    {viewType === "table" ? (
+                        <div className="table-responsive">
                             <Table hover>
                                 <thead>
                                     <tr>
@@ -257,65 +231,52 @@ function Reports() {
                                                     : report.description}
                                             </td>
                                             <td>
-                                                <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0">
+                                                <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"}>
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                 </Badge>
                                             </td>
                                             <td>
-                                                <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <Button variant="outline-danger" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </Table>
-                        ) : (
-                            <ul className="list-group">
-                                {currentReports.map((report) => (
-                                    <li key={report.id} className="list-group-item mb-3">
-                                        <div className="d-flex align-items-start justify-content-between">
-                                            {/* Left Side: Report Details */}
-                                            <div className="w-75 me-3">
-                                                <p><strong>Date:</strong> {new Date(report.created_at).toLocaleString('en-US', {
-                                                    timeZone: 'Asia/Manila',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                })}</p>
-                                                <p><strong>Reported By:</strong> {report.reporter_name}</p>
-                                                <p><strong>Location:</strong> {report.location}</p>
-                                                <p><strong>Issue Type:</strong> {report.issue_type.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</p>
-                                                <p><strong>Description:</strong> {report.description.length > 50
-                                                    ? report.description.substring(0, 50) + "..."
-                                                    : report.description}</p>
-                                                <p>
-                                                    <strong>Status:</strong>
-                                                    <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0">
-                                                        {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                    </Badge>
-                                                </p>
-                                                <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
-                                            </div>
+                        </div>
+                    ) : (
+                        <ul className="list-group">
+                            {currentReports.map((report) => (
+                                <li key={report.id} className="list-group-item mb-3">
+                                    <h5>{report.issue_type.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</h5>
+                                    <p><strong>Date:</strong> {new Date(report.created_at).toLocaleString('en-US', {
+                                        timeZone: 'Asia/Manila',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true,
+                                    })}</p>
+                                    <p><strong>Reported By:</strong> {report.reporter_name}</p>
+                                    <p><strong>Location:</strong> {report.location}</p>
+                                    <p><strong>Description:</strong> {report.description}</p>
+                                    <p>
+                                        <strong>Status:</strong>
+                                        <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2">
+                                            {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                        </Badge>
+                                    </p>
+                                    <div>
+                                        <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                        <Button variant="outline-danger" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
 
-                                            {/* Right Side: Image */}
-                                            <div className="w-25">
-                                                <img
-                                                    src={`http://localhost:5000/uploads/${report.image_path}` || "https://via.placeholder.com/150"}
-                                                    alt="No image attached"
-                                                    className="img-thumbnail rounded shadow-sm"
-                                                    style={{ height: '290px' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                    )}
+
                     <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Confirm Delete</Modal.Title>
@@ -324,15 +285,15 @@ function Reports() {
                             Are you sure you want to delete this report? This action cannot be undone.
                         </Modal.Body>
                         <Modal.Footer>
-                            <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                            <Button variant="danger" className="rounded-0" onClick={handleDelete}>Delete</Button>
+                            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+                            <Button variant="danger" onClick={handleDelete}>Delete</Button>
                         </Modal.Footer>
                     </Modal>
 
                     {/* Pagination Controls */}
                     <div className="d-flex justify-content-between align-items-center mt-3">
                         <div className="d-flex align-items-center">
-                            <Form.Select value={pageSize} onChange={handlePageSizeChange} className="me-2 rounded-0">
+                            <Form.Select value={pageSize} onChange={handlePageSizeChange} className="me-2">
                                 <option value="5">5 per page</option>
                                 <option value="10">10 per page</option>
                                 <option value="15">15 per page</option>
@@ -346,7 +307,7 @@ function Reports() {
                                 <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
                                     <Button
                                         variant="link"
-                                        className="page-link rounded-0"
+                                        className="page-link"
                                         onClick={() => setCurrentPage(currentPage - 1)}
                                         disabled={currentPage === 1}
                                     >
@@ -359,7 +320,7 @@ function Reports() {
                                     <li key={i} className={`page-item ${i + 1 === currentPage ? "active" : ""}`}>
                                         <Button
                                             variant="link"
-                                            className="page-link rounded-0"
+                                            className="page-link"
                                             onClick={() => setCurrentPage(i + 1)}
                                         >
                                             {i + 1}
@@ -371,7 +332,7 @@ function Reports() {
                                 <li className={`page-item ${currentPage === Math.ceil(filteredReports.length / pageSize) ? "disabled" : ""}`}>
                                     <Button
                                         variant="link"
-                                        className="page-link rounded-0"
+                                        className="page-link"
                                         onClick={() => setCurrentPage(currentPage + 1)}
                                         disabled={currentPage === Math.ceil(filteredReports.length / pageSize)}
                                     >
@@ -419,7 +380,7 @@ function Reports() {
                             )}
                             <Form.Group controlId="statusSelect">
                                 <Form.Label><strong>Status:</strong></Form.Label>
-                                <Form.Select value={selectedReport.status} onChange={handleStatusChange} className="rounded-0">
+                                <Form.Select value={selectedReport.status} onChange={handleStatusChange}>
                                     <option value="pending">Pending</option>
                                     <option value="in_progress">In Progress</option>
                                     <option value="resolved">Resolved</option>
@@ -431,8 +392,8 @@ function Reports() {
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
-                    <Button variant="primary" className="rounded-0" onClick={handleUpdateStatus}>Update Status</Button>
+                    <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+                    <Button variant="primary" onClick={handleUpdateStatus}>Update Status</Button>
                 </Modal.Footer>
             </Modal>
 

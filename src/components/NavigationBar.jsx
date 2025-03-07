@@ -8,14 +8,13 @@ function NavigationBar() {
     const { user, signOut,role } = useAuth();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
-    console.log(user);
-    // Example notifications
+
+    // Dummy notifications not yet added
     const [notifications, setNotifications] = useState([
         { id: 1, message: "New report submitted", time: "2 mins ago" },
         { id: 2, message: "User John Doe registered", time: "10 mins ago" },
         { id: 3, message: "System update scheduled", time: "1 hour ago" },
     ]);
-    console.log(role);
     const markAllAsRead = () => {
         setNotifications([]);
     };
@@ -28,19 +27,19 @@ function NavigationBar() {
                     <Nav className="me-auto">
                         {role === 'admin' && (
                             <>
-                                <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
+                                <Nav.Link as={Link} to="/dashboard">Home</Nav.Link>
                                 <Nav.Link as={Link} to="/users">User Management</Nav.Link>
                                 <Nav.Link as={Link} to="/reports">Reports</Nav.Link>
                                 <Nav.Link as={Link} to="/sample">Sample</Nav.Link>
-
                             </>
                         )}
                         {role === 'student' && (
                             <>
-                            <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
-                            <Nav.Link as={Link} to="/student-reports">My Reports</Nav.Link>
-                            <Nav.Link as={Link} to="/sample">Sample</Nav.Link>
-                            
+                            <Nav.Link as={Link} to="/dashboard">Home</Nav.Link>
+                            <Nav.Link as={Link} to="/student-reports">Reports</Nav.Link>
+                            <Nav.Link as={Link} to="/sample">Lost & Found</Nav.Link>
+                            <Nav.Link as={Link} to="/sample">Incident Reporting</Nav.Link>
+                            <Nav.Link as={Link} to="/sample">Borrow Items</Nav.Link>
                             </>
                         )}
                     </Nav>
