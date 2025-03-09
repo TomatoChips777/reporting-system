@@ -20,73 +20,48 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-router.post('/create-report', upload.single('image'), (req, res) => {
+router.post('/create-report', upload.single('image_path'), (req, res) => {
     // console.log("Received Data:", req.body);
     // console.log("Received File:", req.file);
 
-    if (!req.body.userId || !req.body.location || !req.body.issueType || !req.body.description) {
+    if (!req.body.user_id || !req.body.location || !req.body.issue_type || !req.body.description) {
         return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    const { userId, location, issueType, description } = req.body;
-    const imagePath = req.file ? req.file.filename : null;
+    const { user_id, location, issue_type, description } = req.body;
+    const image_path = req.file ? req.file.filename : null;
     
     const query = `INSERT INTO tbl_reports (user_id, location, issue_type, description, image_path) VALUES (?, ?, ?, ?, ?)`;
-    db.query(query, [userId, location, issueType, description, imagePath], (err, result) => {
+    db.query(query, [user_id, location, issue_type, description, image_path], (err, result) => {
         if (err) {
             console.error("Error creating report:", err);
             return res.status(500).json({ success: false, message: 'Failed to submit report' });
         }
+        // const newReport = { id: result.insertId, user_id, location, issue_type, description ,status: 'pending'};
+        const newReport = { 
+            id: result.insertId, 
+            user_id, 
+            location, 
+            issue_type, 
+            description,
+            status: "pending",  // Initially set to 'pending'
+            image_path: image_path || null // Ensure image path is added if it's not null
+        };
+        req.io.emit('update');
+        req.io.emit('createdReport', newReport);
         res.json({ success: true, message: 'Report submitted successfully', reportId: result.insertId });
     });
 });
 
-// Create Report
-// router.post('/create-report', upload.single('image'), (req, res) => {
-//     const { userId, location, issueType, description } = req.body;
-//     const imagePath = req.file ? req.file.filename : null;
-    
-//     const query = `INSERT INTO tbl_reports (user_id, location, issue_type, description, image_path) VALUES (?, ?, ?, ?, ?)`;
-//     db.query(query, [userId, location, issueType, description, imagePath], (err, result) => {
-//         if (err) {
-//             console.error("Error creating report:", err);
-//             return res.status(500).json({ success: false, message: 'Failed to submit report' });
-//         }
-//         res.json({ success: true, message: 'Report submitted successfully', reportId: result.insertId });
-//     });
-// });
 
-// Update Report
-// router.put('/:reportId', upload.single('image'), (req, res) => {
-//     const { reportId } = req.params;
-//     const { userId, location, issueType, description, existingImagePath } = req.body;
-//     const newImage = req.file ? req.file.filename : existingImagePath;
-    
-//     if (req.file && existingImagePath) {
-//         const oldImagePath = path.join('uploads', existingImagePath);
-//         if (fs.existsSync(oldImagePath)) {
-//             fs.unlinkSync(oldImagePath);
-//         }
-//     }
-    
-//     const query = `UPDATE tbl_reports SET location = ?, issue_type = ?, description = ?, image_path = ? WHERE id = ? AND user_id = ?`;
-//     db.query(query, [location, issueType, description, newImage, reportId, userId], (err, result) => {
-//         if (err) {
-//             console.error("Error updating report:", err);
-//             return res.status(500).json({ success: false, message: 'Failed to update report' });
-//         }
-//         res.json({ success: true, message: 'Report updated successfully' });
-//     });
-// });
-
-router.put('/:reportId', upload.single('image'), (req, res) => {
+router.put('/:reportId', upload.single('image_path'), (req, res) => {
     const { reportId } = req.params;
-    const { userId, location, issueType, description } = req.body;
-    const newImage = req.file ? req.file.filename : null;
+    const { user_id, location, issue_type, description } = req.body;
+    const image_path = req.file ? req.file.filename : null;
 
     // Fetch the current image path from the database
     const getImageQuery = `SELECT image_path FROM tbl_reports WHERE id = ? AND user_id = ?`;
-    db.query(getImageQuery, [reportId, userId], (err, rows) => {
+    db.query(getImageQuery, [reportId, user_id], (err, rows) => {
         if (err) {
             console.error("Error fetching existing image:", err);
             return res.status(500).json({ success: false, message: "Failed to fetch report" });
@@ -95,7 +70,7 @@ router.put('/:reportId', upload.single('image'), (req, res) => {
         const existingImagePath = rows[0]?.image_path;
 
         // Delete old image if a new one is uploaded
-        if (newImage && existingImagePath) {
+        if (image_path && existingImagePath) {
             const oldImagePath = path.join('uploads', existingImagePath);
             if (fs.existsSync(oldImagePath)) {
                 fs.unlinkSync(oldImagePath);
@@ -104,11 +79,13 @@ router.put('/:reportId', upload.single('image'), (req, res) => {
 
         // Update report with new data and image path
         const query = `UPDATE tbl_reports SET location = ?, issue_type = ?, description = ?, image_path = ? WHERE id = ? AND user_id = ?`;
-        db.query(query, [location, issueType, description, newImage || existingImagePath, reportId, userId], (err, result) => {
+        db.query(query, [location, issue_type, description, image_path || existingImagePath, reportId, user_id], (err, result) => {
             if (err) {
                 console.error("Error updating report:", err);
                 return res.status(500).json({ success: false, message: "Failed to update report" });
             }
+            // req.io.emit('reportUpdated', { reportId, location, issue_type, description, imagePath: image_path || existingImagePath });
+            req.io.emit('update');
             res.json({ success: true, message: "Report updated successfully" });
         });
     });
@@ -154,6 +131,7 @@ router.delete('/admin/report/:id', (req, res) => {
                 console.error("Error deleting report:", err);
                 return res.status(500).json({ success: false, message: 'Failed to delete report' });
             }
+            req.io.emit('reportDeleted', { reportId: id });
             res.json({ success: true, message: 'Report deleted successfully' });
         });
     });
@@ -199,6 +177,8 @@ router.delete('/report/:id', (req, res) => {
                 console.error("Error deleting report:", err);
                 return res.status(500).json({ success: false, message: 'Failed to delete report' });
             }
+            // req.io.emit('reportDeleted', { reportId: id });
+            req.io.emit('update');
             res.json({ success: true, message: 'Report deleted successfully' });
         });
     });
@@ -243,8 +223,11 @@ router.put('/admin/edit/:reportId', (req, res) => {
     db.query(query, [status, reportId], (err, result) => {
         if (err) {
             console.error("Error updating status:", err);
+
             return res.status(500).json({ success: false, message: 'Failed to update status' });
         }
+        req.io.emit('updatedStatus', {reportId: reportId,  status});
+        req.io.emit('update');
         res.json({ success: true, message: 'Status updated successfully' });
     });
 });

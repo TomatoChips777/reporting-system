@@ -113,11 +113,11 @@ const ReportModal = ({ show, handleClose, existingReport, fetchReports, setRepor
 
     const createReport = async () => {
         const formData = new FormData();
-        formData.append("userId", user.id);
+        formData.append("user_id", user.id);
         formData.append("location", location);
-        formData.append("issueType", issueType);
+        formData.append("issue_type", issueType);
         formData.append("description", description);
-        if (image instanceof File) formData.append("image", image);
+        if (image instanceof File) formData.append("image_path", image);
 
         try {
             const response = await axios.post("http://localhost:5000/api/reports/create-report", formData);
@@ -126,7 +126,7 @@ const ReportModal = ({ show, handleClose, existingReport, fetchReports, setRepor
             if (response.data.success) {
                 handleClose();
                 setShowSuccessModal(true);
-                fetchReports();
+                // fetchReports();
             }
         } catch (error) {
             console.error("Error creating report:", error);
@@ -137,11 +137,11 @@ const ReportModal = ({ show, handleClose, existingReport, fetchReports, setRepor
 
     const updateReport = async () => {
         const formData = new FormData();
-        formData.append("userId", user.id);
+        formData.append("user_id", user.id);
         formData.append("location", location);
-        formData.append("issueType", issueType);
+        formData.append("issue_type", issueType);
         formData.append("description", description);
-        if (image instanceof File) formData.append("image", image);
+        if (image instanceof File) formData.append("image_path", image);
 
         try {
             const response = await axios.put(
@@ -164,7 +164,7 @@ const ReportModal = ({ show, handleClose, existingReport, fetchReports, setRepor
         } catch (error) {
             console.error("Error updating report:", error);
             setLoading(false);
-            alert("Failed to update the report. Please try again.");
+            alert("Failed to update the report. Please try again.", error);
         }
     };
 

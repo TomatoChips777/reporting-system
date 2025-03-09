@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { IoMegaphoneOutline, IoConstructOutline, IoCubeOutline, IoBookOutline, IoWarningOutline } from "react-icons/io5";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const StudentDashboard = () => {
+const HomeScreen = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="container py-4">
+    <div className="container py-4 mt-2">
       <h1 className="text-center text-dark fw-bold mb-4">Campus Reporting System</h1>
 
       {/* Bulletin Board Card */}
@@ -25,7 +25,7 @@ const StudentDashboard = () => {
         <div className="col-6">
           <button
             className="btn btn-light border rounded-3 shadow-sm w-100 p-3 d-flex flex-column align-items-center"
-            onClick={() => navigate("/reports")} 
+            onClick={() => navigate("/dashboard")} 
           >
             <IoConstructOutline size={40} className=" mb-2" style={{color: "#FF9800"}} />
             <h6 className="fw-bold">Maintenance Reporting</h6>
@@ -70,4 +70,4 @@ const StudentDashboard = () => {
   );
 };
 
-export default StudentDashboard;
+export default HomeScreen;
