@@ -213,7 +213,7 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/get-admin-notifcations', (req, res) => {
+router.get('/get-admin-notifications', (req, res) => {
     const query = `
         SELECT * FROM tbl_admin_notifications WHERE is_read = 0
         ORDER BY created_at DESC`;
@@ -226,7 +226,7 @@ router.get('/get-admin-notifcations', (req, res) => {
     });
 });
 
-router.get('/get-notifcations/:user_id', (req, res) => {
+router.get('/get-notifications/:user_id', (req, res) => {
     const { user_id } = req.params;
     const query = `
         SELECT * FROM tbl_user_notifications WHERE user_id = ?
@@ -240,19 +240,24 @@ router.get('/get-notifcations/:user_id', (req, res) => {
     });
 });
 
-router.get('/get-notification-count/:user_id', async (req, res) => {
-    const { user_id } = req.params;
-    const query = `
-        SELECT COUNT(*) FROM tbl_user_notifications WHERE user_id = ?
-        ORDER BY created_at DESC`;
-        db.query(query, [user_id], (err, rows) => {
-            if (err) {
-                console.error("Error fetching notifications:", err);
-                return res.status(500).json([]);
-            }
-            res.json(rows);
-        });
-  });
+router.delete('/user/remove-notification/:report_id', async (req, res) => {
+    const { report_id } = req.params;
+    const query = `DELETE FROM tbl_user_notifications WHERE id = ?`;
+
+    db.query(query, [report_id], (err, result) => {
+        if (err) {
+            console.error("Error deleting notifications:", err);
+            return res.status(500).json({ success: false, error: "Failed to delete notifications" });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "No notifications found to delete" });
+        }
+
+        res.json({ success: true, message: "Notifications deleted successfully" });
+    });
+});
+
   
 router.put('/mark-all-notifications-read', (req, res) => {
     const { ids } = req.body;
