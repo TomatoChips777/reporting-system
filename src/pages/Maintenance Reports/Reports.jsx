@@ -20,7 +20,7 @@ function Reports() {
     const [reportToDelete, setReportToDelete] = useState(null);
     const [viewType, setViewType] = useState("list");
 
-    
+
     useEffect(() => {
         const fetchReports = async () => {
             try {
@@ -46,7 +46,7 @@ function Reports() {
 
     }, []);
 
-    
+
     useEffect(() => {
         // fetchReports();
         let updatedReports = reports.filter(report => {
@@ -346,7 +346,7 @@ function Reports() {
                     </Modal>
 
                     {/* Pagination Controls */}
-                    <div className="d-flex justify-content-between align-items-center mt-3">
+                    <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
                             <Form.Select value={pageSize} onChange={handlePageSizeChange} className="me-2 rounded-0">
                                 <option value="5">5 per page</option>
@@ -357,7 +357,7 @@ function Reports() {
                             <span>{filteredReports.length} records</span>
                         </div>
                         <nav aria-label="Page navigation">
-                            <ul className="pagination mb-0">
+                            <ul className="pagination mb-0 d-flex flex-wrap overflow-auto">
                                 {/* Previous Button */}
                                 <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
                                     <Button
@@ -371,17 +371,20 @@ function Reports() {
                                 </li>
 
                                 {/* Page Numbers */}
-                                {Array.from({ length: Math.ceil(filteredReports.length / pageSize) }, (_, i) => (
-                                    <li key={i} className={`page-item ${i + 1 === currentPage ? "active" : ""}`}>
-                                        <Button
-                                            variant="link"
-                                            className="page-link rounded-0"
-                                            onClick={() => setCurrentPage(i + 1)}
-                                        >
-                                            {i + 1}
-                                        </Button>
-                                    </li>
-                                ))}
+                                {Array.from({ length: Math.ceil(filteredReports.length / pageSize) }, (_, i) => {
+                                    const pageNumber = i + 1;
+                                    return (
+                                        <li key={pageNumber} className={`page-item ${pageNumber === currentPage ? "active" : ""}`}>
+                                            <Button
+                                                variant="link"
+                                                className="page-link rounded-0"
+                                                onClick={() => setCurrentPage(pageNumber)}
+                                            >
+                                                {pageNumber}
+                                            </Button>
+                                        </li>
+                                    );
+                                })}
 
                                 {/* Next Button */}
                                 <li className={`page-item ${currentPage === Math.ceil(filteredReports.length / pageSize) ? "disabled" : ""}`}>
@@ -399,7 +402,6 @@ function Reports() {
                     </div>
                 </Card.Body>
             </Card>
-
             {/* View Details Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} centered>
                 <Modal.Header closeButton>

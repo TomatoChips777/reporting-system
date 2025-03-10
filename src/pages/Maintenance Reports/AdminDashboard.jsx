@@ -36,7 +36,11 @@ const AdminDashboard = () => {
     if (!analytics) return <p className="text-center mt-5">Loading analytics...</p>;
 
     const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff5733", "#28a745"];
-
+    const formattedIssueDistribution = analytics.issueDistribution.map((entry) => ({
+        ...entry,
+        issue_type: entry.issue_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), // Capitalize & format
+    }));
+    
     return (
         <div className="container mt-5 mb-5">
             <h2 className="text-center mb-4 text-primary">
@@ -46,7 +50,7 @@ const AdminDashboard = () => {
             {/* Cards Section */}
             <div className="row text-center mb-4">
                 <div className="col-md-3 col-6">
-                    <div className="card shadow-lg bg-warning text-white p-3 rounded">
+                    <div className="card shadow-lg bg-primary text-white p-3 rounded">
                         <h5>
                             <IoDocumentText className="me-2" /> Total Reports
                         </h5>
@@ -54,7 +58,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
                 <div className="col-md-3 col-6">
-                    <div className="card shadow-lg bg-primary text-white p-3 rounded">
+                    <div className="card shadow-lg bg-warning text-white p-3 rounded">
                         <h5>
                             <IoTime className="me-2" /> Pending Reports
                         </h5>
@@ -62,7 +66,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
                 <div className="col-md-3 col-6 mt-3 mt-md-0">
-                    <div className="card shadow-lg bg-danger text-white p-3 rounded">
+                    <div className="card shadow-lg bg-info text-white p-3 rounded">
                         <h5>
                             <IoTime className="me-2" /> In Progress
                         </h5>
@@ -150,7 +154,7 @@ const AdminDashboard = () => {
                             }}
                         >
                             <PieChart width={450} height={450}>
-                                <Pie data={analytics.issueDistribution} dataKey="count" nameKey="issue_type" cx="50%" cy="50%" outerRadius={180}>
+                                <Pie data={formattedIssueDistribution} dataKey="count" nameKey="issue_type" cx="50%" cy="50%" outerRadius={180}>
                                     {analytics.issueDistribution.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}

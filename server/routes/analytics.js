@@ -36,7 +36,7 @@ router.get('/analytics', async (req, res) => {
             });
         }
         results.statusCount = statusObj || {};
-
+        
         // Send analytics response
         res.json(results);
     } catch (err) {

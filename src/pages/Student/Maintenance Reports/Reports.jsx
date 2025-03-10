@@ -37,7 +37,6 @@ const ReportScreen = () => {
         // Initialize socket connection for real-time updates
         const socket = io('http://localhost:5000');
         setSocket(socket);
-        // Listen for updated status from the server
         
         socket.on('createdReport', (newReport)=>{
 

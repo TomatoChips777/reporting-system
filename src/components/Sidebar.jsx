@@ -16,7 +16,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 {role === 'admin' && (
                     <>
                         <li className={location.pathname === "/Home" ? "active" : ""}>
-                            <Link to="/Home"><IoHome className="me-2" /> Home</Link>
+                            <Link to="/home"><IoHome className="me-2" /> Home</Link>
                         </li>
                         <li className={location.pathname === "/dashboard" ? "active" : ""}>
                             <Link to="/dashboard"><IoDocumentText className="me-2" /> Dashboard</Link>
