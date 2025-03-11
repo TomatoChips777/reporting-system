@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Row, Col, Container } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { IoSettings, IoSearch, IoWarning, IoList } from 'react-icons/io5';
-import { useNavigation } from '../../components/SidebarContext';
+import { useNavigation } from '../components/SidebarContext';
 
 const HomeScreen = () => {
     const navigate = useNavigate();

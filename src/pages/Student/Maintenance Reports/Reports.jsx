@@ -4,7 +4,7 @@ import { useAuth } from '../../../../AuthContext';
 import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaFileAlt, FaClock, FaTasks, FaCheckCircle, FaChevronRight, FaPlusCircle, FaSearch } from 'react-icons/fa';
-import ReportModal from '../components/CreateModal';
+import ReportModal from '../components/CreateReportModal';
 import { io } from 'socket.io-client';
 
 const ReportScreen = () => {
