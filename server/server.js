@@ -1,24 +1,3 @@
-// const express = require('express');
-// const cors = require('cors');
-// const path = require('path');
-// const reportsRoutes = require('./routes/reports');
-// const usersRoutes = require('./routes/users');
-// const app = express();
-
-// // app.use(express.static(path.join(__dirname, "public")));
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// app.use(cors());
-// app.use(express.json());
-
-// const port = 5000;
-
-// app.use('/api/reports', reportsRoutes);
-// app.use('/api/users', usersRoutes);
-// app.listen(port, () => {
-//     console.log(`Server is listening on http://localhost:${port}`);
-// });
-
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -28,17 +7,19 @@ const { Server } = require('socket.io');
 const reportsRoutes = require('./routes/reports');
 const usersRoutes = require('./routes/users');
 const analytics = require('./routes/analytics');
+const notifications = require('./routes/notifications');
+const lostandfound = require('./routes/lost-found');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: [
             "http://localhost:5173",
-            //  'http://localhost',
 
-        ], // Allow frontend connection
+        ],
         methods: ["GET", "POST", "PUT", "DELETE"]
-    } // Allow all origins (update this for production)
+    }
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -53,9 +34,9 @@ app.use((req, res, next) => {
 
 app.use('/api/reports', reportsRoutes);
 app.use('/api/users', usersRoutes);
-
+app.use('/api/notifications', notifications);
+app.use('/api/lostandfound', lostandfound);
 app.use('/api/analytics', analytics);
-
 
 const port = 5000;
 server.listen(port, () => {

@@ -9,7 +9,6 @@ import { io } from 'socket.io-client';
 
 const ReportScreen = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState(null);

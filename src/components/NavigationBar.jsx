@@ -2,35 +2,47 @@ import { Navbar, Nav, Container, Dropdown, Badge, Modal, Button } from 'react-bo
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../AuthContext';
+import { useNavigation } from './SidebarContext';
 import { Bell } from 'react-bootstrap-icons';
-import Sidebar from './Sidebar';
 import axios from 'axios';
 import io from 'socket.io-client';
 
 function NavigationBar() {
     const { user, signOut, role } = useAuth();
+    const { getCurrentSection, setSectionByPath, pathToSection } = useNavigation();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const location = useLocation();
     const [notifications, setNotifications] = useState([]);
     const [selectedNotification, setSelectedNotification] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    // Update section based on current path when component mounts or path changes
     useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                if (role === "admin") {
-                    const response = await axios.get("http://localhost:5000/api/reports/get-admin-notifcations");
-                    setNotifications(response.data);
-                } else {
-                    const response = await axios.get(`http://localhost:5000/api/reports/get-notifcations/${user.id}`);
-                    setNotifications(response.data);
-                }
+        if (location.pathname && pathToSection[location.pathname]) {
+            setSectionByPath(location.pathname);
+        }
+    }, [location.pathname, setSectionByPath, pathToSection]);
 
-            } catch (error) {
-                console.error("Error fetching notifications:", error);
+    const fetchNotifications = async () => {
+        try {
+            if (role === "admin") {
+                const response = await axios.get("http://localhost:5000/api/notifications/get-admin-notifications");
+                setNotifications(response.data);
+            } else {
+                const response = await axios.get(`http://localhost:5000/api/notifications/get-notifications/${user.id}`);
+                // setNotifications(response.data);
+                const unreadNotifications = response.data.filter(notification => notification.is_read === 0);
+                setNotifications(unreadNotifications);
             }
-        };
+
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        }
+    };
+    useEffect(() => {
+        
         fetchNotifications();
         const socket = io("http://localhost:5000");
         socket.on("update", () => {
@@ -49,12 +61,12 @@ function NavigationBar() {
 
             try {
                 if (role === "admin") {
-                    const response = await axios.put(`http://localhost:5000/api/reports/admin/mark-notification-read/${notif.id}`);
+                    const response = await axios.put(`http://localhost:5000/api/notifications/admin/mark-notification-read/${notif.id}`);
                     if (response.success) {
                         fetchNotifications();
                     }
                 } else {
-                    const response = await axios.put(`http://localhost:5000/api/reports/user/mark-notification-read/${notif.id}`);
+                    const response = await axios.put(`http://localhost:5000/api/notifications/mark-notification-read/${notif.id}`);
                     if (response.success) {
                         fetchNotifications();
                     }
@@ -63,17 +75,11 @@ function NavigationBar() {
                 console.log("Error marking notification", error)
             }
 
-            // axios.put(`http://localhost:5000/api/reports/mark-notification-read/${notif.id}`)
-            //     .then(() => {
-            //         fetchNotifications();
-            //     })
-            //     .catch((error) => console.error("Error marking notification as read:", error));
         }
     };
     const markAllAsRead = () => {
         setNotifications([]);
     };
-    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
@@ -101,31 +107,32 @@ function NavigationBar() {
 
     return (
         <>
-            <Navbar bg="success" variant="dark" expand="lg" sticky="top" >
+            <Navbar bg="success" variant="dark" expand="lg" sticky="top">
                 <Container fluid>
                     <Navbar.Toggle aria-controls="navbarSupportedContent" />
                     <Navbar.Collapse id="navbarSupportedContent">
                         <Nav className="me-auto">
-                            {role === 'admin' && (
-                                <>
-                                    <Nav.Link as={Link} to="/Home" className={location.pathname === "/Home" ? "active" : ""}>Home</Nav.Link>
-                                    <Nav.Link as={Link} to="/dashboard" className={location.pathname === "/dashboard" ? "active" : ""}>Dahsboard</Nav.Link>
-                                    <Nav.Link as={Link} to="/reports" className={location.pathname === "/reports" ? "active" : ""}>Reports</Nav.Link>
-                                    <Nav.Link as={Link} to="/users" className={location.pathname === "/users" ? "active" : ""}>Use Management</Nav.Link>
-                                    <Nav.Link as={Link} to="/sample" className={location.pathname === "/sample" ? "active" : ""}>Sample</Nav.Link>
-                                </>
-                            )}
-                            {role === 'student' && (
-                                <>
-                                    <Nav.Link as={Link} to="/dashboard" className={location.pathname === "/dashboard" ? "active" : ""}>Home</Nav.Link>
-                                    <Nav.Link as={Link} to="/student-reports" className={location.pathname === "/student-reports" ? "active" : ""}>Reports</Nav.Link>
-                                    <Nav.Link as={Link} to="/sample" className={location.pathname === "/sample" ? "active" : ""}>Lost & Found</Nav.Link>
-                                    <Nav.Link as={Link} to="/sample" className={location.pathname === "/sample" ? "active" : ""}>Incident Reporting</Nav.Link>
-                                    <Nav.Link as={Link} to="/sample" className={location.pathname === "/sample" ? "active" : ""}>Borrow Items</Nav.Link>
-                                </>
-                            )}
-                            <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-                        </Nav>
+                            <Nav.Link 
+                                as={Link} 
+                                to="/home" 
+                                className={location.pathname === "/home" ? "active" : ""}
+                                onClick={() => setSectionByPath('/home')}
+                            >
+                                Home
+                            </Nav.Link>
+                            
+                            {getCurrentSection().routes.map((route) => (
+                                <Nav.Link
+                                    key={route.path}
+                                    as={Link}
+                                    to={route.path}
+                                    className={location.pathname === route.path ? "active" : ""}
+                                    onClick={() => setSectionByPath(route.path)}
+                                >
+                                    {route.name}
+                                </Nav.Link>
+                            ))}
+                        </Nav> 
 
                         {/* Notifications Dropdown */}
                         <Dropdown show={showNotifications} onToggle={(isOpen) => setShowNotifications(isOpen)}>
@@ -147,6 +154,8 @@ function NavigationBar() {
                                             className={`d-flex flex-column p-2 ${notif.is_read ? "text-muted" : "fw-bold"}`}
                                             style={{ fontSize: "0.875rem", lineHeight: "1.2", whiteSpace: "normal" }}
                                         >
+                                            <small>{notif.title}</small>
+
                                             <span className="text-truncate">
                                                 {notif.message.length > 35 ? `${notif.message.substring(0, 35)}...` : notif.message}
                                             </span>
@@ -180,7 +189,7 @@ function NavigationBar() {
             {/* Notification Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title className="fw-bold">Notification</Modal.Title>
+                    <Modal.Title className="fw-bold">{selectedNotification ? selectedNotification.title : "Notification"}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="p-4">
                     {selectedNotification ? (
@@ -190,11 +199,11 @@ function NavigationBar() {
                                     {selectedNotification.message}
                                 </p>
                                 <p className="mb-0">
-                                        Created At:{new Date(selectedNotification.created_at).toLocaleString('en-US', {
+                                        Created At: {new Date(selectedNotification.created_at).toLocaleString('en-US', {
                                         timeZone: 'Asia/Manila',
                                         month: 'long',
                                         day: 'numeric',
-                                        year: 'numeric',
+                                        year: 'numeric',    
                                         hour: 'numeric',
                                         minute: '2-digit',
                                         hour12: true,

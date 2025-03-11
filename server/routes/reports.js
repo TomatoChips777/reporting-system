@@ -213,99 +213,99 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/get-admin-notifications', (req, res) => {
-    const query = `
-        SELECT * FROM tbl_admin_notifications WHERE is_read = 0
-        ORDER BY created_at DESC`;
-    db.query(query, (err, rows) => {
-        if (err) {
-            console.error("Error fetching notifications:", err);
-            return res.status(500).json([]);
-        }
-        res.json(rows);
-    });
-});
+// router.get('/get-admin-notifications', (req, res) => {
+//     const query = `
+//         SELECT * FROM tbl_admin_notifications WHERE is_read = 0
+//         ORDER BY created_at DESC`;
+//     db.query(query, (err, rows) => {
+//         if (err) {
+//             console.error("Error fetching notifications:", err);
+//             return res.status(500).json([]);
+//         }
+//         res.json(rows);
+//     });
+// });
 
-router.get('/get-notifications/:user_id', (req, res) => {
-    const { user_id } = req.params;
-    const query = `
-        SELECT * FROM tbl_user_notifications WHERE user_id = ?
-        ORDER BY created_at DESC`;
-    db.query(query, [user_id], (err, rows) => {
-        if (err) {
-            console.error("Error fetching notifications:", err);
-            return res.status(500).json([]);
-        }
-        res.json(rows);
-    });
-});
+// router.get('/get-notifications/:user_id', (req, res) => {
+//     const { user_id } = req.params;
+//     const query = `
+//         SELECT * FROM tbl_user_notifications WHERE user_id = ?
+//         ORDER BY created_at DESC`;
+//     db.query(query, [user_id], (err, rows) => {
+//         if (err) {
+//             console.error("Error fetching notifications:", err);
+//             return res.status(500).json([]);
+//         }
+//         res.json(rows);
+//     });
+// });
 
-router.delete('/user/remove-notification/:report_id', async (req, res) => {
-    const { report_id } = req.params;
-    const query = `DELETE FROM tbl_user_notifications WHERE id = ?`;
+// router.delete('/user/remove-notification/:report_id', async (req, res) => {
+//     const { report_id } = req.params;
+//     const query = `DELETE FROM tbl_user_notifications WHERE id = ?`;
 
-    db.query(query, [report_id], (err, result) => {
-        if (err) {
-            console.error("Error deleting notifications:", err);
-            return res.status(500).json({ success: false, error: "Failed to delete notifications" });
-        }
+//     db.query(query, [report_id], (err, result) => {
+//         if (err) {
+//             console.error("Error deleting notifications:", err);
+//             return res.status(500).json({ success: false, error: "Failed to delete notifications" });
+//         }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: "No notifications found to delete" });
-        }
-
-        res.json({ success: true, message: "Notifications deleted successfully" });
-    });
-});
+//         if (result.affectedRows === 0) {
+//             return res.status(404).json({ success: false, message: "No notifications found to delete" });
+//         }
+//         req.io.emit('update');
+//         res.json({ success: true, message: "Notifications deleted successfully" });
+//     });
+// });
 
   
-router.put('/mark-all-notifications-read', (req, res) => {
-    const { ids } = req.body;
+// router.put('/mark-all-notifications-read', (req, res) => {
+//     const { ids } = req.body;
 
-    if (!ids || ids.length === 0) {
-        return res.status(400).json({ success: false, message: "No notifications to update" });
-    }
+//     if (!ids || ids.length === 0) {
+//         return res.status(400).json({ success: false, message: "No notifications to update" });
+//     }
 
-    const query = `UPDATE tbl_admin_notifications SET is_read = 1 WHERE id IN (?)`;
+//     const query = `UPDATE tbl_admin_notifications SET is_read = 1 WHERE id IN (?)`;
 
-    db.query(query, [ids], (err, result) => {
-        if (err) {
-            console.error("Error marking notifications as read:", err);
-            return res.status(500).json({ success: false, message: "Failed to mark notifications as read" });
-        }
-        res.json({ success: true, message: "All notifications marked as read" });
-    });
-});
+//     db.query(query, [ids], (err, result) => {
+//         if (err) {
+//             console.error("Error marking notifications as read:", err);
+//             return res.status(500).json({ success: false, message: "Failed to mark notifications as read" });
+//         }
+//         res.json({ success: true, message: "All notifications marked as read" });
+//     });
+// });
 
-router.put('/admin/mark-notification-read/:id', (req, res) => {
-    const notificationId = req.params.id;
+// router.put('/admin/mark-notification-read/:id', (req, res) => {
+//     const notificationId = req.params.id;
 
-    const query = `UPDATE tbl_admin_notifications SET is_read = 1 WHERE id = ?`;
+//     const query = `UPDATE tbl_admin_notifications SET is_read = 1 WHERE id = ?`;
 
-    db.query(query, [notificationId], (err, result) => {
-        if (err) {
-            console.error("Error marking notification as read:", err);
-            return res.status(500).json({ success: false, message: 'Failed to mark as read' });
-        }
-        req.io.emit('update');
-        res.json({ success: true, message: 'Notification marked as read' });
-    });
-});
+//     db.query(query, [notificationId], (err, result) => {
+//         if (err) {
+//             console.error("Error marking notification as read:", err);
+//             return res.status(500).json({ success: false, message: 'Failed to mark as read' });
+//         }
+//         req.io.emit('update');
+//         res.json({ success: true, message: 'Notification marked as read' });
+//     });
+// });
 
-router.put('/user/mark-notification-read/:id', (req, res) => {
-    const notificationId = req.params.id;
+// router.put('/user/mark-notification-read/:id', (req, res) => {
+//     const notificationId = req.params.id;
 
-    const query = `UPDATE tbl_user_notifications SET is_read = 1 WHERE id = ?`;
+//     const query = `UPDATE tbl_user_notifications SET is_read = 1 WHERE id = ?`;
 
-    db.query(query, [notificationId], (err, result) => {
-        if (err) {
-            console.error("Error marking notification as read:", err);
-            return res.status(500).json({ success: false, message: 'Failed to mark as read' });
-        }
-        req.io.emit('update');
-        res.json({ success: true, message: 'Notification marked as read' });
-    });
-});
+//     db.query(query, [notificationId], (err, result) => {
+//         if (err) {
+//             console.error("Error marking notification as read:", err);
+//             return res.status(500).json({ success: false, message: 'Failed to mark as read' });
+//         }
+//         req.io.emit('update');
+//         res.json({ success: true, message: 'Notification marked as read' });
+//     });
+// });
 
 
 router.get('/user/:userId', (req, res) => {
@@ -322,32 +322,6 @@ router.get('/user/:userId', (req, res) => {
 });
 
 
-// Update Report Status
-// router.put('/admin/edit/:reportId', (req, res) => {
-//     const reportId = req.params.reportId;
-//     const { status } = req.body;
-//     const query = `UPDATE tbl_reports SET status = ? WHERE id = ?`;
-//     db.query(query, [status, reportId], (err, result) => {
-//         if (err) {
-//             console.error("Error updating status:", err);
-
-//             return res.status(500).json({ success: false, message: 'Failed to update status' });
-//         }
-//         const message = `Your report in {the report that updated status} status has been updated to ${status}`;
-//         const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message) VALUES (?, ?, ?)`;
-
-//         db.query(notificationQuery, [result.insertId, user_id, message], (err, notificationResult) => {
-//             if (err) {
-//                 console.error("Error creating notification:", err);
-//                 return res.status(500).json({ success: false, message: 'Failed to create notification' });
-//             }
-//         });
-
-//         req.io.emit('updatedStatus', {reportId: reportId,  status});
-//         req.io.emit('update');
-//         res.json({ success: true, message: 'Status updated successfully' });
-//     });
-// });
 
 router.put('/admin/edit/:reportId', (req, res) => {
     const reportId = req.params.reportId;

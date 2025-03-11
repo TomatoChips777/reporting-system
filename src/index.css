@@ -31,10 +31,18 @@ body {
   background-color: rgb(246, 247, 248);
 }
 
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1030;
+  height: 56px;
+}
 
 .sidebar {
   position: fixed;
-  top: 56px; /* Adjust for navbar height */
+  top: 56px;
   left: 0;
   width: 220px;
   min-width: 220px;
@@ -42,60 +50,90 @@ body {
   background-color: #2c3e50;
   padding-top: 20px;
   color: white;
-  transition: transform 0.3s ease-in-out; /* Smooth transition for sliding effect */
+  transition: transform 0.3s ease-in-out;
+  z-index: 1020;
+  overflow-y: auto;
 }
 
 /* Hide sidebar on small screens */
 @media (max-width: 768px) {
   .sidebar {
-    transform: translateX(-100%); /* Move sidebar out of view */
+    transform: translateX(-100%);
+    top: 0;
+    height: 100vh;
+    padding-top: 76px; /* Increased padding to account for navbar */
   }
   
   .sidebar.open {
-    transform: translateX(0); /* Bring sidebar into view when open */
+    transform: translateX(0);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Prevent body scroll when sidebar is open */
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  /* Ensure navbar stays above sidebar */
+  .navbar {
+    z-index: 1040;
+  }
+
+  /* Adjust navbar-collapse to not be covered by sidebar */
+  .navbar-collapse {
+    position: relative;
+    z-index: 1050;
+    background-color: #198754;
   }
 }
 
 /* Default: Sidebar visible (large screens) */
 .main-content {
-  margin-left: 220px; /* Push content to the right */
+  margin-left: 220px;
   padding: 20px;
-  width: calc(100% - 220px); /* Adjust width */
+  width: calc(100% - 220px);
   transition: all 0.3s ease-in-out;
+  margin-top: 56px; /* Add margin-top to account for fixed navbar */
 }
 
 /* Small screens: Sidebar hidden */
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 0; /* No margin when sidebar is hidden */
-    width: 100%; /* Full width */
+    margin-left: 0;
+    width: 100%;
   }
 }
 
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000; /* Ensures it stays above other elements */
-}
 
-
+/* Sidebar navigation styles */
 .sidebar ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .sidebar li {
   width: 100%;
+  margin: 0;
+}
+
+.sidebar li.section-header {
+  padding: 15px 20px 10px;
+  font-weight: 600;
+  color: #1abc9c;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
 }
 
 .sidebar li a {
   color: white;
   text-decoration: none;
-  display: flex; /* Use flex to ensure full width */
+  display: flex;
   align-items: center;
-  width: 100%; /* Ensure the link takes full width */
+  width: 100%;
   padding: 12px 20px;
   font-size: 16px;
   transition: background-color 0.3s ease-in-out;
@@ -134,4 +172,68 @@ body {
 .dropdown-content li a {
   padding: 10px 20px;
   display: block;
+}
+
+/* Service selection cards */
+.hover-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.icon-circle {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-card:hover .icon-circle {
+  transform: scale(1.1);
+}
+
+/* Sidebar List Structure */
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px); /* Adjust based on your header height */
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Notification Link Styles */
+.notification-link {
+  margin-top: auto;
+  padding: 10px 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-link a {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 0;
+}
+
+.notification-link a:hover {
+  color: #fff;
+  opacity: 0.8;
+}
+
+.notification-link .badge {
+  font-size: 0.7rem;
+  padding: 0.25em 0.5em;
+}
+
+/* Sidebar Divider */
+.sidebar-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
 }

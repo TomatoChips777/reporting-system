@@ -1,4 +1,4 @@
-import React, {useState}from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import NavigationBar from './components/NavigationBar.jsx';
 import LoginScreen from './pages/LoginScreen.jsx';
@@ -12,43 +12,50 @@ import StudentReports from './pages/Student/Maintenance Reports/Reports.jsx';
 import StudentSample from './pages/Student/Maintenance Reports/Sample.jsx';
 import AdminDashboard from './pages/Maintenance Reports/AdminDashboard.jsx';
 import Sidebar from './components/Sidebar.jsx';
-const Contact = () => <h1>Contact Page</h1>;
+import LostAndFound from './pages/Student/Lost And Found/LostAndFound.jsx';
+import { NavigationProvider } from './components/SidebarContext.jsx';
 
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    
     if (isLoading) return <div>Loading...</div>;
 
     return (
         <Router>
             {isAuthenticated ? (
-                <>
+                <NavigationProvider>
                     <NavigationBar />
                     <div className="d-flex vh-100">
-                    <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-                    <div className="main-content">
+                        <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+                        <div className="main-content">
                             <Routes>
                                 {role === 'admin' && (
                                     <>
                                         <Route path="/home" element={<HomeScreen />} />
                                         <Route path="/dashboard" element={<AdminDashboard />} />
                                         <Route path="/reports" element={<Reports />} />
-                                        <Route path="/sample" element={<Sample />} />
-                                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                                        <Route path="/maintenance-requests" element={<Sample />} />
+                                        <Route path="*" element={<Navigate to="/home" replace />} />
                                     </>
                                 )}
                                 {role === 'student' && (
                                     <>
+                                        <Route path="/home" element={<HomeScreen />} />
                                         <Route path="/dashboard" element={<StudentDashboard />} />
-                                        <Route path="/student-reports" element={<StudentReports />} />
-                                        <Route path="/sample" element={<StudentSample />} />
-                                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                                        <Route path="/reports" element={<StudentReports />} />
+                                        <Route path="/lost-and-found" element={<LostAndFound />} />
+                                        <Route path="/incidents" element={<StudentSample />} />
+                                        <Route path="/report-incident" element={<StudentSample />} />
+                                        <Route path="/borrow-items" element={<StudentSample />} />
+                                        <Route path="/my-borrowed" element={<StudentSample />} />
+                                        <Route path="*" element={<Navigate to="/home" replace />} />
                                     </>
                                 )}
                             </Routes>
                         </div>
                     </div>
-                </>
+                </NavigationProvider>
             ) : (
                 <Routes>
                     <Route path="*" element={<LoginScreen />} />
@@ -59,69 +66,3 @@ function App() {
 }
 
 export default App;
-
-// function App() {
-//     const { isAuthenticated, isLoading, role } = useAuth();
-
-//     if (isLoading) return <div>Loading...</div>;
-
-//     return (
-//         <Router>
-//             {isAuthenticated ? (
-//                 <>
-//                     <NavigationBar />
-//                     <Routes>
-//                         {role === 'admin' && (
-//                             <>
-//                                 <Route path="/home" element={<HomeScreen />} />
-//                                 <Route path="/dashboard" element={<AdminDashboard />} />
-//                                 <Route path="/reports" element={<Reports />} />
-//                                 <Route path="/sample" element={<Sample />} />
-                                
-//                                 <Route path="*" element={<Navigate to={role === 'admin' ? "/dashboard" : "/"} replace />} />
-
-//                             </>
-//                         )}
-//                         {role === 'student' && (
-//                             <>
-//                                 <Route path="/dashboard" element={<StudentDashboard />} />
-//                                 <Route path="/student-reports" element={<StudentReports />} />
-//                                 <Route path="/sample" element={<StudentSample />} />
-//                                 <Route path="*" element={<Navigate to={role === 'student' ? "/dashboard" : "/"} replace />} />
-
-//                             </>
-//                         )}
-//                     </Routes>
-//                 </>
-//             ) : (
-//                 <Routes>
-//                     <Route path="*" element={<LoginScreen />} />
-//                 </Routes>
-//             )}
-//         </Router>
-//     );
-// }
-
-// export default App;
-// //     return (
-// //         <Router>
-// //             {isAuthenticated ? (
-// //                 <>
-// //                     <Navbar />
-// //                     <Routes>
-// //                         <Route path="/" element={<Home />} />
-// //                         <Route path="/reports" element={<Reports />} />
-// //                         <Route path="/contact" element={<Contact />} />
-// //                         <Route path="*" element={<Navigate to="/" replace />} />
-// //                     </Routes>
-// //                 </>
-// //             ) : (
-// //                 <Routes>
-// //                     <Route path="*" element={<LoginScreen />} />
-// //                 </Routes>
-// //             )}
-// //         </Router>
-// //     );
-// // }
-
-// // export default App;

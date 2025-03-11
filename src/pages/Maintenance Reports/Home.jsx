@@ -1,73 +1,98 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { IoMegaphoneOutline, IoConstructOutline, IoCubeOutline, IoBookOutline, IoWarningOutline } from "react-icons/io5";
-import "bootstrap/dist/css/bootstrap.min.css";
+import React from 'react';
+import { Card, Row, Col, Container } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { IoSettings, IoSearch, IoWarning, IoList } from 'react-icons/io5';
+import { useNavigation } from '../../components/SidebarContext';
 
 const HomeScreen = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const { setSection } = useNavigation();
 
-  return (
-    <div className="container py-4 mt-2">
-      <h1 className="text-center text-dark fw-bold mb-4">Campus Reporting System</h1>
+    const sections = [
+        {
+            key: 'maintenance',
+            title: 'Maintenance Reporting',
+            icon: <IoSettings size={40} />,
+            description: 'Submit and track maintenance requests',
+            color: '#2ecc71'
+        },
+        {
+            key: 'lostFound',
+            title: 'Lost and Found',
+            icon: <IoSearch size={40} />,
+            description: 'Report or search for lost items',
+            color: '#3498db'
+        },
+        {
+            key: 'incidentReporting',
+            title: 'Incident Reporting',
+            icon: <IoWarning size={40} />,
+            description: 'Report security incidents or concerns',
+            color: '#e74c3c'
+        },
+        {
+            key: 'borrowing',
+            title: 'Borrow Items',
+            icon: <IoList size={40} />,
+            description: 'Browse and borrow available items',
+            color: '#9b59b6'
+        }
+    ];
 
-      {/* Bulletin Board Card */}
-      <button
-        className="w-100 btn btn-light border rounded-3 shadow-sm p-4 d-flex flex-column align-items-center mb-4"
-        onClick={() => navigate("/details")} style={{backgroundColor: '#EDE7F6'}}
-      >
-        <IoMegaphoneOutline size={50} className=" mb-2" style={{color: "#673AB7"}} />
-        <h5 className="fw-bold" style={{color: '#673AB7'}}>Bulletin Board</h5>
-        <p className="text-muted text-center">View announcements and updates.</p>
-      </button>
+    const handleSectionSelect = (sectionKey) => {
+        setSection(sectionKey);
+        switch (sectionKey) {
+            case 'maintenance':
+                navigate('/dashboard');
+                break;
+            case 'lostFound':
+                navigate('/lost-and-found');
+                break;
+            case 'incidentReporting':
+                navigate('/incidents');
+                break;
+            case 'borrowing':
+                navigate('/borrow-items');
+                break;
+            default:
+                navigate('/home');
+        }
+    };
 
-      {/* Grid Layout */}
-      <div className="row g-3">
-        <div className="col-6">
-          <button
-            className="btn btn-light border rounded-3 shadow-sm w-100 p-3 d-flex flex-column align-items-center"
-            onClick={() => navigate("/dashboard")} 
-          >
-            <IoConstructOutline size={40} className=" mb-2" style={{color: "#FF9800"}} />
-            <h6 className="fw-bold">Maintenance Reporting</h6>
-            <p className="text-muted text-center small">Report maintenance issues.</p>
-          </button>
-        </div>
-
-        <div className="col-6">
-          <button
-            className="btn btn-light border rounded-3 shadow-sm w-100 p-3 d-flex flex-column align-items-center"
-            onClick={() => navigate("/lost-and-found")}
-          >
-            <IoCubeOutline size={40} className=" mb-2" style={{color: '#2196F3'}}/>
-            <h6 className="fw-bold">Lost & Found</h6>
-            <p className="text-muted text-center small">Report or find items.</p>
-          </button>
-        </div>
-
-        <div className="col-6">
-          <button
-            className="btn btn-light border rounded-3 shadow-sm w-100 p-3 d-flex flex-column align-items-center"
-            onClick={() => navigate("/borrowing")}
-          >
-            <IoBookOutline size={40} className="mb-2" style={{color: '#4CAF50'}} />
-            <h6 className="fw-bold">Borrowing Items</h6>
-            <p className="text-muted text-center small">Borrow items easily.</p>
-          </button>
-        </div>
-
-        <div className="col-6">
-          <button
-            className="btn btn-light border rounded-3 shadow-sm w-100 p-3 d-flex flex-column align-items-center"
-            onClick={() => navigate("/incident-reports")}
-          >
-            <IoWarningOutline size={40} className="mb-2" style={{color: '#F44336'}} />
-            <h6 className="fw-bold">Incident Reporting</h6>
-            <p className="text-muted text-center small">Report incidents safely.</p>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    return (
+        <Container className="py-5">
+            <h2 className="mb-4">Welcome! Select a Service</h2>
+            <Row className="g-4">
+                {sections.map((section) => (
+                    <Col key={section.key} xs={12} md={6} lg={3}>
+                        <Card 
+                            className="h-100 shadow-sm hover-card" 
+                            onClick={() => handleSectionSelect(section.key)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <Card.Body className="d-flex flex-column align-items-center text-center p-4">
+                                <div 
+                                    className="icon-circle mb-3" 
+                                    style={{ 
+                                        backgroundColor: `${section.color}20`,
+                                        color: section.color,
+                                        padding: '20px',
+                                        borderRadius: '50%'
+                                    }}
+                                >
+                                    {section.icon}
+                                </div>
+                                <Card.Title>{section.title}</Card.Title>
+                                <Card.Text className="text-muted">
+                                    {section.description}
+                                </Card.Text>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                ))}
+            </Row>
+        </Container>
+    );
 };
 
 export default HomeScreen;
