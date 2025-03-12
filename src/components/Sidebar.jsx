@@ -15,22 +15,22 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const { getCurrentSection, activeSection, setSectionByPath, sections } = useNavigation();
     const [notifications, setNotifications] = useState([]);
 
+
+
     const fetchNotifications = async () => {
         try {
-            if (role === "admin") {
-                const response = await axios.get("http://localhost:5000/api/notifications/get-admin-notifications");
-                setNotifications(response.data);
-            } else {
-                const response = await axios.get(`http://localhost:5000/api/notifications/get-notifications/${user.id}`);
-                // setNotifications(response.data);
-                const unreadNotifications = response.data.filter(notification => notification.is_read === 0);
-                setNotifications(unreadNotifications);
-            }
-
+            const endpoint = role === "admin" 
+                ? "http://localhost:5000/api/notifications/get-admin-notifications"
+                : `http://localhost:5000/api/notifications/get-notifications/${user.id}`;
+            
+            const response = await axios.get(endpoint);
+            const unreadNotifications = response.data.filter(notification => notification.is_read === 0);
+            setNotifications(unreadNotifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
         }
     };
+
     useEffect(() => {
         
         fetchNotifications();

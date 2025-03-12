@@ -299,5 +299,4 @@ const ReportModal = ({ show, handleClose, existingReport, fetchReports, setRepor
         </>
     );
 };
-
 export default ReportModal;

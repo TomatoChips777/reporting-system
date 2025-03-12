@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '../../AuthContext';
 
 const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
+    const { role } = useAuth();
     const [activeSection, setActiveSection] = useState(() => {
         const saved = localStorage.getItem('activeSection');
         return saved || 'home';
@@ -11,15 +13,15 @@ export const NavigationProvider = ({ children }) => {
     const sections = {
         home: {
             name: 'Home',
-            routes: []  // Empty for home as it shows selection options
+            routes: [] 
         },
         maintenance: {
             name: 'Maintenance Reporting',
-            defaultPath: '/dashboard',
+            defaultPath: role === 'admin' ? '/dashboard' : '/reports',
             routes: [
-                { path: '/dashboard', name: 'Dashboard', icon: 'dashboard' },
+                { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
                 { path: '/reports', name: 'Reports', icon: 'reports' },
-                { path: '/maintenance-requests', name: 'Maintenance Requests', icon: 'maintenance' }
+                // { path: '/maintenance-requests', name: 'Maintenance Requests', icon: 'maintenance' }
             ]
         },
         lostFound: {
@@ -27,7 +29,7 @@ export const NavigationProvider = ({ children }) => {
             defaultPath: '/lost-and-found',
             routes: [
                 { path: '/lost-and-found', name: 'Lost & Found', icon: 'search' },
-                { path: '/my-reports', name: 'My Reports', icon: 'reports' }
+                { path: '/lost-and-found-reports', name: 'My Reports', icon: 'reports' }
             ]
         },
         incidentReporting: {
@@ -53,10 +55,10 @@ export const NavigationProvider = ({ children }) => {
         '/maintenance': 'maintenance',
         '/dashboard': 'maintenance',
         '/reports': 'maintenance',
-        '/maintenance-requests': 'maintenance',
+        // '/maintenance-requests': 'maintenance',
         
         '/lost-and-found': 'lostFound',
-        '/my-reports': 'lostFound',
+        '/lost-and-found-reports': 'lostFound',
         
         '/incidents': 'incidentReporting',
         '/report-incident': 'incidentReporting',
@@ -85,7 +87,15 @@ export const NavigationProvider = ({ children }) => {
     };
 
     const getCurrentSection = () => {
-        return sections[activeSection] || sections.home;
+        const section = sections[activeSection] || sections.home;
+        
+        if (section.routes) {
+            return {
+                ...section,
+                routes: section.routes.filter(route => !route.adminOnly || role === 'admin')
+            };
+        }
+        return section;
     };
 
     const getAvailableSections = () => {

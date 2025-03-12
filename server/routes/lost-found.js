@@ -133,6 +133,59 @@ router.get('/items', (req, res) => {
     });
 });
 
+    // router.get('/user/items/:user_id', (req, res) => {
+    //     const {user_id} = req.params;
+    //     const query = `
+    //         SELECT 
+    //             lf.*,
+    //             CASE 
+    //                 WHEN lf.is_anonymous = 1 THEN 'Anonymous'
+    //                 ELSE u.name 
+    //             END AS user_name
+    //         FROM tbl_lost_found lf
+    //         LEFT JOIN tbl_users u ON lf.user_id = u.id WHERE user_id = ?
+    //         ORDER BY lf.date_reported DESC
+    //     `;
+
+    //     db.query(query,[user_id], (err, results) => {
+    //         if (err) {
+    //             console.error('Database error:', err);
+    //             return res.status(500).json({ 
+    //                 success: false, 
+    //                 message: 'Database error' 
+    //             });
+    //         }
+
+    //         res.json({ 
+    //             success: true, 
+    //             items: results 
+    //         });
+    //     });
+    // });
+
+
+
+    router.get('/user/items/:userId', (req, res) => {
+        const { userId } = req.params;
+    
+        const query = `SELECT 
+                lf.*,
+                CASE 
+                    WHEN lf.is_anonymous = 1 THEN 'Anonymous'
+                    ELSE u.name 
+                END AS user_name
+            FROM tbl_lost_found lf
+            LEFT JOIN tbl_users u ON lf.user_id = u.id WHERE user_id = ?
+            ORDER BY lf.date_reported DESC`;
+        db.query(query, [userId], (err, rows) => {
+            if (err) {
+                console.error("Error fetching user reports:", err);
+                return res.status(500).json({ success: false, message: "Failed to fetch reports" });
+            }
+            res.json({ success: true, items: rows });
+        });
+    });
+
 /**
  * @route GET /items/:id
  * @desc Fetch a single lost/found item by ID

@@ -3,8 +3,9 @@ import { Card, Row, Col, Container } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { IoSettings, IoSearch, IoWarning, IoList } from 'react-icons/io5';
 import { useNavigation } from '../components/SidebarContext';
-
+import { useAuth } from '../../AuthContext';
 const HomeScreen = () => {
+    const {role} = useAuth();
     const navigate = useNavigate();
     const { setSection } = useNavigation();
 
@@ -43,7 +44,7 @@ const HomeScreen = () => {
         setSection(sectionKey);
         switch (sectionKey) {
             case 'maintenance':
-                navigate('/dashboard');
+                navigate(role === 'admin' ? '/dashboard' : '/reports');
                 break;
             case 'lostFound':
                 navigate('/lost-and-found');

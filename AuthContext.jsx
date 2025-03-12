@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem("user");
         if (savedUser) {
           const parsedUser = JSON.parse(savedUser);
-          setUser(parsedUser); // Set local user immediately
+          setUser(parsedUser);
           setRole(parsedUser.role);
           setIsAuthenticated(true);
   
@@ -37,15 +37,13 @@ export const AuthProvider = ({ children }) => {
   
     initializeAuth();
   }, []);
-  
-  
 
   const signIn = async (userInfo) => {
     try {
       setUser(userInfo);
       setRole(userInfo.role);
       setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(userInfo)); // Store only the user info
+      localStorage.setItem('user', JSON.stringify(userInfo));
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;

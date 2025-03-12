@@ -17,6 +17,7 @@ import AdminLostAndFound from './pages/LostAndFound/LostAndFound.jsx';
 import { NavigationProvider } from './components/SidebarContext.jsx';
 import Notifications from './pages/Notifications.jsx';
 import LostAndFoundDashboard from './pages/LostAndFound/Dashboard.jsx';
+import LostAndFoundReport from './pages/Student/Lost And Found/LostFoundReport.jsx';
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -47,9 +48,10 @@ function App() {
                                 {role === 'student' && (
                                     <>
                                         <Route path="/home" element={<HomeScreen />} />
-                                        <Route path="/dashboard" element={<StudentDashboard />} />
+                                        {/* <Route path="/dashboard" element={<StudentDashboard />} /> */}
                                         <Route path="/reports" element={<StudentReports />} />
                                         <Route path="/lost-and-found" element={<LostAndFound />} />
+                                        <Route path="/lost-and-found-reports" element={<LostAndFoundReport />} />
                                         <Route path="/incidents" element={<StudentSample />} />
                                         <Route path="/report-incident" element={<StudentSample />} />
                                         <Route path="/borrow-items" element={<StudentSample />} />

@@ -88,8 +88,6 @@ const ReportScreen = () => {
         const matchesSearch = searchQuery ? r.issue_type.toLowerCase().includes(searchQuery.toLowerCase()) || r.location.toLowerCase().includes(searchQuery.toLowerCase()) || r.description.toLowerCase().includes(searchQuery.toLowerCase()) : true;
         return matchesStatus && matchesSearch;
     });
-
-
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentReports = filteredReports.slice(indexOfFirstItem, indexOfLastItem);
@@ -187,9 +185,9 @@ const ReportScreen = () => {
             </div>
             <div className="d-flex justify-content-between mb-3">
                 <div className="btn-group">
-                    <button onClick={() => handleStatusFilter('pending')} className={`rounded-0 btn ${selectedStatus === 'pending' ? 'btn-warning' : 'btn-outline-warning'}`}>Pending</button>
-                    <button onClick={() => handleStatusFilter('in_progress')} className={`rounded-0 btn ${selectedStatus === 'in_progress' ? 'btn-primary' : 'btn-outline-primary'}`}>In Progress</button>
-                    <button onClick={() => handleStatusFilter('resolved')} className={`rounded-0 btn ${selectedStatus === 'resolved' ? 'btn-success' : 'btn-outline-success'}`}>Resolved</button>
+                    <button onClick={() => handleStatusFilter('pending')} className={`rounded-0 btn ${selectedStatus === 'pending' ? 'btn-dark' : 'btn-outline-dark'}`}>Pending</button>
+                    <button onClick={() => handleStatusFilter('in_progress')} className={`rounded-0 btn ${selectedStatus === 'in_progress' ? 'btn-dark' : 'btn-outline-dark'}`}>In Progress</button>
+                    <button onClick={() => handleStatusFilter('resolved')} className={`rounded-0 btn ${selectedStatus === 'resolved' ? 'btn-dark' : 'btn-outline-dark'}`}>Resolved</button>
                 </div>
                 <div className="input-group" style={{ maxWidth: "300px" }}>
                     <input
