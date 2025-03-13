@@ -4,7 +4,9 @@ const db = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "lc-wm-database",
+    // database: "lc-wm-database",
+    database: "unified-reports",
+
 });
 
 db.connect((err) => {

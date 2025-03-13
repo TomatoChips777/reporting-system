@@ -64,6 +64,7 @@ const CreateReportModal = ({ show, handleClose, fetchReports }) => {
         // Keywords for each category
         const maintenanceKeywords = ['repair', 'broken', 'fix', 'maintenance', 'electrical', 'plumbing', 
             'light', 'ac', 'air conditioning', 'door', 'window', 'leak', 'damage'];
+            
         const lostFoundKeywords = ['lost', 'found', 'missing', 'item', 'belongings', 'wallet', 'phone', 
             'bag', 'left', 'forgot'];
         const incidentKeywords = ['incident', 'accident', 'emergency', 'injury', 'security', 'threat', 

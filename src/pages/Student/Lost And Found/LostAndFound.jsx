@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Card, Badge } from 'react-bootstrap';
 import axios from 'axios';
 import { useAuth } from '../../../../AuthContext';
-import CreateLostFoundModal from '../components/LostFoundModal';
+import CreateLostFoundModal from '../Junk/LostFoundModal';
 
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
 

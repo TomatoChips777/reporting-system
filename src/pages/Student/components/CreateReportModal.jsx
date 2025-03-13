@@ -3,7 +3,7 @@ import { useAuth } from '../../../../AuthContext';
 import { Modal, Button, Form, Spinner, Alert } from 'react-bootstrap';
 import axios from 'axios';
 const ReportModal = ({ show, handleClose, existingReport, fetchReports, setReports }) => {
-    const { user } = useAuth();
+    const { user } = useAuth(); 
     const [location, setLocation] = useState('');
     const [issueType, setIssueType] = useState('');
     const [description, setDescription] = useState('');
@@ -22,7 +22,7 @@ const ReportModal = ({ show, handleClose, existingReport, fetchReports, setRepor
                 setIssueType(existingReport.issue_type || '');
                 setDescription(existingReport.description || '');
                 setImage(existingReport.image_path || null);
-                setStatus(existingReport.status || ''); // Ensure lowercase status is stored
+                setStatus(existingReport.status || '');s
             } else {
                 resetForm();
             }

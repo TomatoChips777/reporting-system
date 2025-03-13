@@ -12,7 +12,7 @@ import {
   FaFilter,
   FaTimesCircle,
 } from "react-icons/fa";
-import CreateLostFoundModal from "../components/LostFoundModal";
+import CreateLostFoundModal from "../Junk/LostFoundModal";
 import { io } from "socket.io-client";
 
 const LostAndFoundReport = () => {
