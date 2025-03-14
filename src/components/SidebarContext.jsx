@@ -1,6 +1,85 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../../AuthContext';
 
+class Section {
+    constructor(name, defaultPath, routes = [], adminOnly = false) {
+        this.name = name;
+        this.defaultPath = defaultPath;
+        this.routes = routes;
+        this.adminOnly = adminOnly;
+    }
+
+    getFilteredRoutes(role) {
+        return this.routes.filter(route => !route.adminOnly || role === 'admin');
+    }
+
+    hasAccess(role) {
+        return !this.adminOnly || role === 'admin';
+    }
+}
+
+class NavigationManager {
+    constructor(role) {
+        this.role = role;
+        this.sections = this.initializeSections();
+        this.pathToSection = this.buildPathMapping();
+    }
+
+    initializeSections() {
+        return {
+            home: new Section('Home', '/home', []),
+            maintenance: new Section('Maintenance Reporting', '/dashboard', [
+                { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
+                { path: '/reports', name: 'Reports', icon: 'reports' }
+            ]),
+            lostFound: new Section('Lost and Found', '/lost-and-found', [
+                { path: '/lost-and-found', name: 'Lost & Found', icon: 'search' },
+                { path: '/lost-and-found-reports', name: 'My Reports', icon: 'reports' }
+            ]),
+            incidentReporting: new Section('Incident Reporting', '/incidents', [
+                { path: '/incidents', name: 'Incidents', icon: 'warning' },
+                { path: '/report-incident', name: 'Report Incident', icon: 'create' }
+            ]),
+            borrowing: new Section('Borrow Items', '/borrow-items', [
+                { path: '/borrow-items', name: 'Available Items', icon: 'inventory' },
+                { path: '/my-borrowed', name: 'My Borrowed Items', icon: 'list' }
+            ]),
+            student: new Section('Student Reports', '/list-screen', [
+                { path: '/list-screen', name: 'Lost And Found', icon: 'list' },
+                { path: '/reports-screen', name: 'My Reports', icon: 'reports' },
+            ])
+        };
+    }
+
+    buildPathMapping() {
+        const mapping = { '/home': 'home' };
+        Object.entries(this.sections).forEach(([key, section]) => {
+            section.routes.forEach(route => {
+                mapping[route.path] = key;
+            });
+        });
+        return mapping;
+    }
+
+    getSection(sectionKey) {
+        return this.sections[sectionKey] || this.sections.home;
+    }
+
+    getSectionByPath(path) {
+        return this.sections[this.pathToSection[path]] || this.sections.home;
+    }
+
+    getAvailableSections() {
+        return Object.entries(this.sections)
+            .filter(([_, section]) => section.hasAccess(this.role))
+            .map(([key, section]) => ({
+                key,
+                name: section.name,
+                defaultPath: section.defaultPath
+            }));
+    }
+}
+
 const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
@@ -10,100 +89,31 @@ export const NavigationProvider = ({ children }) => {
         return saved || 'home';
     });
 
-    const sections = {
-        home: {
-            name: 'Home',
-            routes: [] 
-        },
-        maintenance: {
-            name: 'Maintenance Reporting',
-            defaultPath: role === 'admin' ? '/dashboard' : '/reports',
-            routes: [
-                { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
-                { path: '/reports', name: 'Reports', icon: 'reports' },
-                // { path: '/maintenance-requests', name: 'Maintenance Requests', icon: 'maintenance' }
-            ]
-        },
-        lostFound: {
-            name: 'Lost and Found',
-            defaultPath: '/lost-and-found',
-            routes: [
-                { path: '/lost-and-found', name: 'Lost & Found', icon: 'search' },
-                { path: '/lost-and-found-reports', name: 'My Reports', icon: 'reports' }
-            ]
-        },
-        incidentReporting: {
-            name: 'Incident Reporting',
-            defaultPath: '/incidents',
-            routes: [
-                { path: '/incidents', name: 'Incidents', icon: 'warning' },
-                { path: '/report-incident', name: 'Report Incident', icon: 'create' }
-            ]
-        },
-        borrowing: {
-            name: 'Borrow Items',
-            defaultPath: '/borrow-items',
-            routes: [
-                { path: '/borrow-items', name: 'Available Items', icon: 'inventory' },
-                { path: '/my-borrowed', name: 'My Borrowed Items', icon: 'list' }
-            ]
-        }
-    };
-
-    // Map paths to section keys
-    const pathToSection = {
-        '/maintenance': 'maintenance',
-        '/dashboard': 'maintenance',
-        '/reports': 'maintenance',
-        // '/maintenance-requests': 'maintenance',
-        
-        '/lost-and-found': 'lostFound',
-        '/lost-and-found-reports': 'lostFound',
-        
-        '/incidents': 'incidentReporting',
-        '/report-incident': 'incidentReporting',
-        
-        '/borrow-items': 'borrowing',
-        '/my-borrowed': 'borrowing',
-        
-        '/home': 'home'
-    };
+    const navigationManager = new NavigationManager(role);
 
     useEffect(() => {
         localStorage.setItem('activeSection', activeSection);
     }, [activeSection]);
 
     const setSection = (sectionKey) => {
-        if (sections[sectionKey]) {
+        if (navigationManager.sections[sectionKey]) {
             setActiveSection(sectionKey);
         }
     };
 
     const setSectionByPath = (path) => {
-        const sectionKey = pathToSection[path];
+        const sectionKey = navigationManager.pathToSection[path];
         if (sectionKey) {
             setActiveSection(sectionKey);
         }
     };
 
     const getCurrentSection = () => {
-        const section = sections[activeSection] || sections.home;
-        
-        if (section.routes) {
-            return {
-                ...section,
-                routes: section.routes.filter(route => !route.adminOnly || role === 'admin')
-            };
-        }
-        return section;
-    };
-
-    const getAvailableSections = () => {
-        return Object.keys(sections).map(key => ({
-            key,
-            name: sections[key].name,
-            defaultPath: sections[key].defaultPath || '/home'
-        }));
+        const section = navigationManager.getSection(activeSection);
+        return {
+            ...section,
+            routes: section.getFilteredRoutes(role)
+        };
     };
 
     const contextValue = {
@@ -111,9 +121,9 @@ export const NavigationProvider = ({ children }) => {
         setSection,
         setSectionByPath,
         getCurrentSection,
-        getAvailableSections,
-        sections,
-        pathToSection
+        getAvailableSections: () => navigationManager.getAvailableSections(),
+        sections: navigationManager.sections,
+        pathToSection: navigationManager.pathToSection
     };
 
     return (

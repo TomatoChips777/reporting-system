@@ -4,7 +4,7 @@ import { BsQuestionCircle } from 'react-icons/bs'; // Help icon
 import axios from 'axios';
 import { useAuth } from '../../../../AuthContext';
 
-const UnifiedCreateReportModal = ({ show, handleClose, existingReport }) => {
+const CreateModal = ({ show, handleClose, existingReport }) => {
     const { user } = useAuth();
     const [reportType, setReportType] = useState('maintenance');
     const [formData, setFormData] = useState({
@@ -187,4 +187,4 @@ const UnifiedCreateReportModal = ({ show, handleClose, existingReport }) => {
         </Modal>
     );
 };
-export default UnifiedCreateReportModal;
+export default CreateModal;

@@ -113,7 +113,7 @@ router.get('/items', (req, res) => {
                 ELSE u.name 
             END AS user_name
         FROM tbl_lost_found lf
-        LEFT JOIN tbl_users u ON lf.user_id = u.id
+        LEFT JOIN tbl_users u ON lf.user_id = u.id where lf.archived = 0
         ORDER BY lf.date_reported DESC
     `;
 

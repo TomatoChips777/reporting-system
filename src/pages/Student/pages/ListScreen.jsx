@@ -3,11 +3,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Card, Badge } from 'react-bootstrap';
 import axios from 'axios';
 import { useAuth } from '../../../../AuthContext';
-import CreateLostFoundModal from '../Junk/LostFoundModal';
+// import CreateLostFoundModal from '../Junk/LostFoundModal';
 
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
 
-function LostAndFound() {
+function ListScreen() {
     const { user } = useAuth();
     const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -75,10 +75,9 @@ function LostAndFound() {
                     </div>
                 ))}
             </div>
-
-            <CreateLostFoundModal show={showModal} handleClose={() => setShowModal(false)} fetchItems={fetchItems} />
+            {/* <CreateLostFoundModal show={showModal} handleClose={() => setShowModal(false)} fetchItems={fetchItems} /> */}
         </div>
     );
 }
 
-export default LostAndFound;
+export default ListScreen;

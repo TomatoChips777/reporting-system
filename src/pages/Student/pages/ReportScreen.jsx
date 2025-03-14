@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { Table, Card, Form, Button, Badge, Modal } from "react-bootstrap";
-import { FaFileAlt, FaClock, FaTasks, FaCheckCircle, FaChevronRight, FaPlusCircle, FaSearch, FaWrench, FaBoxOpen } from 'react-icons/fa';
+import { Table, Card, Form, Button, Badge } from "react-bootstrap";
+import { FaFileAlt, FaTasks, FaPlusCircle, FaSearch, FaWrench, FaBoxOpen } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../../AuthContext";
-import UnifiedCreateReportModal from "../components/UnifiedModal";
+import CreateModal from "../components/CreateModal";
 import UpdateModal from "../components/UpdateModal";
-function StudentSample() {
+function ReportScreen() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
@@ -84,7 +84,7 @@ function StudentSample() {
         const formattedReport = {
             ...report,
             user_id: report.user_id,
-            type: report.report_type,
+            type: report.type || report.report_type, // Ensure type is set from either field
             report_type: report.report_type,
             description: report.description || '',
             location: report.location || '',
@@ -95,13 +95,11 @@ function StudentSample() {
             // Maintenance specific fields
             issue_type: report.issue_type || '',
             // Lost and found specific fields
-            item_name: report.item_name || '',
+            item_name: report.item_name || report.title || '', // Use title as fallback
             category: report.category || ''
         };
         
-        // setSelectedReport(formattedReport);
         setExistingReport(formattedReport);
-        // setShowCreateModal(true);
         setShowUpdateModal(true);
     };
 
@@ -143,8 +141,6 @@ function StudentSample() {
     const lostFoundOpen = lostFoundReports.filter(r => r.status === 'open').length;
     const lostFoundClosed = lostFoundReports.filter(r => r.status === 'closed').length;
     const lostFoundClaimed = lostFoundReports.filter(r => r.status === 'claimed').length;
-
-
 
     return (
         <div className="container mt-5">
@@ -415,7 +411,7 @@ function StudentSample() {
                 </Card.Body>
             </Card>
                 
-            <UnifiedCreateReportModal 
+            <CreateModal 
                 show={showCreateModal} 
                 handleClose={handleCloseCreateModal}
                 existingReport={existingReport}
@@ -432,4 +428,4 @@ function StudentSample() {
     );
 }
 
-export default StudentSample;
+export default ReportScreen;
