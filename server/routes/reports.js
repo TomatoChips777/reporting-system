@@ -30,6 +30,7 @@ router.post('/create-report', upload.single('image_path'), (req, res) => {
 
     const { user_id, location, issue_type, description } = req.body;
     const image_path = req.file ? req.file.filename : null;
+    
 
     const query = `INSERT INTO tbl_reports (user_id, location, issue_type, description, image_path) VALUES (?, ?, ?, ?, ?)`;
     db.query(query, [user_id, location, issue_type, description, image_path], (err, result) => {

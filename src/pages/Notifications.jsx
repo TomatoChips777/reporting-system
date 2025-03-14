@@ -31,8 +31,8 @@ function Notifications() {
         try {
             setLoading(true);
             const endpoint = role === "admin" 
-                ? `${VITE_API_URL}/api/notifications/get-admin-notifications`
-                : `${VITE_API_URL}/api/notifications/get-notifications/${user.id}`;
+                ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
+                : `${import.meta.env.VITE_USER_NOTIFICATION}/${user.id}`;
             
             const response = await axios.get(endpoint);
             setNotifications(response.data);
@@ -58,8 +58,8 @@ function Notifications() {
     const markAsRead = async (notificationId) => {
         try {
             const endpoint = role === "admin" 
-                ? `${VITE_API_URL}/api/notifications/admin/mark-notification-read/${notificationId}`
-                : `${VITE_API_URL}/api/notifications/mark-notification-read/${notificationId}`;
+                ? `http://localhost:5000/api/notifications/admin/mark-notification-read/${notificationId}`
+                : `http://localhost:5000/api/notifications/mark-notification-read/${notificationId}`;
             
                 await axios.put(endpoint);
         } catch (error) {
@@ -70,8 +70,8 @@ function Notifications() {
     const deleteNotification = async (notificationId) => {
         try {
             const endpoint = role === "admin" 
-                ? `${VITE_API_URL}/api/notifications/admin/remove-notification/${notificationId}`
-                : `${VITE_API_URL}/api/notifications/remove-notification/${notificationId}`;
+                ? `http://localhost:5000/api/notifications/admin/remove-notification/${notificationId}`
+                : `http://localhost:5000/api/notifications/remove-notification/${notificationId}`;
             await axios.delete(endpoint);
         } catch (error) {
             console.error("Error deleting notification:", error);
@@ -81,10 +81,10 @@ function Notifications() {
     const markAllAsRead = async () => {
         try {
             const endpoint = role === "admin" 
-            ? `${VITE_API_URL}/api/notifications/admin/mark-all-notifications-read/`
-            : `${VITE_API_URL}/api/notifications/mark-all-notifications-read/${user.id}`;
+            ? `http://localhost:5000/api/notifications/admin/mark-all-notifications-read/`
+            : `http://localhost:5000/api/notifications/mark-all-notifications-read/${user.id}`;
             await axios.put(endpoint);
-            // await axios.put(`${VITE_API_URL}/api/notifications/mark-all-notifications-read/${user.id}`);
+            // await axios.put(`http://localhost:5000/api/notifications/mark-all-notifications-read/${user.id}`);
         } catch (error) {
             console.error("Error marking all notifications as read:", error);
         }

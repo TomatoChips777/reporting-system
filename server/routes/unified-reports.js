@@ -84,4 +84,105 @@ router.put('/reports/archive-lost-found-report/:id', async (req, res) => {
         res.status(500).json({ success: false, message: "Error archiving report" });
     }
 });
+
+
+
+router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
+    try {
+        
+        const { user_id, type, item_name, category, description, location, contact_info, is_anonymous,image_path } = req.body;
+        const status = 'open'; // Default status for new items
+
+        if (!user_id || !type || !item_name || !category || !location) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Missing required fields: user_id, type, item_name, category, and location are required" 
+            });
+        }
+
+        const query = `
+            INSERT INTO tbl_lost_found (
+                user_id, type, item_name, category, description, 
+                location, status, image_path, contact_info, is_anonymous
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        db.query(
+            query, 
+            [user_id, type, item_name, category, description, location, status, image_path, contact_info, is_anonymous],
+            (err, result) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ success: false, message: 'Database error' });
+                }
+
+                // Emit socket events if available
+                if (req.io) {
+                    req.io.emit('update');
+                    req.io.emit('createdReport', { 
+                        id: result.insertId, 
+                        item_name, 
+                        type 
+                    });
+                }
+
+                res.json({ 
+                    success: true, 
+                    message: 'Item posted successfully', 
+                    itemId: result.insertId 
+                });
+            }
+        );
+    } catch (error) {
+        console.error('Server error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error' 
+        });
+    }
+});
+
+
+
+router.post('/create-report', upload.single('image_path'), (req, res) => {
+
+    if (!req.body.user_id || !req.body.location || !req.body.issue_type || !req.body.description) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    const { user_id, location, issue_type, description, image_path } = req.body;
+    
+
+    const query = `INSERT INTO tbl_reports (user_id, location, issue_type, description, image_path) VALUES (?, ?, ?, ?, ?)`;
+    db.query(query, [user_id, location, issue_type, description, image_path], (err, result) => {
+        if (err) {
+            console.error("Error creating report:", err);
+            return res.status(500).json({ success: false, message: 'Failed to submit report' });
+        }
+        // const newReport = { id: result.insertId, user_id, location, issue_type, description ,status: 'pending'};
+        const newReport = {
+            id: result.insertId,
+            user_id,
+            location,
+            issue_type,
+            description,
+            status: "pending",  // Initially set to 'pending'
+            image_path: image_path || null // set image path if not null or null
+        };
+        // $message = "New report submitted {$issueType} issue at {$location}";
+        const title = "Maintenance Report";
+        const message = `New report submitted ${issue_type} issue at ${location}`;
+        const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
+
+        db.query(notificationQuery, [result.insertId, user_id, message, title], (err, notificationResult) => {
+            if (err) {
+                console.error("Error creating notification:", err);
+                return res.status(500).json({ success: false, message: 'Failed to create notification' });
+            }
+        });
+        req.io.emit('update');
+        req.io.emit('createdReport', newReport);
+        res.json({ success: true, message: 'Report submitted successfully', reportId: result.insertId });
+    });
+});
 module.exports = router;

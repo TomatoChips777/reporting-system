@@ -47,6 +47,7 @@ router.use('/uploads', express.static('uploads'));
  */
 router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
     try {
+        
         const { user_id, type, item_name, category, description, location, contact_info, is_anonymous } = req.body;
         const image_path = req.file ? req.file.filename : null;
         const status = 'open'; // Default status for new items

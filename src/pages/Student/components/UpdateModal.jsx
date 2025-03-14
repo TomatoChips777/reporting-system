@@ -175,7 +175,7 @@ const UpdateModal = ({ show, handleClose, existingReport }) => {
                 }
                 endpoint = reportType === 'lostfound'
                    ? 'http://localhost:5000/api/unified-reports/create-lost-found':
-                    'http://localhost:5000/api/reports/create-report';
+                    'http://localhost:5000/api/unified-reports/create-report';
                 method = 'post';
 
                 
@@ -183,7 +183,7 @@ const UpdateModal = ({ show, handleClose, existingReport }) => {
                 // Update existing report
                 endpoint = reportType === 'lostfound'
                     ? `http://localhost:5000/api/lostandfound/update-lost-found/${existingReport.id}`
-                    : `http://localhost:5000/api/reports/update-report/${existingReport.id}`;
+                    : `http://localhost:5000/api/reports/${existingReport.id}`;
                 method = 'put';
             }
 

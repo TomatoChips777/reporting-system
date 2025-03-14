@@ -2,12 +2,14 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../../AuthContext';
 import axios from 'axios';
+
+
 const LoginScreen = () => {
   const { signIn } = useAuth();
 
   const handleLogin = async (user) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/users/login', {
+      const response = await axios.post(`${import.meta.env.VITE_LOGIN_API}`, {
         email: user.email,
         name: user.name,
         picture: user.photo,
