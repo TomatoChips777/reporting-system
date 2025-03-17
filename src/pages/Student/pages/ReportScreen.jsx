@@ -58,7 +58,7 @@ function ReportScreen() {
             return (
                 (report.description.toLowerCase().includes(search) ||
                     report.location.toLowerCase().includes(search) ||
-                    report.title.toLowerCase().includes(search)) && // Use `title` instead of `issue_type`
+                    report.title.toLowerCase().includes(search)) &&
                 (statusFilter === "all" || report.status === statusFilter)
             );
         });
@@ -98,7 +98,7 @@ function ReportScreen() {
             item_name: report.item_name || report.title || '', // Use title as fallback
             category: report.category || ''
         };
-        
+
         setExistingReport(formattedReport);
         setShowUpdateModal(true);
     };
@@ -107,7 +107,7 @@ function ReportScreen() {
         setExistingReport(null);
         setShowCreateModal(true);
     };
-    
+
     const handleCloseCreateModal = () => {
         setExistingReport(null);
         setShowCreateModal(false);
@@ -117,7 +117,7 @@ function ReportScreen() {
         setExistingReport(null);
         setShowUpdateModal(true);
     };
-    
+
     const handleCloseUpdateModal = () => {
         setExistingReport(null);
         setShowUpdateModal(false);
@@ -143,7 +143,7 @@ function ReportScreen() {
     const lostFoundClaimed = lostFoundReports.filter(r => r.status === 'claimed').length;
 
     return (
-        <div className="container mt-5">
+        <div className="container">
             <div className="row mb-3">
                 {/* Total Reports */}
                 <div className="col-md-3">
@@ -210,7 +210,7 @@ function ReportScreen() {
             </div>
 
             {/* Reports Table */}
-            <Card className="border-0 shadow-sm">
+            <Card className="border-0 shadow-sm" >
                 <Card.Header className="bg-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
@@ -255,7 +255,7 @@ function ReportScreen() {
                         </div>
                     </div>
                 </Card.Header>
-                <Card.Body>
+                <Card.Body style={{ maxHeight: '600px', overflowY: 'auto' }}>
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
@@ -332,8 +332,8 @@ function ReportScreen() {
                                             <td>{report.title}</td>
                                             <td>{report.report_type.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</td>
                                             <td>
-                                                {report.description.length > 50
-                                                    ? report.description.substring(0, 50) + "..."
+                                                {report.description.length > 20
+                                                    ? report.description.substring(0, 20) + "..."
                                                     : report.description}
                                             </td>
                                             <td>
@@ -353,6 +353,9 @@ function ReportScreen() {
                         )}
                     </div>
 
+
+                </Card.Body>
+                <Card.Footer>
                     {/* Pagination Controls */}
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
@@ -408,17 +411,17 @@ function ReportScreen() {
                             </ul>
                         </nav>
                     </div>
-                </Card.Body>
+                </Card.Footer>
             </Card>
-                
-            <CreateModal 
-                show={showCreateModal} 
+
+            <CreateModal
+                show={showCreateModal}
                 handleClose={handleCloseCreateModal}
                 existingReport={existingReport}
                 defaultType="maintenance"
             />
 
-            <UpdateModal 
+            <UpdateModal
                 show={showUpdateModal}
                 handleClose={handleCloseUpdateModal}
                 existingReport={existingReport}

@@ -5,7 +5,6 @@ import axios from 'axios';
 import { useAuth } from '../../AuthContext';
 import io from 'socket.io-client';
 
-const VITE_API_URL = import.meta.env.VITE_API_URL
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -46,7 +45,7 @@ function Notifications() {
     useEffect(() => {
         
         fetchNotifications();
-        const socket = io(`${VITE_API_URL}`);
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
         socket.on("update", () => {
             fetchNotifications();
         });
@@ -58,8 +57,8 @@ function Notifications() {
     const markAsRead = async (notificationId) => {
         try {
             const endpoint = role === "admin" 
-                ? `http://localhost:5000/api/notifications/admin/mark-notification-read/${notificationId}`
-                : `http://localhost:5000/api/notifications/mark-notification-read/${notificationId}`;
+                ? `${import.meta.env.VITE_ADMIN_READ_NOTIFICATION_API}/${notificationId}`
+                : `${import.meta.env.VITE_USER_READ_NOTIFICATION_API}/${notificationId}`;
             
                 await axios.put(endpoint);
         } catch (error) {
@@ -70,8 +69,8 @@ function Notifications() {
     const deleteNotification = async (notificationId) => {
         try {
             const endpoint = role === "admin" 
-                ? `http://localhost:5000/api/notifications/admin/remove-notification/${notificationId}`
-                : `http://localhost:5000/api/notifications/remove-notification/${notificationId}`;
+                ? `${import.meta.env.VITE_ADMIN_DELETE_NOTIFICATION}/${notificationId}`
+                : `${import.meta.env.VITE_USER_DELETE_NOTIFICATION}/${notificationId}`;
             await axios.delete(endpoint);
         } catch (error) {
             console.error("Error deleting notification:", error);
@@ -81,8 +80,8 @@ function Notifications() {
     const markAllAsRead = async () => {
         try {
             const endpoint = role === "admin" 
-            ? `http://localhost:5000/api/notifications/admin/mark-all-notifications-read/`
-            : `http://localhost:5000/api/notifications/mark-all-notifications-read/${user.id}`;
+            ? `${import.meta.env.VITE_ADMIN_MARK_ALL_NOTIFICATION}/`
+            : `${import.meta.env.VITE_USER_MARK_ALL_NOTIFICATION}/${user.id}`;
             await axios.put(endpoint);
             // await axios.put(`http://localhost:5000/api/notifications/mark-all-notifications-read/${user.id}`);
         } catch (error) {

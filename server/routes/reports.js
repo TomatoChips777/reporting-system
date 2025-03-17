@@ -21,8 +21,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post('/create-report', upload.single('image_path'), (req, res) => {
-    // console.log("Received Data:", req.body);
-    // console.log("Received File:", req.file);
 
     if (!req.body.user_id || !req.body.location || !req.body.issue_type || !req.body.description) {
         return res.status(400).json({ success: false, message: "Missing required fields" });

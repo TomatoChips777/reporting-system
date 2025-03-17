@@ -3,20 +3,21 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../AuthContext';
 import { useNavigation } from './SidebarContext';
-import { Bell } from 'react-bootstrap-icons';
+import { useSidebarState } from './SidebarStateContext';
+import { Bell, List } from 'react-bootstrap-icons';
 import axios from 'axios';
 import io from 'socket.io-client';
 
 function NavigationBar() {
     const { user, signOut, role } = useAuth();
     const { getCurrentSection, setSectionByPath, pathToSection } = useNavigation();
+    const { toggleSidebar } = useSidebarState();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const location = useLocation();
     const [notifications, setNotifications] = useState([]);
     const [selectedNotification, setSelectedNotification] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Update section based on current path when component mounts or path changes
     useEffect(() => {
@@ -40,7 +41,6 @@ function NavigationBar() {
     };
   
     useEffect(() => {
-        
         fetchNotifications();
         const socket = io("http://localhost:5000");
         socket.on("update", () => {
@@ -56,7 +56,6 @@ function NavigationBar() {
         setSelectedNotification(notif);
         setShowModal(true);
         if (!notif.is_read) {
-
             try {
                 if (role === "admin") {
                     const response = await axios.put(`http://localhost:5000/api/notifications/admin/mark-notification-read/${notif.id}`);
@@ -72,16 +71,13 @@ function NavigationBar() {
             } catch (error) {
                 console.log("Error marking notification", error)
             }
-
         }
     };
+
     const markAllAsRead = () => {
         setNotifications([]);
     };
 
-    const toggleSidebar = () => {
-        setSidebarOpen(!sidebarOpen);
-    };
     const getTimeAgo = (timestamp) => {
         const createdAt = new Date(timestamp);
         const now = new Date();
@@ -102,12 +98,19 @@ function NavigationBar() {
         }
     };
 
-
     return (
         <>
             <Navbar bg="success" variant="dark" expand="lg" sticky="top">
                 <Container fluid>
-                    <Navbar.Toggle aria-controls="navbarSupportedContent" />
+                    <Button 
+                        variant="outline-light" 
+                        className="me-2 d-flex align-items-center" 
+                        onClick={toggleSidebar}
+                    >
+                        <List size={24} />
+                    </Button>
+                    {/* <Navbar.Toggle aria-controls="navbarSupportedContent" /> */}
+                
                     <Navbar.Collapse id="navbarSupportedContent">
                         <Nav className="me-auto">
                             <Nav.Link 
@@ -153,7 +156,6 @@ function NavigationBar() {
                                             style={{ fontSize: "0.875rem", lineHeight: "1.2", whiteSpace: "normal" }}
                                         >
                                             <small>{notif.title}</small>
-
                                             <span className="text-truncate">
                                                 {notif.message.length > 35 ? `${notif.message.substring(0, 35)}...` : notif.message}
                                             </span>
@@ -184,6 +186,7 @@ function NavigationBar() {
                     </Navbar.Collapse>
                 </Container>
             </Navbar>
+
             {/* Notification Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} centered>
                 <Modal.Header closeButton>
@@ -193,29 +196,16 @@ function NavigationBar() {
                     {selectedNotification ? (
                         <div className="d-flex flex-column">
                             <div className="p-3 bg-light rounded mb-3">
-                                <p className="mb-2">
-                                    {selectedNotification.message}
-                                </p>
-                                <p className="mb-0">
-                                        Created At: {new Date(selectedNotification.created_at).toLocaleString('en-US', {
-                                        timeZone: 'Asia/Manila',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        year: 'numeric',    
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true,
-                                    })}
-                                </p>
+                                <p className="mb-2">{selectedNotification.message}</p>
+                                <small className="text-muted">{getTimeAgo(selectedNotification.created_at)}</small>
                             </div>
-                            <small className="text-muted text-center"> {getTimeAgo(selectedNotification.created_at)}</small>
                         </div>
-                    ) : (
-                        <p className="text-center text-muted">No details available</p>
-                    )}
+                    ) : null}
                 </Modal.Body>
-                <Modal.Footer className="d-flex justify-content-center">
-                    <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Close</Button>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowModal(false)}>
+                        Close
+                    </Button>
                 </Modal.Footer>
             </Modal>
         </>

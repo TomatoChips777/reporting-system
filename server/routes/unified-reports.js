@@ -65,7 +65,6 @@ router.put('/reports/archive-maintenance-report/:id', async (req, res) => {
     const { id } = req.params;
     try {
         await db.query("UPDATE tbl_reports SET archived = 1 WHERE id = ?", [id]);
-        // await db.query("UPDATE tbl_lost_found SET archived = 1 WHERE id = ?", [id]);
         res.json({ success: true, message: "Report archived successfully" });
     } catch (error) {
         console.error(error);
@@ -76,7 +75,6 @@ router.put('/reports/archive-maintenance-report/:id', async (req, res) => {
 router.put('/reports/archive-lost-found-report/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        // await db.query("UPDATE tbl_reports SET archived = 1 WHERE id = ?", [id]);
         await db.query("UPDATE tbl_lost_found SET archived = 1 WHERE id = ?", [id]);
         res.json({ success: true, message: "Report archived successfully" });
     } catch (error) {
@@ -84,7 +82,6 @@ router.put('/reports/archive-lost-found-report/:id', async (req, res) => {
         res.status(500).json({ success: false, message: "Error archiving report" });
     }
 });
-
 
 
 router.post('/create-lost-found', upload.single('image_path'), (req, res) => {

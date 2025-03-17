@@ -5,6 +5,7 @@ import { Bell } from 'react-bootstrap-icons';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../AuthContext';
 import { useNavigation } from './SidebarContext';
+import { useSidebarState } from './SidebarStateContext';
 import axios from 'axios';
 import io from 'socket.io-client';
 
@@ -71,10 +72,10 @@ class SidebarManager {
                 { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> }
             ];
         }
-            return [
-                { path: '/list-screen', name: 'Lost And Found', icon: <IoDocumentText /> },
-                { path: '/reports-screen', name: 'My Reports', icon: <IoDocumentText /> }
-            ];
+        return [
+            { path: '/list-screen', name: 'Lost And Found', icon: <IoDocumentText /> },
+            { path: '/reports-screen', name: 'My Reports', icon: <IoDocumentText /> }
+        ];
     }
 
     handleSectionClick(sectionKey, navigate, toggleSidebar) {
@@ -111,24 +112,37 @@ class SidebarLink extends Component {
 
 class NotificationBadge extends Component {
     shouldComponentUpdate(nextProps) {
-        return this.props.notifications.length !== nextProps.notifications.length;
+        return this.props.notifications.length !== nextProps.notifications.length ||
+               this.props.location.pathname !== nextProps.location.pathname;
     }
 
     render() {
-        const { notifications, location } = this.props;
+        const { notifications, location, toggleSidebar } = this.props;
+        const isActive = location.pathname === "/notifications";
+        
         return (
-            <li className="notification-link">
+            <div className="notification-container">
                 <div className="sidebar-divider"></div>
-                <Link to="/notifications" className={location.pathname === "/notifications" ? "active" : ""}>
-                    <Bell className="me-2" />
-                    Notifications
-                    {notifications.length > 0 && (
-                        <Badge bg="danger" className="ms-2">
-                            {notifications.length}
-                        </Badge>
-                    )}
-                </Link>
-            </li>
+                <li className={`notification-link ${isActive ? 'active' : ''}`}>
+                    <Link 
+                        to="/notifications" 
+                        className={isActive ? "active" : ""}
+                        onClick={() => {
+                            if (window.innerWidth <= 768) {
+                                toggleSidebar();
+                            }
+                        }}
+                    >
+                        <Bell className="me-2" />
+                        Notifications
+                        {notifications.length > 0 && (
+                            <Badge bg="danger" className="ms-2">
+                                {notifications.length}
+                            </Badge>
+                        )}
+                    </Link>
+                </li>
+            </div>
         );
     }
 }
@@ -159,7 +173,7 @@ class Sidebar extends Component {
     }
 
     renderSidebarContent() {
-        const { location, navigation, navigate, isOpen, toggleSidebar } = this.props;
+        const { location, navigation, navigate, toggleSidebar } = this.props;
         const { activeSection, getCurrentSection } = navigation;
         const isHome = activeSection === 'home' || !activeSection;
         const currentSection = getCurrentSection();
@@ -200,59 +214,63 @@ class Sidebar extends Component {
                 ) : (
                     <>
                         <li className="section-header">{currentSection.name}</li>
-                        {currentSection.routes.map((route, index) => (
+                        {currentSection.routes.map(route => (
                             <SidebarLink
-                                key={index}
+                                key={route.path}
                                 to={route.path}
                                 icon={IconManager.getIcon(route.icon)}
                                 isActive={location.pathname === route.path}
+                                onClick={() => {
+                                    if (window.innerWidth <= 768) {
+                                        toggleSidebar();
+                                    }
+                                }}
                             >
                                 {route.name}
                             </SidebarLink>
                         ))}
                     </>
                 )}
+
+                
             </>
         );
     }
 
     render() {
-        const { isOpen, toggleSidebar, location } = this.props;
+        const { isSidebarOpen, location, toggleSidebar } = this.props;
         return (
-            <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-                <button className="btn btn-danger d-md-none m-2" onClick={toggleSidebar}>
-                    <IoClose size={24} />
-                </button>
+            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <ul className="sidebar-list">
-                    <div className="sidebar-content">
-                        {this.renderSidebarContent()}
-                    </div>
-                    <NotificationBadge 
-                        notifications={this.state.notifications} 
-                        location={location}
-                    />
+                    {this.renderSidebarContent()}
                 </ul>
+                <NotificationBadge 
+                    notifications={this.state.notifications} 
+                    location={location}
+                    toggleSidebar={toggleSidebar}
+                />
             </div>
         );
     }
 }
 
-// HOC to wrap Sidebar with necessary context
-const SidebarWrapper = (props) => {
-    const auth = useAuth();
-    const navigation = useNavigation();
+function SidebarWrapper(props) {
     const location = useLocation();
     const navigate = useNavigate();
-    
+    const auth = useAuth();
+    const navigation = useNavigation();
+    const { isSidebarOpen, toggleSidebar } = useSidebarState();
+
     return (
         <Sidebar
-            {...props}
-            auth={auth}
-            navigation={navigation}
             location={location}
             navigate={navigate}
+            auth={auth}
+            navigation={navigation}
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={toggleSidebar}
         />
     );
-};
+}
 
 export default SidebarWrapper;

@@ -182,7 +182,7 @@ const UpdateModal = ({ show, handleClose, existingReport }) => {
             } else {
                 // Update existing report
                 endpoint = reportType === 'lostfound'
-                    ? `http://localhost:5000/api/lostandfound/update-lost-found/${existingReport.id}`
+                    ? `http://localhost:5000/api/lostandfound/items/${existingReport.id}`
                     : `http://localhost:5000/api/reports/${existingReport.id}`;
                 method = 'put';
             }

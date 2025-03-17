@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async (user) => {
     try {
-      const response = await axios.post(`${VITE_API_URL}/api/users/get-current-user`, {
+      const response = await axios.post(`${import.meta.env.VITE_FETCH_USER}`, {
         id: user.id,
         email: user.email,
       });

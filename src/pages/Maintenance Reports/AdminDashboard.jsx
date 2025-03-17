@@ -42,7 +42,7 @@ const AdminDashboard = () => {
     }));
     
     return (
-        <div className="container mt-5 mb-5">
+        <div className="container-fluid mt-5 mb-5">
             <h2 className="text-center mb-4 text-primary">
                 <IoPieChart className="me-2" /> Admin Dashboard Analytics
             </h2>

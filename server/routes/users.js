@@ -15,9 +15,7 @@ router.post('/login', (req, res) => {
             console.error('Database query error:', err);
             return res.status(500).json({ error: 'Internal server error' });
         }
-
         let user;
-
         if (rows.length === 0) {
             // Insert new user
             db.query(
@@ -46,7 +44,6 @@ router.post('/login', (req, res) => {
         }
     });
 });
-
 
 router.post('/get-current-user', (req, res) => {
     const { id, email } = req.body;

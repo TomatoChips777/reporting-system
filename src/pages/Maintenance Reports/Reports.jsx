@@ -236,7 +236,7 @@ function Reports() {
                         </div>
                     </div>
                 </Card.Header>
-                <Card.Body>
+                <Card.Body style={{ maxHeight: '600px', overflowY: 'auto' }}>
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
@@ -332,7 +332,7 @@ function Reports() {
 
                         )}
                     </div>
-                    <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+                    <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
                         <Modal.Header closeButton>
                             <Modal.Title>Confirm Delete</Modal.Title>
                         </Modal.Header>
@@ -403,7 +403,7 @@ function Reports() {
                 </Card.Body>
             </Card>
             {/* View Details Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Report Details</Modal.Title>
                 </Modal.Header>
