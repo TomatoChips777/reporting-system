@@ -64,7 +64,6 @@ router.post('/create-report', upload.single('image_path'), (req, res) => {
     });
 });
 
-
 router.put('/:reportId', upload.single('image_path'), (req, res) => {
     const { reportId } = req.params;
     const { user_id, location, issue_type, description } = req.body;
@@ -195,6 +194,20 @@ router.delete('/report/:id', (req, res) => {
     });
 });
 
+router.put('/reports/archive-maintenance-report/:id', (req, res) => {
+    const { id } = req.params;
+    const query = `UPDATE tbl_reports SET archived = 1 WHERE id = ?`;
+
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error("Error archiving report:", err);
+            return res.status(500).json({ success: false, message: "Error archiving report" });
+        }
+        req.io.emit('update');
+        res.json({ success: true, message: "Report archived successfully" });   
+    })
+    
+});
 
 // Get All Reports
 router.get('/', (req, res) => {

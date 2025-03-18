@@ -4,6 +4,7 @@ const db = require('../config/db');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const { use } = require('react');
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -80,7 +81,7 @@ router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
 
                 const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
 
-                db.query(notificationQuery, [60, 1, message, title], (err, notificationResult) => {
+                db.query(notificationQuery, [result.insertId, user_id, message, title], (err, notificationResult) => {
                     if (err) {
                         console.error("Error creating notification:", err);
                         return res.status(500).json({ success: false, message: 'Failed to create notification' });
@@ -390,5 +391,75 @@ router.put('/items/:id', upload.single('image_path'), (req, res) => {
 
 })
 
+router.post('/claim-item/:id',upload.single('image'), (req, res) => {
+    const { id } = req.params;  // Get item ID from the URL params
+    const { user_id, description, contact_info } = req.body;  // Get claim data from the request body
+    const image = req.file ? req.file.filename : null;
+
+    // SQL query to insert a new claim
+    const claimQuery = 'INSERT INTO tbl_claim_items (item_id, user_id, description, contact_info, image) VALUES (?, ?, ?, ?, ?)';
+
+    db.query(claimQuery, [id, user_id, description, contact_info, image], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);  // Log the error for debugging
+            return res.status(500).json({
+                success: false,
+                message: 'Database error',
+                error: err,  // Include the error message in the response for debugging
+            });
+        }
+
+
+                const title = "Lost And Found Report";
+                const message = `A new ${type} item "${item_name}" has been reported at ${location}.`;
+
+                const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
+
+                db.query(notificationQuery, [id, user_id, message, title], (err, notificationResult) => {
+                    if (err) {
+                        console.error("Error creating notification:", err);
+                        return res.status(500).json({ success: false, message: 'Failed to create notification' });
+                    }
+                });
+        // Emit the update event (if using sockets)
+        req.io.emit('update');
+        
+        // Respond with a success message
+        res.json({
+            success: true,
+            message: 'Item claimed successfully',
+        });
+    });
+});
+
+
+router.post('/found-item/:id',upload.single('image'), (req, res) => {
+    const { id } = req.params;  // Get item ID from the URL params
+    const { user_id, location, description } = req.body;  // Get claim data from the request body
+    const image = req.file ? req.file.filename : null;
+
+    // SQL query to insert a new claim
+    const claimQuery = 'INSERT INTO tbl_found_items (item_id, user_id, location, description, image) VALUES (?, ?, ?, ?, ?)';
+
+    db.query(claimQuery, [id, user_id, location, description, image], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);  // Log the error for debugging
+            return res.status(500).json({
+                success: false,
+                message: 'Database error',
+                error: err,  // Include the error message in the response for debugging
+            });
+        }
+
+        // Emit the update event (if using sockets)
+        req.io.emit('update');
+        
+        // Respond with a success message
+        res.json({
+            success: true,
+            message: 'Item claimed successfully',
+        });
+    });
+});
 
 module.exports = router;
