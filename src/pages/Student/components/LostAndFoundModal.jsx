@@ -38,28 +38,7 @@ const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
                 resetForm();
             }
         }
-    }, [show, existingItem, user?.id]);
-    
-
-    
-    // Update form fields if an existing item is passed
-    // useEffect(() => {
-    //     if (existingItem) {
-    //         setFormData({
-    //             user_id: existingItem.user_id || user?.id,
-    //             type: existingItem.type || 'lost',
-    //             item_name: existingItem.item_name || '',
-    //             category: existingItem.category || '',
-    //             description: existingItem.description || '',
-    //             location: existingItem.location || '',
-    //             contact_info: existingItem.contact_info || '',
-    //             is_anonymous: !!existingItem.is_anonymous,
-    //             image_path: null,
-    //             status: existingItem.status || 'open',
-    //         });
-    //     }
-    // }, [existingItem, user?.id]);
-
+    }, [show, existingItem]);
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData((prev) => ({
@@ -92,8 +71,7 @@ const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
                 ? `http://localhost:5000/api/lostandfound/items/${existingItem.id}`
                 : 'http://localhost:5000/api/lostandfound/create-lost-found';
 
-            const method = existingItem ? 'put' : 'post'; // Use PUT for update, POST for create
-
+            const method = existingItem ? 'put' : 'post';
             const response = await axios({
                 method,
                 url,

@@ -16,6 +16,7 @@ import Notifications from './pages/Notifications.jsx';
 import LostAndFoundDashboard from './pages/LostAndFound/Dashboard.jsx';
 import ReportScreen from './pages/Student/pages/ReportScreen.jsx';
 import ListScreen from './pages/Student/pages/ListScreen.jsx';
+import Messages from './pages/Student/pages/Messages.jsx';
 
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
@@ -50,6 +51,8 @@ function App() {
                                            <Route path="/reports-screen" element={<ReportScreen />} />
                                            <Route path="/list-screen" element={<ListScreen />} />
                                            <Route path='/notifications' element={<Notifications />} />
+                                           <Route path='/messages' element={<Messages />} />
+
                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}

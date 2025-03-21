@@ -5,7 +5,8 @@ import { Card, Badge, Button, Form, OverlayTrigger, Tooltip } from 'react-bootst
 import axios from 'axios';
 import { useAuth } from '../../../../AuthContext';
 import LostAndFoundModal from '../components/LostAndFoundModal';
-
+import ClaimModal from '../components/ClaimModal';
+import FoundModal from '../components/FoundModal';
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
 
 function ListScreen() {
@@ -15,8 +16,10 @@ function ListScreen() {
     const [filter, setFilter] = useState('all');
     const [filterCategory, setFilterCategory] = useState('all');
     const [showModal, setShowModal] = useState(false);
+    const [showClaimModal, setShowClaimModal] = useState(false);
+    const [showFoundModal, setShowFoundModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
-    
+
     useEffect(() => {
         fetchItems();
     }, []);
@@ -36,20 +39,33 @@ function ListScreen() {
         setExistingItem(item);
         setShowModal(true);
     };
+    const handleClaimModal = (item) => {
+        setExistingItem(item);
+        setShowClaimModal(true);
+    }
+    const handleFoundModal = (item) => {
+        setExistingItem(item);
+        setShowFoundModal(true);
+    }
     const handleCloseModal = () => {
         setShowModal(false);
     };
-
+    const handleCloseClaimModal = () => {
+        setShowClaimModal(false);
+    }
+    const handleCloseFoundModal = () => {
+        setShowFoundModal(false);
+    }
     const filteredItems = items.filter(item => {
         const matchesSearch = item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.category.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filter === 'all' || item.type === filter;
-        const mathesFilterCategory = filterCategory ==='all' || item.category === filterCategory;
+        const mathesFilterCategory = filterCategory === 'all' || item.category === filterCategory;
         return matchesSearch && matchesFilter && mathesFilterCategory;
     });
-    
+
     return (
         <div className="container">
             {/* Header Section with Additional Information */}
@@ -70,7 +86,7 @@ function ListScreen() {
                                     {/* Opens the modal to create a new lost and found report */}
                                     <Button
                                         className="btn btn-light btn-lg rounded-0"
-                                        onClick={() => setShowModal(true)}
+                                        onClick={() => handleOpenModal()}
                                     >
                                         <i className="bi bi-plus-lg me-2"></i>Post Item
                                     </Button>
@@ -116,12 +132,13 @@ function ListScreen() {
                                         <option value="other">Other</option>
                                     </Form.Select>
                                 </div>
+                                
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             {/* Item List Container with Scrollable Feature */}
             <div className="row" style={{ maxHeight: "calc(100vh - 250px)", overflowY: "auto" }}>
                 {filteredItems.length > 0 ? (
@@ -166,7 +183,7 @@ function ListScreen() {
                                                     placement="top"
                                                     overlay={<Tooltip>Click if you found this lost item</Tooltip>}
                                                 >
-                                                    <Button variant="info" className="rounded-0 text-white w-100">
+                                                    <Button variant="info" className="rounded-0 text-white w-100" onClick={() => handleFoundModal(item)}>
                                                         Found
                                                     </Button>
                                                 </OverlayTrigger>
@@ -176,7 +193,7 @@ function ListScreen() {
                                                     placement="top"
                                                     overlay={<Tooltip>Click to claim this found item</Tooltip>}
                                                 >
-                                                    <Button variant="success" className="rounded-0 w-100">
+                                                    <Button variant="success" className="rounded-0 w-100" onClick={() => handleClaimModal(item)}>
                                                         Claim
                                                     </Button>
                                                 </OverlayTrigger>
@@ -199,8 +216,20 @@ function ListScreen() {
                 fetchItems={fetchItems}
                 existingItem={existingItem}
             />
+
+            <ClaimModal
+                show={showClaimModal}
+                handleClose={handleCloseClaimModal}
+                existingItem={existingItem}
+                fetchItems={fetchItems}
+            />
+            <FoundModal
+            show={showFoundModal}
+            handleClose={handleCloseFoundModal}
+            existingItem={existingItem}
+            fetchItems={fetchItems}
+            />
         </div>
     );
 }
-
 export default ListScreen;

@@ -7,7 +7,6 @@ import { useAuth } from '../../../../AuthContext';
 const UpdateModal = ({ show, handleClose, existingReport }) => {
     const { user } = useAuth();
     const [reportType, setReportType] = useState(null);
-    const [isTypeChanged, setIsTypeChanged] = useState(false);
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [formData, setFormData] = useState({
@@ -45,7 +44,6 @@ const UpdateModal = ({ show, handleClose, existingReport }) => {
             resetForm();
         }
     }, [show, existingReport]);
-    console.log(formData);
 
     const validateField = (name, value) => {
         switch (name) {

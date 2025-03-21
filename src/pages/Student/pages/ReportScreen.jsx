@@ -103,6 +103,28 @@ function ReportScreen() {
         setShowUpdateModal(true);
     };
 
+
+    const handleDelete = async (report) =>{
+        const reportType = report.report_type;
+        // console.log(reportType);
+        if(reportType === 'maintenance'){
+        const response = await axios.put(`http://localhost:5000/api/unified-reports/reports/archive-maintenance-report/${report.id}`);
+        if (response.data.success) {
+            alert("Report deleted successfully.");
+            // setShowDeleteModal(false);
+            // fetchReports();
+        }
+        }else if(reportType === 'lost' || reportType === 'found'){
+            const response = await axios.put(`http://localhost:5000/api/unified-reports/reports/archive-lost-found-report/${report.id}`);
+
+            if (response.data.success) {
+                alert("Report deleted successfully.");
+                // setShowDeleteModal(false);
+                // fetchReports();
+            }
+        }
+       
+    }
     const handleOpenCreateModal = () => {
         setExistingReport(null);
         setShowCreateModal(true);
@@ -287,7 +309,7 @@ function ReportScreen() {
                                                     </Badge>
                                                 </p>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => handleDelete(report)}>Remove</Button>
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -343,17 +365,14 @@ function ReportScreen() {
                                             </td>
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => handleDelete(report)}>Remove</Button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </Table>
-
                         )}
                     </div>
-
-
                 </Card.Body>
                 <Card.Footer>
                     {/* Pagination Controls */}
@@ -396,7 +415,6 @@ function ReportScreen() {
                                         </li>
                                     );
                                 })}
-
                                 {/* Next Button */}
                                 <li className={`page-item ${currentPage === Math.ceil(filteredReports.length / pageSize) ? "disabled" : ""}`}>
                                     <Button
@@ -420,7 +438,6 @@ function ReportScreen() {
                 existingReport={existingReport}
                 defaultType="maintenance"
             />
-
             <UpdateModal
                 show={showUpdateModal}
                 handleClose={handleCloseUpdateModal}

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { IoHome, IoDocumentText, IoPerson, IoSettings, IoClose } from 'react-icons/io5';
+import { IoHome, IoDocumentText, IoPerson, IoSettings, IoSearch } from 'react-icons/io5';
 import { Bell } from 'react-bootstrap-icons';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../AuthContext';
@@ -14,7 +14,7 @@ class IconManager {
         dashboard: <IoHome />,
         reports: <IoDocumentText />,
         maintenance: <IoSettings />,
-        search: <IoPerson />,
+        search: <IoSearch />,
         warning: <IoDocumentText />,
         create: <IoDocumentText />,
         inventory: <IoSettings />,
@@ -67,14 +67,16 @@ class SidebarManager {
         if (this.role === 'admin') {
             return [
                 { key: 'maintenance', name: 'Maintenance Reporting', icon: <IoSettings /> },
-                { key: 'lostFound', name: 'Lost & Found', icon: <IoPerson /> },
+                { key: 'lostFound', name: 'Lost & Found', icon: <IoSearch /> },
                 { key: 'incidentReporting', name: 'Incident Reporting', icon: <IoDocumentText /> },
                 { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> }
             ];
         }
         return [
-            { path: '/list-screen', name: 'Lost And Found', icon: <IoDocumentText /> },
-            { path: '/reports-screen', name: 'My Reports', icon: <IoDocumentText /> }
+            { path: '/list-screen', name: 'Lost And Found', icon: <IoSearch /> },
+            { path: '/reports-screen', name: 'Reports', icon: <IoDocumentText /> },
+            { path: '/messages', name: 'Messages', icon: <IoDocumentText /> }
+
         ];
     }
 
@@ -231,8 +233,6 @@ class Sidebar extends Component {
                         ))}
                     </>
                 )}
-
-                
             </>
         );
     }

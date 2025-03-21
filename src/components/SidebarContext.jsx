@@ -44,9 +44,11 @@ class NavigationManager {
                 { path: '/borrow-items', name: 'Available Items', icon: 'inventory' },
                 { path: '/my-borrowed', name: 'My Borrowed Items', icon: 'list' }
             ]),
-            student: new Section('Student Reports', '/list-screen', [
-                { path: '/list-screen', name: 'Lost And Found', icon: 'list' },
-                { path: '/reports-screen', name: 'My Reports', icon: 'reports' },
+            student: new Section('Student Page', '/list-screen', [
+                { path: '/list-screen', name: 'Lost And Found', icon: 'search' },
+                { path: '/reports-screen', name: 'Reports', icon: 'reports' },
+                { path: '/messages', name: 'Messages', icon: 'reports' },
+
             ])
         };
     }

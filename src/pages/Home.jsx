@@ -12,19 +12,19 @@ const HomeScreen = () => {
 
     const sections = [
         {
-            key: 'maintenance',
-            title: 'Report Screen',
-            icon: <IoSettings size={40} />,
-            description: 'Submit new reports and track your requests',
-            color: '#2ecc71',
-            studentAccess: true
-        },
-        {
             key: 'lostFound',
             title: 'Lost and Found',
             icon: <IoSearch size={40} />,
             description: 'Report or search for lost items',
             color: '#3498db',
+            studentAccess: true
+        },
+        {
+            key: 'maintenance',
+            title: 'Report Screen',
+            icon: <IoSettings size={40} />,
+            description: 'Submit new reports and track your requests',
+            color: '#2ecc71',
             studentAccess: true
         },
         {
