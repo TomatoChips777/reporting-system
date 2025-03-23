@@ -10,6 +10,7 @@ const analytics = require('./routes/analytics');
 const notifications = require('./routes/notifications');
 const lostandfound = require('./routes/lost-found');
 const unifiedReports = require('./routes/unified-reports');
+const messages = require('./routes/messages');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -38,6 +39,7 @@ app.use('/api/notifications', notifications);
 app.use('/api/lostandfound', lostandfound);
 app.use('/api/analytics', analytics);
 app.use('/api/unified-reports', unifiedReports);
+app.use('/api/messages', messages);
 const port = 5000;
 server.listen(port, () => {
     console.log(`Server is listening on http://localhost:${port}`);

@@ -1,398 +1,133 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Badge, Modal, Button, Form, InputGroup } from 'react-bootstrap';
-import { BsPersonCircle, BsSend, BsCheck2All, BsCheck2 } from 'react-icons/bs';
+import React, { useState, useEffect, useRef } from 'react';
+import { Container, Row, Col, Card, Badge, Button, Form, InputGroup } from 'react-bootstrap';
+import { BsPersonCircle, BsSend, BsCheck2All, BsCheck2, BsPaperclip } from 'react-icons/bs';
 import { useAuth } from '../../../../AuthContext';
+import axios from 'axios';
+import { io } from 'socket.io-client';
 
 const Messages = () => {
     const [messages, setMessages] = useState([]);
-    const [showModal, setShowModal] = useState(false);
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [newMessage, setNewMessage] = useState('');
     const { user } = useAuth();
+    const messagesEndRef = useRef(null);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const fileInputRef = useRef(null);
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
-    // Dummy data for conversations
-    const dummyConversations = [
-        {
-            id: 1,
-            user: {
-                id: 2,
-                name: 'John Smith',
-                avatar: null
-            },
-            lastMessage: 'Hi, I found your lost laptop at the library.',
-            timestamp: '2025-03-18T07:30:00',
-            unread: 2,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 2,
-                    text: 'Hi, I found your lost laptop at the library.',
-                    timestamp: '2025-03-18T07:30:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Oh thank you so much! Can you describe it?',
-                    timestamp: '2025-03-18T07:35:00',
-                    status: 'read'
-                },
-                {
-                    id: 3,
-                    senderId: 2,
-                    text: 'It\'s a silver MacBook Pro with a black case.',
-                    timestamp: '2025-03-18T07:36:00',
-                    status: 'unread'
-                }
-            ]
-        },
-        {
-            id: 2,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 3,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 4,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 5,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 6,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 7,
-            user: {
-                id: 2,
-                name: 'John Smith',
-                avatar: null
-            },
-            lastMessage: 'Hi, I found your lost laptop at the library.',
-            timestamp: '2025-03-18T07:30:00',
-            unread: 2,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 2,
-                    text: 'Hi, I found your lost laptop at the library.',
-                    timestamp: '2025-03-18T07:30:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Oh thank you so much! Can you describe it?',
-                    timestamp: '2025-03-18T07:35:00',
-                    status: 'read'
-                },
-                {
-                    id: 3,
-                    senderId: 2,
-                    text: 'It\'s a silver MacBook Pro with a black case.',
-                    timestamp: '2025-03-18T07:36:00',
-                    status: 'unread'
-                }
-            ]
-        },
-        {
-            id: 8,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 9,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 10,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 11,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
-        },
-        {
-            id: 12,
-            user: {
-                id: 3,
-                name: 'Sarah Johnson',
-                avatar: null
-            },
-            lastMessage: 'I think I found your student ID card.',
-            timestamp: '2025-03-18T06:45:00',
-            unread: 1,
-            messages: [
-                {
-                    id: 1,
-                    senderId: 3,
-                    text: 'I think I found your student ID card.',
-                    timestamp: '2025-03-18T06:45:00',
-                    status: 'read'
-                },
-                {
-                    id: 2,
-                    senderId: 1,
-                    text: 'Really? Where did you find it?',
-                    timestamp: '2025-03-18T06:50:00',
-                    status: 'read'
-                }
-            ]
+    const fetchItems = async () => {
+        try {
+            const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
+            if (response.data.success) {
+                setMessages(response.data.messages.map(convo => ({
+                    ...convo,
+                    lastMessage: convo.messages.length > 0 ? convo.messages[convo.messages.length - 1].text : ''
+                })));
+            }
+        } catch (error) {
+            console.error('Error fetching messages:', error);
         }
-    ];
+    };
 
     useEffect(() => {
-        setMessages(dummyConversations);
-    }, []);
+        const socket = io('http://localhost:5000');
 
-    const formatTime = (timestamp) => {
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
+        socket.on('updateMessage', ({ senderId, receiverId, newMsg }) => {
+            setMessages(prevMessages => {
+                let updated = false;
 
-    const formatDate = (timestamp) => {
-        const date = new Date(timestamp);
-        return date.toLocaleDateString();
-    };
+                const updatedMessages = prevMessages.map(convo => {
+                    if (convo.id === senderId || convo.id === receiverId) {
+                        updated = true;
+                        return {
+                            ...convo,
+                            lastMessage: newMsg.text,
+                            messages: [...convo.messages, newMsg]
+                        };
+                    }
+                    return convo;
+                });
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return;
+                return updated ? updatedMessages : [...prevMessages, {
+                    id: user.id === senderId ? receiverId : senderId,
+                    user: {
+                        id: user.id === senderId ? receiverId : senderId,
+                        name: newMsg.senderId === senderId ? newMsg.receiverName : newMsg.senderName,
+                        avatar: newMsg.senderId === senderId ? newMsg.receiverAvatar : newMsg.senderAvatar
+                    },
+                    lastMessage: newMsg.text,
+                    created_at: newMsg.created_at,
+                    unread: 1,
+                    messages: [newMsg]
+                }];
+            });
 
-        const newMsg = {
-            id: Date.now(),
-            senderId: user.id,
-            text: newMessage,
-            timestamp: new Date().toISOString(),
-            status: 'sent'
+            // Update selected conversation if it's the active chat
+            if (selectedConversation && (selectedConversation.id === senderId || selectedConversation.id === receiverId)) {
+                setSelectedConversation(prev => ({
+                    ...prev,
+                    messages: [...prev.messages, newMsg]
+                }));
+            }
+        });
+
+        scrollToBottom();
+
+        fetchItems();
+
+        return () => {
+            socket.disconnect();
         };
+    }, [user.id, selectedConversation, selectedConversation?.message]);
 
-        setSelectedConversation(prev => ({
-            ...prev,
-            messages: [...prev.messages, newMsg],
-            lastMessage: newMessage
-        }));
-
-        setNewMessage('');
+    const formatTime = (created_at) => {
+        return new Date(created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    const handleFileChange = (e) => {
+        if (e.target.files.length > 0) {
+            setSelectedImage(e.target.files[0]);
+        }
     };
 
+    const handleFileButtonClick = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim() && !selectedImage) return;
+
+        const formData = new FormData();
+        formData.append("sender_id", user.id);
+        formData.append("receiver_id", selectedConversation.id);
+        formData.append("message", newMessage);
+        if (selectedImage) {
+            formData.append("image", selectedImage);
+        }
+
+        console.log(formData);
+        try {
+            const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            if (response.data.success) {
+                const newMsg = response.data.message;
+                setNewMessage('');
+                setSelectedImage(null);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    };
     return (
         <Container fluid className="messages-page p-4">
             <Row className="h-100">
                 <Col md={4} className="conversations-list">
                     <Card className="h-100">
-                        <Card.Header className="bg-primary text-white">
+                        <Card.Header className="bg-success text-white">
                             <h5 className="mb-0">Messages</h5>
                         </Card.Header>
                         <Card.Body className="p-0">
@@ -405,24 +140,23 @@ const Messages = () => {
                                     >
                                         <div className="d-flex align-items-center">
                                             <div className="avatar-container">
-                                                <BsPersonCircle size={40} className="text-secondary" />
+                                                {conversation.user?.avatar ? (
+                                                    <img src={conversation.user.avatar} width="40" height="40" className="rounded-circle" alt="User" />
+                                                ) : (
+                                                    <BsPersonCircle size={40} className="text-secondary" />
+                                                )}
                                             </div>
                                             <div className="ms-3 flex-grow-1">
                                                 <div className="d-flex justify-content-between align-items-center">
-                                                    <h6 className="mb-0">{conversation.user.name}</h6>
+                                                    <h6 className="mb-0">{conversation.user?.name || 'Unknown'}</h6>
                                                     <small className="text-muted">
-                                                        {formatTime(conversation.timestamp)}
+                                                        {formatTime(conversation.created_at)}
                                                     </small>
                                                 </div>
                                                 <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
-                                                    {conversation.lastMessage}
+                                                    {conversation.lastMessage || 'No messages yet'}
                                                 </p>
                                             </div>
-                                            {conversation.unread > 0 && (
-                                                <Badge bg="primary" pill className="ms-2">
-                                                    {conversation.unread}
-                                                </Badge>
-                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -436,10 +170,14 @@ const Messages = () => {
                             <>
                                 <Card.Header className="bg-light">
                                     <div className="d-flex align-items-center">
-                                        <BsPersonCircle size={40} className="text-secondary" />
+                                        {selectedConversation.user?.avatar ? (
+                                            <img src={selectedConversation.user.avatar} width="40" height="40" className="rounded-circle" alt="User" />
+                                        ) : (
+                                            <BsPersonCircle size={40} className="text-secondary" />
+                                        )}
                                         <div className="ms-3">
-                                            <h6 className="mb-0">{selectedConversation.user.name}</h6>
-                                            <small className="text-muted">Online</small>
+                                            <h6 className="mb-0">{selectedConversation.user?.name || 'Unknown'}</h6>
+                                            {/* <small className="text-muted">Online</small> */}
                                         </div>
                                     </div>
                                 </Card.Header>
@@ -450,11 +188,58 @@ const Messages = () => {
                                                 key={message.id}
                                                 className={`message ${message.senderId === user.id ? 'sent' : 'received'}`}
                                             >
+                                                <div className="message-content">
+                                                    {/* Display Text */}
+                                                    {message.text && message.text.trim() && (
+                                                        <div className="message-bubble">
+                                                            {message.text}
+                                                            <div className="message-meta">
+                                                                <small className="text-muted">{formatTime(message.created_at)}</small>
+                                                                {message.senderId === user.id && (
+                                                                    <span className="ms-1">
+                                                                        {message.status === 'read' ? (
+                                                                            <BsCheck2All className="text-primary" />
+                                                                        ) : (
+                                                                            <BsCheck2 className="text-muted" />
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Display Image (if available) below the text */}
+                                                    {message.image_path && (
+                                                        <div className="image-container">
+                                                            <img
+                                                                src={`http://localhost:5000/uploads/${message.image_path}`}
+                                                                alt="Sent"
+                                                                className="message-image"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div ref={messagesEndRef} />
+                                    </div>
+                                </Card.Body>
+
+
+                                {/* <Card.Body className="chat-body">
+                                    <div className="messages-container">
+                                        {selectedConversation.messages.map((message) => (
+                                            <div
+                                                key={message.id}
+                                                className={`message ${message.senderId === user.id ? 'sent' : 'received'}`}
+                                            >
                                                 <div className="message-bubble">
+                                                    
                                                     {message.text}
+
                                                     <div className="message-meta">
                                                         <small className="text-muted">
-                                                            {formatTime(message.timestamp)}
+                                                            {formatTime(message.created_at)}
                                                         </small>
                                                         {message.senderId === user.id && (
                                                             <span className="ms-1">
@@ -465,29 +250,45 @@ const Messages = () => {
                                                                 )}
                                                             </span>
                                                         )}
+
+                                                        
                                                     </div>
                                                 </div>
+                                                {message.image_path && (
+                                                    <img src={`http://localhost:5000/uploads/${message.image_path}`} alt="Sent" style={{ maxWidth: '200px', borderRadius: '8px', marginTop: '5px' }} />
+                                                )}
+                                                
                                             </div>
+                                            
                                         ))}
+                                        
+                                        <div ref={messagesEndRef} />
                                     </div>
-                                </Card.Body>
-                                <Card.Footer className="bg-light ">
+
+                                </Card.Body> */}
+                                <Card.Footer className="bg-light">
                                     <Form onSubmit={handleSendMessage}>
                                         <InputGroup>
+                                            <Button variant="light" onClick={handleFileButtonClick}>
+                                                <BsPaperclip />
+                                            </Button>
+                                            <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
                                             <Form.Control
                                                 type="text"
                                                 placeholder="Type a message..."
                                                 value={newMessage}
-                                                onChange={(e) => setNe(e.target.value)}
+                                                onChange={(e) => setNewMessage(e.target.value)}
                                             />
-                                            <Button type="submit" variant="primary" disabled={!newMessage.trim()}>
+                                            <Button type="submit" variant="primary" disabled={!newMessage.trim() && !selectedImage}>
                                                 <BsSend />
                                             </Button>
                                         </InputGroup>
                                     </Form>
                                 </Card.Footer>
                             </>
+
                         ) : (
+
                             <Card.Body className="d-flex align-items-center justify-content-center text-muted">
                                 <div className="text-center">
                                     <BsPersonCircle size={50} />
@@ -501,4 +302,25 @@ const Messages = () => {
         </Container>
     );
 };
+{/* <Card.Footer className="bg-light">
+                                    <Form onSubmit={handleSendMessage}>
+                                        <InputGroup>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Type a message..."
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                            />
+                                            <Form.Control
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => setSelectedImage(e.target.files[0])}
+                                            />
+                                            <Button type="submit" variant="primary" disabled={!newMessage.trim() && !selectedImage}>
+                                                <BsSend />
+                                            </Button>
+                                        </InputGroup>
+                                    </Form>
+                                </Card.Footer>
+                            </> */}
 export default Messages;

@@ -5,7 +5,7 @@ const db = mysql.createConnection({
     user: "root",
     password: "",
     // database: "lc-wm-database",
-    database: "unified-reports",
+    database: "lc-database",
 
 });
 
