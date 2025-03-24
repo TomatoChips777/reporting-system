@@ -8,21 +8,22 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        sender_id: user?.id,
-        receiver_id: existingItem?.user_id,
-        report_id: existingItem?.id,
-        message: '',
+        user_id: user?.id,
+        item_id: existingItem?.id,
+        contact_info: '',
+        description: '',
         image: null,
+        
     });
 
     useEffect(() => {
         if (show) {
             if (existingItem) {
                 setFormData({
-                    sender_id: user?.id,
-                    receiver_id: existingItem?.user_id, // Assuming `existingItem` has `user_id` as the receiver
-                    report_id: existingItem?.id,
-                    message: '',
+                    user_id: user?.id,
+                    item_id: existingItem?.id,
+                    contact_info: '',
+                    description: '',
                     image: null,
                 });
             } else {
@@ -56,48 +57,48 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { message, image } = formData;
 
-        // Ensure either message or image exists
-        if (!message.trim() && !image) return;
-
-        const messageData = new FormData();
-        messageData.append("sender_id", user.id);
-        messageData.append("receiver_id", existingItem?.user_id);
-        messageData.append("report_id", existingItem?.id);
-        messageData.append("message", message.trim());
-        if (image) {
-            messageData.append("image", image);
+        // Validate required fields
+        if (!formData.contact_info.trim()) {
+            alert('Please provide your contact information');
+            return;
+        }
+        if (!formData.description.trim()) {
+            alert('Please provide a description to prove ownership');
+            return;
         }
 
         setLoading(true);
-
         try {
-            const response = await axios.post('http://localhost:5000/api/messages/send-message', messageData, {
-                headers: { "Content-Type": "multipart/form-data" }
+            const url = `http://localhost:5000/api/lostandfound/claim-item/${existingItem.id}`;
+            const response = await axios.post(url, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             if (response.data.success) {
-                resetForm();
+                alert('Claim submitted successfully! This will be notified and will contact you if your claim is verified.');
                 fetchItems();
                 handleClose();
+                resetForm();
             } else {
-                console.error('Error sending message:', response.data.message);
+                alert(response.data.message || 'Error submitting claim');
             }
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('Error claiming the item:', error);
+            alert('Error submitting claim. Please try again.');
         } finally {
-            setLoading(false); // Reset loading state
+            setLoading(false);
         }
     };
 
     const resetForm = () => {
         setFormData({
-            sender_id: user?.id,
-            receiver_id: existingItem?.user_id,
-            report_id: existingItem?.id,
-            message: '',
+            user_id: user?.id,
+            item_id: existingItem?.id,
+            contact_info: '',
+            description: '',
             image: null,
+            claim_date: new Date().toISOString().split('T')[0]
         });
     };
 
@@ -122,11 +123,26 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Message <span className="text-danger">*</span></Form.Label>
+                        <Form.Label>Contact Info <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                            type="text"
+                            name="contact_info"
+                            value={formData.contact_info}
+                            onChange={handleInputChange}
+                            required
+                            placeholder="Enter your contact information"
+                        />
+                        <Form.Text className="text-muted">
+                            This will be shared with the item owner to contact you
+                        </Form.Text>
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label>Description <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             as="textarea"
-                            name="message" // Use "message" as the field name
-                            value={formData.message}
+                            name="description"
+                            value={formData.description}
                             onChange={handleInputChange}
                             rows={3}
                             required
@@ -136,12 +152,10 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                             Include specific details about the item that only the owner would know
                         </Form.Text>
                     </Form.Group>
-
                     <Form.Group className="mb-3">
                         <Form.Label>Upload Image</Form.Label>
                         <Form.Control type="file" onChange={handleFileChange} accept="image/*" />
                     </Form.Group>
-
                     <div className="d-flex justify-content-end gap-2">
                         <Button variant="secondary" onClick={handleClose}>
                             Cancel

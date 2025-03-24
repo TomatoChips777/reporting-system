@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Badge, Button, Form, InputGroup } from 'react-bootstrap';
-import { BsPersonCircle, BsSend, BsCheck2All, BsCheck2, BsPaperclip } from 'react-icons/bs';
+import { BsPersonCircle, BsSend, BsCheck2All, BsCheck2, BsPaperclip, BsCheckCircle, BsXCircle } from 'react-icons/bs';
 import { useAuth } from '../../../../AuthContext';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -13,6 +13,7 @@ const Messages = () => {
     const messagesEndRef = useRef(null);
     const [selectedImage, setSelectedImage] = useState(null);
     const fileInputRef = useRef(null);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -103,6 +104,7 @@ const Messages = () => {
         formData.append("sender_id", user.id);
         formData.append("receiver_id", selectedConversation.id);
         formData.append("message", newMessage);
+        formData.append("report_id", selectedConversation.report_id);
         if (selectedImage) {
             formData.append("image", selectedImage);
         }
@@ -122,6 +124,31 @@ const Messages = () => {
             console.error('Error sending message:', error);
         }
     };
+
+    const handleClaimAction = async (messageId, action) => {
+        try {
+            const response = await axios.post(`http://localhost:5000/api/messages/claim-action`, {
+                messageId,
+                action,
+                userId: user.id
+            });
+
+            if (response.data.success) {
+                // Update the message status locally
+                setSelectedConversation(prev => ({
+                    ...prev,
+                    messages: prev.messages.map(msg =>
+                        msg.id === messageId
+                            ? { ...msg, claimStatus: action }
+                            : msg
+                    )
+                }));
+            }
+        } catch (error) {
+            console.error('Error handling claim action:', error);
+        }
+    };
+
     return (
         <Container fluid className="messages-page p-4">
             <Row className="h-100">
@@ -134,8 +161,8 @@ const Messages = () => {
                             <div className="conversation-items">
                                 {messages.map((conversation) => (
                                     <div
-                                        key={conversation.id}
-                                        className={`conversation-item p-3 ${selectedConversation?.id === conversation.id ? 'active' : ''}`}
+                                        key={`${conversation.report_id}-${conversation.id}`} // Unique key per report
+                                        className={`conversation-item p-3 ${selectedConversation?.id === conversation.id && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
                                         onClick={() => setSelectedConversation(conversation)}
                                     >
                                         <div className="d-flex align-items-center">
@@ -160,6 +187,7 @@ const Messages = () => {
                                         </div>
                                     </div>
                                 ))}
+
                             </div>
                         </Card.Body>
                     </Card>
@@ -193,6 +221,7 @@ const Messages = () => {
                                                     {message.text && message.text.trim() && (
                                                         <div className="message-bubble">
                                                             {message.text}
+                                                            
                                                             <div className="message-meta">
                                                                 <small className="text-muted">{formatTime(message.created_at)}</small>
                                                                 {message.senderId === user.id && (
@@ -208,6 +237,45 @@ const Messages = () => {
                                                         </div>
                                                     )}
 
+                                                    {/* Display claim action card */}
+                                                    {message.type === 'claim' && message.receiverId === user.id && !message.claimStatus && (
+                                                        <Card className="claim-action-card mt-2">
+                                                            <Card.Body>
+                                                                <div className="d-flex justify-content-between align-items-center">
+                                                                    <span>Item Claim Request</span>
+                                                                    <div>
+                                                                        <Button
+                                                                            variant="success"
+                                                                            className="me-2"
+                                                                            onClick={() => handleClaimAction(message.id, 'accepted')}
+                                                                        >
+                                                                            <BsCheckCircle className="me-1" /> Accept
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="danger"
+                                                                            onClick={() => handleClaimAction(message.id, 'rejected')}
+                                                                        >
+                                                                            <BsXCircle className="me-1" /> Reject
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </Card.Body>
+                                                        </Card>
+                                                    )}
+
+                                                    {/* Display claim status if action was taken */}
+                                                    {message.type === 'claim' && message.claimStatus && (
+                                                        <div className={`claim-status mt-2 text-${message.claimStatus === 'accepted' ? 'success' : 'danger'}`}>
+                                                            <small>
+                                                                {message.claimStatus === 'accepted' ? (
+                                                                    <><BsCheckCircle className="me-1" /> Claim Accepted</>
+                                                                ) : (
+                                                                    <><BsXCircle className="me-1" /> Claim Rejected</>
+                                                                )}
+                                                            </small>
+                                                        </div>
+                                                    )}
+
                                                     {/* Display Image (if available) below the text */}
                                                     {message.image_path && (
                                                         <div className="image-container">
@@ -218,54 +286,13 @@ const Messages = () => {
                                                             />
                                                         </div>
                                                     )}
+
                                                 </div>
                                             </div>
                                         ))}
                                         <div ref={messagesEndRef} />
                                     </div>
                                 </Card.Body>
-
-
-                                {/* <Card.Body className="chat-body">
-                                    <div className="messages-container">
-                                        {selectedConversation.messages.map((message) => (
-                                            <div
-                                                key={message.id}
-                                                className={`message ${message.senderId === user.id ? 'sent' : 'received'}`}
-                                            >
-                                                <div className="message-bubble">
-                                                    
-                                                    {message.text}
-
-                                                    <div className="message-meta">
-                                                        <small className="text-muted">
-                                                            {formatTime(message.created_at)}
-                                                        </small>
-                                                        {message.senderId === user.id && (
-                                                            <span className="ms-1">
-                                                                {message.status === 'read' ? (
-                                                                    <BsCheck2All className="text-primary" />
-                                                                ) : (
-                                                                    <BsCheck2 className="text-muted" />
-                                                                )}
-                                                            </span>
-                                                        )}
-
-                                                        
-                                                    </div>
-                                                </div>
-                                                {message.image_path && (
-                                                    <img src={`http://localhost:5000/uploads/${message.image_path}`} alt="Sent" style={{ maxWidth: '200px', borderRadius: '8px', marginTop: '5px' }} />
-                                                )}
-                                                
-                                            </div>
-                                            
-                                        ))}
-                                        
-                                        <div ref={messagesEndRef} />
-                                    </div>
-
-                                </Card.Body> */}
                                 <Card.Footer className="bg-light">
                                     <Form onSubmit={handleSendMessage}>
                                         <InputGroup>
@@ -302,25 +329,4 @@ const Messages = () => {
         </Container>
     );
 };
-{/* <Card.Footer className="bg-light">
-                                    <Form onSubmit={handleSendMessage}>
-                                        <InputGroup>
-                                            <Form.Control
-                                                type="text"
-                                                placeholder="Type a message..."
-                                                value={newMessage}
-                                                onChange={(e) => setNewMessage(e.target.value)}
-                                            />
-                                            <Form.Control
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => setSelectedImage(e.target.files[0])}
-                                            />
-                                            <Button type="submit" variant="primary" disabled={!newMessage.trim() && !selectedImage}>
-                                                <BsSend />
-                                            </Button>
-                                        </InputGroup>
-                                    </Form>
-                                </Card.Footer>
-                            </> */}
 export default Messages;
