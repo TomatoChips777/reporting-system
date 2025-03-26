@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { Table, Card, Form, Button, Badge } from "react-bootstrap";
-import { FaFileAlt, FaTasks, FaPlusCircle, FaSearch, FaWrench, FaBoxOpen } from 'react-icons/fa';
+import { Table, Card, Form, Button, Badge, Modal } from "react-bootstrap";
+import { FaFileAlt, FaClock, FaTasks, FaCheckCircle, FaChevronRight, FaPlusCircle, FaSearch } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../../AuthContext";
-import CreateModal from "../components/CreateModal";
-import UpdateModal from "../components/UpdateModal";
-function ReportScreen() {
+function Reports() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
@@ -16,46 +14,51 @@ function ReportScreen() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [pageSize, setPageSize] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedReport, setSelectedReport] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [reportToDelete, setReportToDelete] = useState(null);
     const [viewType, setViewType] = useState("table");
-    const [existingReport, setExistingReport] = useState(null);
+
+
     useEffect(() => {
         const fetchReports = async () => {
-            // setLoading(true);
             try {
-                const response = await axios.get(`http://localhost:5000/api/unified-reports/user-reports/${user.id}`);
+                const response = await axios.get(`http://localhost:5000/api/reports/user/${user.id}`);
                 setReports(response.data.reports || []);
+                setFilteredReports(response.data.reports);
             } catch (error) {
-                alert("Error: Failed to fetch reports.");
+                console.error("Error fetching reports:", error);
             }
         };
         fetchReports();
 
-        const socket = io('http://localhost:5000');
+        const socket = io('http://localhost:5000'); // Connect to your backend server
         socket.on('update', () => {
-
+            // setReports((prevReports) => [newReport, ...prevReports]);
             fetchReports();
         });
 
+        // Clean up the socket connection on component unmount
         return () => {
             socket.disconnect();
         };
 
     }, []);
+
+
     useEffect(() => {
+        // fetchReports();
         let updatedReports = reports.filter(report => {
             const search = searchTerm.toLowerCase();
             return (
                 (report.description.toLowerCase().includes(search) ||
-                    report.location.toLowerCase().includes(search) ||
-                    report.title.toLowerCase().includes(search)) &&
+                    report.location.toLowerCase().includes(search)) &&
                 (statusFilter === "all" || report.status === statusFilter)
             );
         });
         setFilteredReports(updatedReports);
     }, [searchTerm, statusFilter, reports]);
-
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
@@ -70,149 +73,115 @@ function ReportScreen() {
         setCurrentPage(1);
     };
 
-    const handleViewDetails = (report) => {
-        // Ensure the report type is properly set
-        const formattedReport = {
-            ...report,
-            user_id: report.user_id,
-            type: report.type || report.report_type, // Ensure type is set from either field
-            report_type: report.report_type,
-            description: report.description || '',
-            location: report.location || '',
-            contact_info: report.contact_info || user?.phone || '',
-            is_anonymous: Boolean(report.is_anonymous),
-            image_path: report.image_path || null,
-            status: report.status || 'pending',
-            // Maintenance specific fields
-            issue_type: report.issue_type || '',
-            // Lost and found specific fields
-            item_name: report.item_name || report.title || '', // Use title as fallback
-            category: report.category || ''
-        };
 
-        setExistingReport(formattedReport);
-        setShowUpdateModal(true);
+    const handleViewDetails = (report) => {
+        setSelectedReport({ ...report });
+        setShowModal(true);
     };
 
+    const handleStatusChange = (e) => {
+        setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
+    };
 
-    const handleDelete = async (report) =>{
-        const reportType = report.report_type;
-        // console.log(reportType);
-        if(reportType === 'maintenance'){
-        const response = await axios.put(`http://localhost:5000/api/unified-reports/reports/archive-maintenance-report/${report.id}`);
-        if (response.data.success) {
-            alert("Report deleted successfully.");
-            // setShowDeleteModal(false);
-            // fetchReports();
+    const handleUpdateStatus = async () => {
+        if (!selectedReport || !selectedReport.status) {
+            console.error("Invalid report selection or missing status.");
+            return;
         }
-        }else if(reportType === 'lost' || reportType === 'found'){
-            const response = await axios.put(`http://localhost:5000/api/unified-reports/reports/archive-lost-found-report/${report.id}`);
+
+        try {
+            const response = await axios.put(
+                `http://localhost:5000/api/reports/admin/edit/${selectedReport.id}`,
+                { status: selectedReport.status },
+                { headers: { "Content-Type": "application/json" } }
+            );
 
             if (response.data.success) {
-                alert("Report deleted successfully.");
-                // setShowDeleteModal(false);
-                // fetchReports();
+                setReports((prevReports) =>
+                    prevReports.map((report) =>
+                        report.id === selectedReport.id ? { ...report, status: selectedReport.status } : report
+                    )
+                );
+                setShowModal(false);
+            } else {
+                alert("Failed to update report status.");
             }
+        } catch (error) {
+            console.error("Error updating status:", error);
+            alert("Failed to update report status. Please try again.");
         }
-       
+    };
+
+    const handleDelete = async () => {
+        if (!reportToDelete) {
+            console.error("Invalid report selection.");
+            return;
+        }
+
+        try {
+            const response = await axios.delete(`http://localhost:5000/api/reports/admin/report/${reportToDelete}`, {
+                data: {
+                    role: role
+                },
+            });
+
+            if (response.data.success) {
+                setReports((prevReports) => prevReports.filter((report) => report.id !== reportToDelete));
+                setShowDeleteModal(false);
+                setReportToDelete(null);
+            } else {
+                alert("Failed to delete report.");
+            }
+        } catch (error) {
+            console.error("Error deleting report:", error);
+            alert("Failed to delete report. Please try again.");
+        }
     }
-    const handleOpenCreateModal = () => {
-        setExistingReport(null);
-        setShowCreateModal(true);
-    };
-
-    const handleCloseCreateModal = () => {
-        setExistingReport(null);
-        setShowCreateModal(false);
-    };
-
-    const handleOpenUpdateModal = () => {
-        setExistingReport(null);
-        setShowUpdateModal(true);
-    };
-
-    const handleCloseUpdateModal = () => {
-        setExistingReport(null);
-        setShowUpdateModal(false);
+    const confirmDelete = (reportID) => {
+        setReportToDelete(reportID);
+        setShowDeleteModal(true);
     };
     // Pagination Logic
     const indexOfLastReport = currentPage * pageSize;
     const indexOfFirstReport = indexOfLastReport - pageSize;
     const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
 
-    // Count all reports
     const totalReports = reports.length;
+    const pendingCount = reports.filter(r => r.status === 'pending').length;
+    const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
+    const resolvedCount = reports.filter(r => r.status === 'resolved').length;
 
-    // Maintenance reports breakdown
-    const maintenanceReports = reports.filter(r => r.report_type === 'maintenance');
-    const maintenancePending = maintenanceReports.filter(r => r.status === 'pending').length;
-    const maintenanceInProgress = maintenanceReports.filter(r => r.status === 'in_progress').length;
-    const maintenanceResolved = maintenanceReports.filter(r => r.status === 'resolved').length;
-
-    // Lost & Found reports breakdown
-    const lostFoundReports = reports.filter(r => r.report_type === 'lost' || r.report_type === 'found');
-    const lostFoundOpen = lostFoundReports.filter(r => r.status === 'open').length;
-    const lostFoundClosed = lostFoundReports.filter(r => r.status === 'closed').length;
-    const lostFoundClaimed = lostFoundReports.filter(r => r.status === 'claimed').length;
 
     return (
-        <div className="container">
+        <div className="container mt-5">
             <div className="row mb-3">
-                {/* Total Reports */}
                 <div className="col-md-3">
-                    <Card className="p-3 text-center shadow-sm">
+                    <div className="card p-3 text-center rounded-0">
                         <FaFileAlt className="text-success mb-2" size={30} />
                         <h6>Total Reports</h6>
-                        <strong className="fs-1">{totalReports}</strong>
-                        <div className="mt-2">
-                            <small>Maintenance: {maintenanceReports.length}</small> |{" "}
-                            <small>Lost: {reports.filter(r => r.report_type === 'lost').length}</small> |{" "}
-                            <small>Found: {reports.filter(r => r.report_type === 'found').length}</small>
-                        </div>
-                    </Card>
+                        <strong className='fs-1'>{totalReports}</strong>
+                    </div>
                 </div>
-
-
-                {/* Maintenance Reports */}
                 <div className="col-md-3">
-                    <Card className="p-3 text-center shadow-sm">
-                        <FaWrench className="text-warning mb-2" size={30} />
-                        <h6>Maintenance Reports</h6>
-                        <strong className="fs-1">{maintenanceReports.length}</strong>
-                        <div className="mt-2">
-                            <small>Pending: {maintenancePending}</small> |{" "}
-                            <small>In Progress: {maintenanceInProgress}</small> |{" "}
-                            <small>Resolved: {maintenanceResolved}</small>
-                        </div>
-                    </Card>
+                    <div className="card p-3 text-center rounded-0">
+                        <FaClock className="text-warning mb-2" size={30} />
+                        <h6>Pending</h6>
+                        <strong className='fs-1'>{pendingCount}</strong>
+                    </div>
                 </div>
-
-                {/* Lost & Found Reports */}
                 <div className="col-md-3">
-                    <Card className="p-3 text-center shadow-sm">
-                        <FaBoxOpen className="text-primary mb-2" size={30} />
-                        <h6>Lost & Found</h6>
-                        <strong className="fs-1">{lostFoundReports.length}</strong>
-                        <div className="mt-2">
-                            <small>Open: {lostFoundOpen}</small> |{" "}
-                            <small>Closed: {lostFoundClosed}</small> |{" "}
-                            <small>Claimed: {lostFoundClaimed}</small>
-                        </div>
-                    </Card>
+                    <div className="card p-3 text-center rounded-0">
+                        <FaTasks className="text-primary mb-2" size={30} />
+                        <h6>In Progress</h6>
+                        <strong className='fs-1'>{inProgressCount}</strong>
+                    </div>
                 </div>
-
-                {/* Other Reports (New Fourth Card) */}
                 <div className="col-md-3">
-                    <Card className="p-3 text-center shadow-sm">
-                        <FaTasks className="text-info mb-2" size={30} />
-                        <h6>Other Reports</h6>
-                        <strong className="fs-1">
-                            {reports.filter(r => !['maintenance', 'lost', 'found'].includes(r.report_type)).length}
-                        </strong>
-                        <div className="mt-2">
-                            <small>Miscellaneous: {reports.filter(r => !['maintenance', 'lost', 'found'].includes(r.report_type)).length}</small>
-                        </div>
-                    </Card>
+                    <div className="card p-3 text-center rounded-0">
+                        <FaCheckCircle className="text-success mb-2" size={30} />
+                        <h6>Resolved</h6>
+                        <strong className='fs-1'>{resolvedCount}</strong>
+                    </div>
                 </div>
             </div>
             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -221,9 +190,8 @@ function ReportScreen() {
                     <FaPlusCircle className="me-1" /> Create Report
                 </button>
             </div>
-
             {/* Reports Table */}
-            <Card className="border-0 shadow-sm" >
+            <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
@@ -255,6 +223,9 @@ function ReportScreen() {
                             </Form.Select>
                         </div>
 
+                        {/* <div className="col-auto">
+                            <Form.Control type="text" placeholder="Search reports..." value={searchTerm} onChange={handleSearch} />
+                        </div> */}
                         <div className="col-auto">
                             <div className="btn-group ">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
@@ -273,12 +244,11 @@ function ReportScreen() {
                         {viewType === "list" ? (
                             <ul className="list-group">
                                 {currentReports.map((report) => (
-                                    // <ReportItem key={report.unique_id} item={report} />
-                                    <li key={report.unique_id} className="list-group-item mb-3">
+                                    <li key={report.id} className="list-group-item mb-3">
                                         <div className="d-flex align-items-start justify-content-between">
                                             {/* Left Side: Report Details */}
                                             <div className="w-75 me-3">
-                                                <p><strong>Date:</strong> {new Date(report.date_reported).toLocaleString('en-US', {
+                                                <p><strong>Date:</strong> {new Date(report.created_at).toLocaleString('en-US', {
                                                     timeZone: 'Asia/Manila',
                                                     month: 'long',
                                                     day: 'numeric',
@@ -287,9 +257,7 @@ function ReportScreen() {
                                                     minute: '2-digit',
                                                     hour12: true,
                                                 })}</p>
-                                                <p><strong>Type:</strong> {report.report_type.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</p>
-                                                <p><strong>Title:</strong> {report.title}</p> {/* Use `title` instead of `issue_type` */}
-
+                                                <p><strong>Location:</strong> {report.location}</p>
                                                 <p><strong>Description:</strong> {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
                                                     : report.description}</p>
@@ -300,7 +268,7 @@ function ReportScreen() {
                                                     </Badge>
                                                 </p>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => handleDelete(report)}>Remove</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -322,8 +290,6 @@ function ReportScreen() {
                                     <tr>
                                         <th>Date</th>
                                         <th>Location</th>
-                                        <th>Title</th>
-                                        <th>Type</th>
                                         <th>Description</th>
                                         <th>Status</th>
                                         <th style={{ width: "16%" }}>Actions</th>
@@ -331,8 +297,8 @@ function ReportScreen() {
                                 </thead>
                                 <tbody>
                                     {currentReports.map((report) => (
-                                        <tr key={report.unique_id}>
-                                            <td>{new Date(report.date_reported).toLocaleString('en-US', {
+                                        <tr key={report.id}>
+                                            <td>{new Date(report.created_at).toLocaleString('en-US', {
                                                 timeZone: 'Asia/Manila',
                                                 month: 'long',
                                                 day: 'numeric',
@@ -342,11 +308,9 @@ function ReportScreen() {
                                                 hour12: true,
                                             })}</td>
                                             <td>{report.location}</td>
-                                            <td>{report.title}</td>
-                                            <td>{report.report_type.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</td>
                                             <td>
-                                                {report.description.length > 20
-                                                    ? report.description.substring(0, 20) + "..."
+                                                {report.description.length > 50
+                                                    ? report.description.substring(0, 50) + "..."
                                                     : report.description}
                                             </td>
                                             <td>
@@ -356,16 +320,28 @@ function ReportScreen() {
                                             </td>
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => handleDelete(report)}>Remove</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </Table>
+
                         )}
                     </div>
-                </Card.Body>
-                <Card.Footer>
+                    <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
+                        <Modal.Header closeButton>
+                            <Modal.Title>Confirm Delete</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            Are you sure you want to delete this report? This action cannot be undone.
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+                            <Button variant="danger" className="rounded-0" onClick={handleDelete}>Delete</Button>
+                        </Modal.Footer>
+                    </Modal>
+
                     {/* Pagination Controls */}
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
@@ -406,6 +382,7 @@ function ReportScreen() {
                                         </li>
                                     );
                                 })}
+
                                 {/* Next Button */}
                                 <li className={`page-item ${currentPage === Math.ceil(filteredReports.length / pageSize) ? "disabled" : ""}`}>
                                     <Button
@@ -420,23 +397,64 @@ function ReportScreen() {
                             </ul>
                         </nav>
                     </div>
-                </Card.Footer>
+                </Card.Body>
             </Card>
+            {/* View Details Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Report Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedReport ? (
+                        <div>
+                            <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
+                                timeZone: 'Asia/Manila',
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                            })}</p>
+                            <p className="text-break"><strong>Reported By:</strong> {selectedReport.reporter_name}</p>
+                            <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
+                            <p className="text-break"><strong>Issue Type:</strong> {selectedReport.issue_type}</p>
+                            <p className="text-break"><strong>Description:</strong> {selectedReport.description}</p>
+                            {/* Image Display */}
+                            {selectedReport.image_path && (
+                                <div className="mb-3 d-flex flex-column align-items-center text-center">
+                                    <strong>Attached Image:</strong>
+                                    <img
+                                        src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
+                                        alt="Report"
+                                        className="img-fluid mt-2"
+                                        style={{ maxHeight: "300px", borderRadius: "10px" }}
+                                    />
+                                </div>
+                            )}
 
-            <CreateModal
-                show={showCreateModal}
-                handleClose={handleCloseCreateModal}
-                existingReport={existingReport}
-                defaultType="maintenance"
-            />
-            <UpdateModal
-                show={showUpdateModal}
-                handleClose={handleCloseUpdateModal}
-                existingReport={existingReport}
-            />
+                            <Form.Group controlId="statusSelect">
+                                <Form.Label><strong>Status:</strong></Form.Label>
+                                <Form.Select value={selectedReport.status} onChange={handleStatusChange} className="rounded-0">
+                                    <option value="pending">Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </div>
+                    ) : (
+                        <p>No details available.</p>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
+                    <Button variant="primary" className="rounded-0" onClick={handleUpdateStatus}>Update Status</Button>
+                </Modal.Footer>
+            </Modal>
+
 
         </div>
     );
 }
 
-export default ReportScreen;
+export default Reports;

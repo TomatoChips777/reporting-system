@@ -18,6 +18,7 @@ import ReportScreen from './pages/Student/pages/ReportScreen.jsx';
 import ListScreen from './pages/Student/pages/ListScreen.jsx';
 import Messages from './pages/Student/pages/Messages.jsx';
 import GuestScreen from './pages/GuestScreen.jsx';
+import Testing from './pages/Student/pages/Testing.jsx';
 
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
@@ -49,10 +50,12 @@ function App() {
                                     {role === 'student' && (
                                         <>
                                            <Route path="/home" element={<HomeScreen />} />
-                                           <Route path="/reports-screen" element={<ReportScreen />} />
+                                           {/* <Route path="/reports-screen" element={<ReportScreen />} /> */}
                                            <Route path="/list-screen" element={<ListScreen />} />
                                            <Route path='/notifications' element={<Notifications />} />
                                            <Route path='/messages' element={<Messages />} />
+                                           <Route path="/reports-screen" element={<Testing />} />
+
 
                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>

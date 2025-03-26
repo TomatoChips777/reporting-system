@@ -12,6 +12,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         receiver_id: existingItem?.user_id,
         report_id: existingItem?.id,
         message: '',
+        type: '',
         image: null,
     });
 
@@ -20,9 +21,10 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
             if (existingItem) {
                 setFormData({
                     sender_id: user?.id,
-                    receiver_id: existingItem?.user_id, // Assuming `existingItem` has `user_id` as the receiver
+                    receiver_id: existingItem?.user_id,
                     report_id: existingItem?.id,
                     message: '',
+                    type: '',
                     image: null,
                 });
             } else {
@@ -65,7 +67,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         messageData.append("receiver_id", existingItem?.user_id);
         messageData.append("report_id", existingItem?.id);
         messageData.append("message", message.trim());
-        
+        messageData.append('item_type', existingItem?.type);
         if (image) {
             messageData.append("image", image);
         }
@@ -97,6 +99,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
             receiver_id: existingItem?.user_id,
             report_id: existingItem?.id,
             message: '',
+            type: '',
             image: null,
         });
     };

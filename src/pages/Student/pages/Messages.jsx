@@ -31,6 +31,7 @@ const Messages = () => {
             console.error('Error fetching messages:', error);
         }
     };
+
     useEffect(() => {
         const socket = io('http://localhost:5000');
 
@@ -39,12 +40,15 @@ const Messages = () => {
             if (user.id === senderId || user.id === receiverId) {
                 setMessages(prevMessages => {
                     let updated = false;
+
                     const updatedMessages = prevMessages.map(convo => {
+                        // if (convo.senderId === senderId || convo.receiverId === receiverId) {
                         if (convo.message_session_id === message_session_id) {
 
                             updated = true;
                             return {
                                 ...convo,
+                                // lastMessage: newMsg.text,
                                 messages: [...convo.messages, newMsg]
                             };
                         }
@@ -62,11 +66,17 @@ const Messages = () => {
                         receiverId: newMsg.receiverId,
                         lastMessage: newMsg.text,
                         created_at: newMsg.created_at,
+                        item_type: newMsg.item_type,
                         unread: 1,
                         messages: [newMsg]
+                        // messages: newMsg.message_session_id === message_session_id
+                        // ? [...prev.messages] 
+                        // : [...prev.messages, newMsg] 
+
                     }];
                 });
-
+                // console.log(selectedConversation);
+                // Update selected conversation if it's the active chat
                 if (selectedConversation && (selectedConversation.message_session_id === message_session_id)) {
                     console.log(selectedConversation);
                     setSelectedConversation(prev => ({
@@ -75,8 +85,9 @@ const Messages = () => {
                         messages: selectedConversation.report_id === report_id
                             ? [...prev.messages]
                             : [...prev.messages, newMsg]
-                }));
-            } else {
+
+                    }));
+                } else {
                     fetchItems();
                 }
             }
@@ -133,6 +144,7 @@ const Messages = () => {
             console.error('Error sending message:', error);
         }
     };
+
     const handleClaimAction = async (messageId, action) => {
         try {
             const response = await axios.post(`http://localhost:5000/api/messages/claim-action`, {
@@ -264,7 +276,7 @@ const Messages = () => {
                                         <div className="ms-3">
                                             <h6 className="mb-0">
                                                 {selectedConversation.user?.name || 'Unknown'}
-                                                <span className="text-muted"> [{selectedConversation.item_type.charAt(0).toUpperCase() + selectedConversation.item_type.slice(1).toLowerCase()}]</span>
+                                                <span className="text-muted"> [{selectedConversation.item_type.charAt(0).toUpperCase() + selectedConversation.item_type.slice(1).toLowerCase()}  - {selectedConversation.item_name}]</span>
                                             </h6>
                                         </div>
                                     </div>
