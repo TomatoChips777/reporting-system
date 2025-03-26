@@ -14,7 +14,7 @@ import { NavigationProvider } from './components/SidebarContext.jsx';
 import { SidebarStateProvider } from './components/SidebarStateContext.jsx';
 import Notifications from './pages/Notifications.jsx';
 import LostAndFoundDashboard from './pages/LostAndFound/Dashboard.jsx';
-import ReportScreen from './pages/Student/pages/ReportScreen.jsx';
+import ReportScreen from './pages/Reports/ReportScreen.jsx';
 import ListScreen from './pages/Student/pages/ListScreen.jsx';
 import Messages from './pages/Student/pages/Messages.jsx';
 import GuestScreen from './pages/GuestScreen.jsx';
@@ -38,8 +38,9 @@ function App() {
                                     {role === 'admin' && (
                                         <>
                                             <Route path="/home" element={<HomeScreen />} />
+                                            <Route path='/reports' element={<ReportScreen />} />
                                             <Route path="/dashboard" element={<AdminDashboard />} />
-                                            <Route path="/reports" element={<Reports />} />
+                                            <Route path="/maintenance-reports" element={<Reports />} />
                                             <Route path="/lf-dashboard" element={<LostAndFoundDashboard />} />
                                             <Route path="/lostandfound" element={<AdminLostAndFound />} />
                                             <Route path="/maintenance-requests" element={<Sample />} />

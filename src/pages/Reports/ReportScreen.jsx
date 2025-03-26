@@ -2,43 +2,41 @@ import { useState, useEffect } from "react";
 import { Table, Card, Form, Button, Badge, Modal } from "react-bootstrap";
 import { FaFileAlt, FaClock, FaTasks, FaCheckCircle, FaChevronRight, FaPlusCircle, FaSearch } from 'react-icons/fa';
 import { io } from 'socket.io-client';
-
+import ViewReportModal from "./Components/ViewReportModal";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
-import { useAuth } from "../../../../AuthContext";
-import CreateReportModal from "../components/CreateReportModal";
+import { useAuth } from "../../../AuthContext";
 function Reports() {
-    const { role, user } = useAuth();
+    const { role } = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
     const [pageSize, setPageSize] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [reportToDelete, setReportToDelete] = useState(null);
-    const [viewType, setViewType] = useState("table");
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [existingReport, setExistingReport] = useState(null);
+    const [viewType, setViewType] = useState("list");
+    const [monthFilter, setMonthFilter] = useState(""); // Month filter state
+    const [yearFilter, setYearFilter] = useState("");   // Year filter state
 
-    const fetchReports = async () => {
-        try {
-            const response = await axios.get(`http://localhost:5000/api/reports/user/${user.id}`);
-            setReports(response.data.reports || []);
-            setFilteredReports(response.data.reports);
-        } catch (error) {
-            console.error("Error fetching reports:", error);
-        }
-    };
+
+
     useEffect(() => {
-       
+        const fetchReports = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/reports");
+                setReports(response.data);
+                setFilteredReports(response.data);
+            } catch (error) {
+                console.error("Error fetching reports:", error);
+            }
+        };
         fetchReports();
 
-        const socket = io('http://localhost:5000'); // Connect to your backend server
+        const socket = io('http://localhost:5000');
         socket.on('update', () => {
-            // setReports((prevReports) => [newReport, ...prevReports]);
             fetchReports();
         });
 
@@ -51,17 +49,27 @@ function Reports() {
 
 
     useEffect(() => {
-        // fetchReports();
         let updatedReports = reports.filter(report => {
             const search = searchTerm.toLowerCase();
+            const reportDate = new Date(report.created_at);
+
+            const selectedMonth = parseInt(monthFilter, 10); 
+            const selectedYear = parseInt(yearFilter, 10);
+
             return (
                 (report.description.toLowerCase().includes(search) ||
+                    report.reporter_name.toLowerCase().includes(search) ||
                     report.location.toLowerCase().includes(search)) &&
-                (statusFilter === "all" || report.status === statusFilter)
+                (monthFilter === "" || reportDate.getMonth() + 1 === selectedMonth) &&
+                (yearFilter === "" || reportDate.getFullYear() === selectedYear)
             );
         });
+
         setFilteredReports(updatedReports);
-    }, [searchTerm, statusFilter, reports]);
+    }, [searchTerm, monthFilter, yearFilter, reports]);
+
+
+    const uniqueYears = [...new Set(reports.map(report => new Date(report.created_at).getFullYear()))].sort((a, b) => b - a);
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
@@ -75,43 +83,36 @@ function Reports() {
         setPageSize(parseInt(e.target.value));
         setCurrentPage(1);
     };
-    const handleCloseModal = () => {
-        setExistingReport(null);
-        setShowCreateModal(false);
-    };
 
-
-    const handleOpenCreateModal = () => {
-        setExistingReport(null);
-        setShowCreateModal(true);
-    };
 
     const handleViewDetails = (report) => {
         setSelectedReport({ ...report });
         setShowModal(true);
     };
 
-    const handleStatusChange = (e) => {
-        setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
+    const handleReportTypeChange = (e) => {
+        console.log(e);
+        setSelectedReport((prev) => ({ ...prev, report_type: e.target.value }));
     };
-
+    
     const handleUpdateStatus = async () => {
-        if (!selectedReport || !selectedReport.status) {
+
+        if (!selectedReport || !selectedReport.report_type) {
             console.error("Invalid report selection or missing status.");
             return;
         }
 
         try {
             const response = await axios.put(
-                `http://localhost:5000/api/reports/admin/edit/${selectedReport.id}`,
-                { status: selectedReport.status },
+                `http://localhost:5000/api/reports/admin/edit-report-type/${selectedReport.id}`,
+                { report_type: selectedReport.report_type },
                 { headers: { "Content-Type": "application/json" } }
             );
 
             if (response.data.success) {
                 setReports((prevReports) =>
                     prevReports.map((report) =>
-                        report.id === selectedReport.id ? { ...report, status: selectedReport.status } : report
+                        report.id === selectedReport.id ? { ...report, report_type: selectedReport.report_type } : report
                     )
                 );
                 setShowModal(false);
@@ -158,15 +159,15 @@ function Reports() {
     const indexOfFirstReport = indexOfLastReport - pageSize;
     const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
 
-    const totalReports = reports.length;
-    const pendingCount = reports.filter(r => r.status === 'pending').length;
-    const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
-    const resolvedCount = reports.filter(r => r.status === 'resolved').length;
+    // const totalReports = reports.length;
+    // const pendingCount = reports.filter(r => r.status === 'pending').length;
+    // const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
+    // const resolvedCount = reports.filter(r => r.status === 'resolved').length;
 
 
     return (
         <div className="container mt-5">
-            <div className="row mb-3">
+            {/* <div className="row mb-3">
                 <div className="col-md-3">
                     <div className="card p-3 text-center rounded-0">
                         <FaFileAlt className="text-success mb-2" size={30} />
@@ -195,13 +196,8 @@ function Reports() {
                         <strong className='fs-1'>{resolvedCount}</strong>
                     </div>
                 </div>
-            </div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2>My Reports</h2>
-                <button className="btn btn-success rounded-0" onClick={() => handleOpenCreateModal()}>
-                    <FaPlusCircle className="me-1" /> Create Report
-                </button>
-            </div>
+            </div> */}
+
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white py-3">
@@ -230,28 +226,33 @@ function Reports() {
                                 onChange={(e) => setViewType(e.target.value)}
                                 className="me-2 rounded-0"
                             >
-                                <option value="table">Table View</option>
                                 <option value="list">List View</option>
+                                <option value="table">Table View</option>
                             </Form.Select>
                         </div>
 
-                        {/* <div className="col-auto">
-                            <Form.Control type="text" placeholder="Search reports..." value={searchTerm} onChange={handleSearch} />
-                        </div> */}
                         <div className="col-auto">
-                            <div className="btn-group ">
-                                {["all", "pending", "in_progress", "resolved"].map((status) => (
-                                    <Button key={status} variant="outline-dark" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
-                                        {/* {status.charAt(0).toUpperCase() + status.slice(1)} */}
-                                        {status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-
-                                    </Button>
+                            <Form.Select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="me-2 rounded-0">
+                                <option value="">All Months</option>
+                                {[
+                                    "January", "February", "March", "April", "May", "June",
+                                    "July", "August", "September", "October", "November", "December"
+                                ].map((month, index) => (
+                                    <option key={index + 1} value={index + 1}>{month}</option>
                                 ))}
-                            </div>
+                            </Form.Select>
+                        </div>
+                        <div className="col-auto">
+                            <Form.Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="me-2 rounded-0">
+                                <option value="">All Years</option>
+                                {uniqueYears.map(year => (
+                                    <option key={year} value={year}>{year}</option>
+                                ))}
+                            </Form.Select>
                         </div>
                     </div>
                 </Card.Header>
-                <Card.Body style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                <Card.Body>
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
@@ -269,6 +270,7 @@ function Reports() {
                                                     minute: '2-digit',
                                                     hour12: true,
                                                 })}</p>
+                                                <p><strong>Reported By:</strong> {report.reporter_name}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
                                                 <p><strong>Description:</strong> {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
@@ -280,7 +282,7 @@ function Reports() {
                                                     </Badge>
                                                 </p>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -301,6 +303,7 @@ function Reports() {
                                 <thead>
                                     <tr>
                                         <th>Date</th>
+                                        <th>Reported By</th>
                                         <th>Location</th>
                                         <th>Description</th>
                                         <th>Status</th>
@@ -319,6 +322,7 @@ function Reports() {
                                                 minute: '2-digit',
                                                 hour12: true,
                                             })}</td>
+                                            <td>{report.reporter_name}</td>
                                             <td>{report.location}</td>
                                             <td>
                                                 {report.description.length > 50
@@ -332,7 +336,7 @@ function Reports() {
                                             </td>
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -343,14 +347,14 @@ function Reports() {
                     </div>
                     <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
                         <Modal.Header closeButton>
-                            <Modal.Title>Confirm Delete</Modal.Title>
+                            <Modal.Title>Confirm Remove</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            Are you sure you want to delete this report? This action cannot be undone.
+                            Are you sure you want to remove this report? This action cannot be undone.
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                            <Button variant="danger" className="rounded-0" onClick={handleDelete}>Delete</Button>
+                            <Button variant="danger" className="rounded-0" onClick={handleDelete}>Remove</Button>
                         </Modal.Footer>
                     </Modal>
 
@@ -412,64 +416,15 @@ function Reports() {
                 </Card.Body>
             </Card>
             {/* View Details Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Report Details</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {selectedReport ? (
-                        <div>
-                            <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
-                                timeZone: 'Asia/Manila',
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true,
-                            })}</p>
-                            <p className="text-break"><strong>Reported By:</strong> {selectedReport.reporter_name}</p>
-                            <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
-                            {/* <p className="text-break"><strong>Issue Type:</strong> {selectedReport.issue_type}</p> */}
-                            <p className="text-break"><strong>Description:</strong> {selectedReport.description}</p>
-                            {/* Image Display */}
-                            {selectedReport.image_path && (
-                                <div className="mb-3 d-flex flex-column align-items-center text-center">
-                                    <strong>Attached Image:</strong>
-                                    <img
-                                        src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
-                                        alt="Report"
-                                        className="img-fluid mt-2"
-                                        style={{ maxHeight: "300px", borderRadius: "10px" }}
-                                    />
-                                </div>
-                            )}
-
-                            <Form.Group controlId="statusSelect">
-                                <Form.Label><strong>Status:</strong></Form.Label>
-                                <Form.Select value={selectedReport.status} onChange={handleStatusChange} className="rounded-0">
-                                    <option value="pending">Pending</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="resolved">Resolved</option>
-                                </Form.Select>
-                            </Form.Group>
-                        </div>
-                    ) : (
-                        <p>No details available.</p>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
-                    <Button variant="primary" className="rounded-0" onClick={handleUpdateStatus}>Update Status</Button>
-                </Modal.Footer>
-            </Modal>
-
-            <CreateReportModal
-             show={showCreateModal}
-             handleClose={() => handleCloseModal()}
-             fetchItems={fetchReports}
-             existingItem={null}
+        
+            <ViewReportModal 
+                show={showModal} 
+                onHide={() => setShowModal(false)} 
+                report={selectedReport} 
+                onUpdateType={handleReportTypeChange} 
+                onUpdateStatus={handleUpdateStatus} 
             />
+
 
 
         </div>

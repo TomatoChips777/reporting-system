@@ -22,16 +22,16 @@ const upload = multer({ storage });
 
 router.post('/create-report', upload.single('image_path'), (req, res) => {
 
-    if (!req.body.user_id || !req.body.location || !req.body.issue_type || !req.body.description) {
+    if (!req.body.user_id || !req.body.location || !req.body.description) {
         return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    const { user_id, location, issue_type, description } = req.body;
+    const { user_id, location, description } = req.body;
     const image_path = req.file ? req.file.filename : null;
     
 
-    const query = `INSERT INTO tbl_reports (user_id, location, issue_type, description, image_path) VALUES (?, ?, ?, ?, ?)`;
-    db.query(query, [user_id, location, issue_type, description, image_path], (err, result) => {
+    const query = `INSERT INTO tbl_reports (user_id, location, description, image_path) VALUES ( ?, ?, ?, ?)`;
+    db.query(query, [user_id, location, description, image_path], (err, result) => {
         if (err) {
             console.error("Error creating report:", err);
             return res.status(500).json({ success: false, message: 'Failed to submit report' });
@@ -41,14 +41,13 @@ router.post('/create-report', upload.single('image_path'), (req, res) => {
             id: result.insertId,
             user_id,
             location,
-            issue_type,
             description,
             status: "pending",  // Initially set to 'pending'
             image_path: image_path || null // set image path if not null or null
         };
         // $message = "New report submitted {$issueType} issue at {$location}";
         const title = "Maintenance Report";
-        const message = `New report submitted ${issue_type} issue at ${location}`;
+        const message = `New report submitted  issue at ${location}`;
         const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
 
         db.query(notificationQuery, [result.insertId, user_id, message, title], (err, notificationResult) => {
@@ -214,7 +213,7 @@ router.get('/', (req, res) => {
     const query = `
         SELECT r.*, u.name as reporter_name 
         FROM tbl_reports r 
-        JOIN tbl_users u ON r.user_id = u.id WHERE archived = 0
+        JOIN tbl_users u ON r.user_id = u.id WHERE archived = 0 AND report_type = ''
         ORDER BY r.created_at DESC`;
     db.query(query, (err, rows) => {
         if (err) {
@@ -229,7 +228,7 @@ router.get('/', (req, res) => {
 router.get('/user/:userId', (req, res) => {
     const { userId } = req.params;
 
-    const query = `SELECT * FROM tbl_reports WHERE user_id = ? AND archived = 1 ORDER BY created_at DESC`;
+    const query = `SELECT * FROM tbl_reports WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC`;
     db.query(query, [userId], (err, rows) => {
         if (err) {
             console.error("Error fetching user reports:", err);
@@ -284,6 +283,41 @@ router.put('/admin/edit/:reportId', (req, res) => {
 
                 res.json({ success: true, message: 'Status updated successfully' });
             });
+        });
+    });
+});
+
+
+router.put('/admin/edit-report-type/:reportId', (req, res) => {
+    const reportId = req.params.reportId;
+    const { report_type } = req.body;
+
+    // Step 1: Retrieve the user_id associated with this report
+    const getUserQuery = `SELECT user_id, location FROM tbl_reports WHERE id = ?`;
+
+    db.query(getUserQuery, [reportId], (err, result) => {
+        if (err) {
+            console.error("Error retrieving report details:", err);
+            return res.status(500).json({ success: false, message: 'Failed to retrieve report details' });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({ success: false, message: 'Report not found' });
+        }
+
+
+        const updateQuery = `UPDATE tbl_reports SET report_type  = ? WHERE id = ?`;
+
+        db.query(updateQuery, [report_type, reportId], (err, updateResult) => {
+            if (err) {
+                console.error("Error updating status:", err);
+                return res.status(500).json({ success: false, message: 'Failed to update status' });
+            }
+
+                req.io.emit('updatedStatus', { reportId, report_type });
+                req.io.emit('update');
+
+                res.json({ success: true, message: 'Status updated successfully' });
         });
     });
 });
