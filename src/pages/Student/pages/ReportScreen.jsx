@@ -18,14 +18,8 @@ function ReportScreen() {
     const [currentPage, setCurrentPage] = useState(1);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
-    const [selectedReport, setSelectedReport] = useState(null);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [reportToDelete, setReportToDelete] = useState(null);
-    const [viewType, setViewType] = useState("list");
+    const [viewType, setViewType] = useState("table");
     const [existingReport, setExistingReport] = useState(null);
-
-
-
     useEffect(() => {
         const fetchReports = async () => {
             // setLoading(true);
@@ -44,14 +38,11 @@ function ReportScreen() {
             fetchReports();
         });
 
-        // Clean up the socket connection on component unmount
         return () => {
             socket.disconnect();
         };
 
     }, []);
-
-
     useEffect(() => {
         let updatedReports = reports.filter(report => {
             const search = searchTerm.toLowerCase();
@@ -259,8 +250,8 @@ function ReportScreen() {
                                 onChange={(e) => setViewType(e.target.value)}
                                 className="me-2 rounded-0"
                             >
+                                <option value="list">Table View</option>
                                 <option value="list">List View</option>
-                                <option value="table">Table View</option>
                             </Form.Select>
                         </div>
 

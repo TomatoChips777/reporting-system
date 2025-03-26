@@ -183,7 +183,7 @@ function ListScreen() {
                                                     placement="top"
                                                     overlay={<Tooltip>Click if you found this lost item</Tooltip>}
                                                 >
-                                                    <Button variant="info" className="rounded-0 text-white w-100" onClick={() => handleFoundModal(item)}>
+                                                    <Button variant="info" className="rounded-0 text-white w-100" onClick={() => handleClaimModal(item)}>
                                                         Found
                                                     </Button>
                                                 </OverlayTrigger>

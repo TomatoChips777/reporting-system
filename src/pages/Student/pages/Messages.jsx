@@ -31,47 +31,56 @@ const Messages = () => {
             console.error('Error fetching messages:', error);
         }
     };
-
     useEffect(() => {
         const socket = io('http://localhost:5000');
 
-        socket.on('updateMessage', ({ senderId, receiverId, newMsg }) => {
-            setMessages(prevMessages => {
-                let updated = false;
+        socket.on('updateMessage', ({ senderId, receiverId, newMsg, report_id, message_session_id }) => {
 
-                const updatedMessages = prevMessages.map(convo => {
-                    if (convo.id === senderId || convo.id === receiverId) {
-                        updated = true;
-                        return {
-                            ...convo,
-                            lastMessage: newMsg.text,
-                            messages: [...convo.messages, newMsg]
-                        };
-                    }
-                    return convo;
+            if (user.id === senderId || user.id === receiverId) {
+                setMessages(prevMessages => {
+                    let updated = false;
+                    const updatedMessages = prevMessages.map(convo => {
+                        if (convo.message_session_id === message_session_id) {
+
+                            updated = true;
+                            return {
+                                ...convo,
+                                messages: [...convo.messages, newMsg]
+                            };
+                        }
+                        return convo;
+                    });
+
+                    return updated ? updatedMessages : [...prevMessages, {
+                        id: user.id === senderId ? receiverId : senderId,
+                        user: {
+                            id: user.id === senderId ? receiverId : senderId,
+                            name: newMsg.senderId === senderId ? newMsg.receiverName : newMsg.senderName,
+                            avatar: newMsg.senderId === senderId ? newMsg.receiverAvatar : newMsg.senderAvatar
+                        },
+                        senderId: newMsg.senderId,
+                        receiverId: newMsg.receiverId,
+                        lastMessage: newMsg.text,
+                        created_at: newMsg.created_at,
+                        unread: 1,
+                        messages: [newMsg]
+                    }];
                 });
 
-                return updated ? updatedMessages : [...prevMessages, {
-                    id: user.id === senderId ? receiverId : senderId,
-                    user: {
-                        id: user.id === senderId ? receiverId : senderId,
-                        name: newMsg.senderId === senderId ? newMsg.receiverName : newMsg.senderName,
-                        avatar: newMsg.senderId === senderId ? newMsg.receiverAvatar : newMsg.senderAvatar
-                    },
-                    lastMessage: newMsg.text,
-                    created_at: newMsg.created_at,
-                    unread: 1,
-                    messages: [newMsg]
-                }];
-            });
-
-            // Update selected conversation if it's the active chat
-            if (selectedConversation && (selectedConversation.id === senderId || selectedConversation.id === receiverId)) {
-                setSelectedConversation(prev => ({
-                    ...prev,
-                    messages: [...prev.messages, newMsg]
+                if (selectedConversation && (selectedConversation.message_session_id === message_session_id)) {
+                    console.log(selectedConversation);
+                    setSelectedConversation(prev => ({
+                        ...prev,
+                        // messages: [...prev.messages, newMsg]
+                        messages: selectedConversation.report_id === report_id
+                            ? [...prev.messages]
+                            : [...prev.messages, newMsg]
                 }));
+            } else {
+                    fetchItems();
+                }
             }
+
         });
 
         scrollToBottom();
@@ -124,7 +133,6 @@ const Messages = () => {
             console.error('Error sending message:', error);
         }
     };
-
     const handleClaimAction = async (messageId, action) => {
         try {
             const response = await axios.post(`http://localhost:5000/api/messages/claim-action`, {
@@ -158,11 +166,12 @@ const Messages = () => {
                             <h5 className="mb-0">Messages</h5>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            <div className="conversation-items">
+                            {/* <div className="conversation-items">
                                 {messages.map((conversation) => (
                                     <div
                                         key={`${conversation.report_id}-${conversation.id}`} // Unique key per report
-                                        className={`conversation-item p-3 ${selectedConversation?.id === conversation.id && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
+                                        className={`conversation-item p-3 ${selectedConversation?.id === conversation.id 
+                                            && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
                                         onClick={() => setSelectedConversation(conversation)}
                                     >
                                         <div className="d-flex align-items-center">
@@ -188,7 +197,56 @@ const Messages = () => {
                                     </div>
                                 ))}
 
+                            </div> */}
+                            <div className="conversation-items">
+                                {messages.map((conversation) => (
+                                    <div
+                                        key={`${conversation.report_id}-${conversation.id}`} // Unique key per report
+                                        className={`conversation-item p-3 ${selectedConversation?.id === conversation.id && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
+                                        onClick={() => setSelectedConversation(conversation)}
+                                    >
+                                        <div className="d-flex align-items-center">
+                                            <div className="avatar-container">
+                                                {conversation.user?.id === "anonymous" ? (
+                                                    <BsPersonCircle size={40} className="text-secondary" />
+                                                ) : (
+                                                    <img
+                                                        src={conversation.user?.avatar}
+                                                        width="40"
+                                                        height="40"
+                                                        className="rounded-circle"
+                                                        alt="User"
+                                                        onError={(e) => e.target.style.display = 'none'} // Hide broken image links
+                                                    />
+                                                )}
+                                            </div>
+
+                                            {/* <div className="avatar-container">
+                                                {conversation.user?.avatar ? (
+                                                    <img src={conversation.user.avatar} width="40" height="40" className="rounded-circle" alt="User" />
+                                                ) : (
+                                                    <BsPersonCircle size={40} className="text-secondary" />
+                                                )}
+                                            </div> */}
+                                            <div className="ms-3 flex-grow-1">
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <h6 className="mb-0">
+                                                        {conversation.user?.name || 'Unknown'}
+                                                        <span className="text-muted"> [{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span>
+                                                    </h6>
+                                                    <small className="text-muted">
+                                                        {formatTime(conversation.created_at)}
+                                                    </small>
+                                                </div>
+                                                <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
+                                                    {conversation.lastMessage || 'No messages yet'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+
                         </Card.Body>
                     </Card>
                 </Col>
@@ -204,8 +262,10 @@ const Messages = () => {
                                             <BsPersonCircle size={40} className="text-secondary" />
                                         )}
                                         <div className="ms-3">
-                                            <h6 className="mb-0">{selectedConversation.user?.name || 'Unknown'}</h6>
-                                            {/* <small className="text-muted">Online</small> */}
+                                            <h6 className="mb-0">
+                                                {selectedConversation.user?.name || 'Unknown'}
+                                                <span className="text-muted"> [{selectedConversation.item_type.charAt(0).toUpperCase() + selectedConversation.item_type.slice(1).toLowerCase()}]</span>
+                                            </h6>
                                         </div>
                                     </div>
                                 </Card.Header>
@@ -221,7 +281,7 @@ const Messages = () => {
                                                     {message.text && message.text.trim() && (
                                                         <div className="message-bubble">
                                                             {message.text}
-                                                            
+
                                                             <div className="message-meta">
                                                                 <small className="text-muted">{formatTime(message.created_at)}</small>
                                                                 {message.senderId === user.id && (

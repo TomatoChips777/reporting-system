@@ -58,7 +58,6 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         e.preventDefault();
         const { message, image } = formData;
 
-        // Ensure either message or image exists
         if (!message.trim() && !image) return;
 
         const messageData = new FormData();
@@ -66,6 +65,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         messageData.append("receiver_id", existingItem?.user_id);
         messageData.append("report_id", existingItem?.id);
         messageData.append("message", message.trim());
+        
         if (image) {
             messageData.append("image", image);
         }
@@ -125,7 +125,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                         <Form.Label>Message <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             as="textarea"
-                            name="message" // Use "message" as the field name
+                            name="message"
                             value={formData.message}
                             onChange={handleInputChange}
                             rows={3}

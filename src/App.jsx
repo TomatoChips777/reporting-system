@@ -17,6 +17,7 @@ import LostAndFoundDashboard from './pages/LostAndFound/Dashboard.jsx';
 import ReportScreen from './pages/Student/pages/ReportScreen.jsx';
 import ListScreen from './pages/Student/pages/ListScreen.jsx';
 import Messages from './pages/Student/pages/Messages.jsx';
+import GuestScreen from './pages/GuestScreen.jsx';
 
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
@@ -63,11 +64,12 @@ function App() {
                 </NavigationProvider>
             ) : (
                 <Routes>
-                    <Route path="*" element={<LoginScreen />} />
+                    <Route path="/" element={<GuestScreen />} />
+                    <Route path="/login" element={<LoginScreen />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             )}
         </Router>
     );
 }
-
 export default App;
