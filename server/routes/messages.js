@@ -23,6 +23,8 @@ const upload = multer({ storage });
 router.post('/send-message', upload.single("image"), (req, res) => {
     const { sender_id, receiver_id, message, report_id } = req.body;
     const image = req.file ? req.file.filename : null;
+    
+    const item_type = req.body.item_type && req.body.item_type.trim() !== "" ? req.body.item_type : null;
 
     if (!sender_id || !receiver_id || (!message.trim() && !image) || !report_id) {
         return res.status(400).json({ success: false, message: 'Message or image is required, and report_id is mandatory' });
@@ -125,7 +127,7 @@ router.post('/send-message', upload.single("image"), (req, res) => {
                         id: result.insertId,
                         image_path: image,
                         senderId: sender.sender_id,
-
+                        item_type: item_type,
                         text: textMessage,
                         created_at: new Date().toISOString(),
                         user: {
@@ -210,7 +212,6 @@ ORDER BY m.created_at DESC;
                         name: isReceiverAnonymous ? "Anonymous" : (msg.sender_id == userId ? msg.receiver_name : msg.sender_name),
                         avatar: isReceiverAnonymous ? null : (msg.sender_id == userId ? msg.receiver_avatar : msg.sender_avatar)
                     },
-                    
                     // user: {
                     //     id: conversationPartner,
                     //     name: isReceiverAnonymous ? "Anonymous" : (msg.sender_id == userId ? msg.receiver_name : msg.sender_name),
@@ -262,8 +263,6 @@ ORDER BY m.created_at DESC;
             messages: Object.values(conversations)
         });
     });
-
-
 });
 
 module.exports = router;

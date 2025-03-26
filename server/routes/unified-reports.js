@@ -27,6 +27,7 @@ router.get("/user-reports/:userId", async (req, res) => {
     try {
         const maintenanceQuery = `SELECT id, user_id, location, issue_type AS title, description, image_path, status, created_at AS date_reported, 'maintenance'
          AS report_type FROM tbl_reports WHERE user_id = ? AND archived = 0`;
+         
         db.query(maintenanceQuery, [userId], (err, maintenanceReports) => {
             if (err) {
                 console.error("Error fetching maintenance reports:", err);
