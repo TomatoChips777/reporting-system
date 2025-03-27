@@ -20,7 +20,7 @@ const Messages = () => {
 
     const fetchItems = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
+            const response = await axios.get(`${import.meta.env.VITE_GET_MESSAGES}/${user.id}`);
             if (response.data.success) {
                 setMessages(response.data.messages.map(convo => ({
                     ...convo,
@@ -33,7 +33,7 @@ const Messages = () => {
     };
 
     useEffect(() => {
-        const socket = io('http://localhost:5000');
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
 
         socket.on('updateMessage', ({ senderId, receiverId, newMsg, report_id, message_session_id }) => {
 
@@ -131,7 +131,7 @@ const Messages = () => {
 
         console.log(formData);
         try {
-            const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
+            const response = await axios.post(`${import.meta.env.VITE_SEND_MESSAGE}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
@@ -352,7 +352,7 @@ const Messages = () => {
                                                     {message.image_path && (
                                                         <div className="image-container">
                                                             <img
-                                                                src={`http://localhost:5000/uploads/${message.image_path}`}
+                                                                src={`${import.meta.env.VITE_IMAGES}/${message.image_path}`}
                                                                 alt="Sent"
                                                                 className="message-image"
                                                             />

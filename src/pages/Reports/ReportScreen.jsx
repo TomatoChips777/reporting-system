@@ -27,7 +27,7 @@ function Reports() {
     useEffect(() => {
         const fetchReports = async () => {
             try {
-                const response = await axios.get("http://localhost:5000/api/reports");
+                const response = await axios.get(`${import.meta.env.VITE_GET_REPORTS}`);
                 setReports(response.data);
                 setFilteredReports(response.data);
             } catch (error) {
@@ -36,7 +36,7 @@ function Reports() {
         };
         fetchReports();
 
-        const socket = io('http://localhost:5000');
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
         socket.on('update', () => {
             fetchReports();
         });
@@ -117,7 +117,7 @@ function Reports() {
         try {
             // Send full report data along with report_type
             const response = await axios.put(
-                `http://localhost:5000/api/reports/admin/edit-report-type/${selectedReport.id}`,
+                `${import.meta.env.VITE_UPDATE_REPORT_STATUS}/${selectedReport.id}`,
                 {
                     report_type: selectedReport.report_type,
                     type: selectedReport.type || "lost",
@@ -157,7 +157,7 @@ function Reports() {
         }
 
         try {
-            const response = await axios.delete(`http://localhost:5000/api/reports/admin/report/${reportToDelete}`, {
+            const response = await axios.delete(`${import.meta.env.VITE_REMOVE_REPORT}/${reportToDelete}`, {
                 data: {
                     role: role
                 },
@@ -300,7 +300,7 @@ function Reports() {
                                             {/* Right Side: Image */}
                                             <div className="w-25">
                                                 <img
-                                                    src={`http://localhost:5000/uploads/${report.image_path}` || "https://via.placeholder.com/150"}
+                                                    src={`${import.meta.env.VITE_IMAGES}/${report.image_path}` || "https://via.placeholder.com/150"}
                                                     alt="No image attached"
                                                     className="img-thumbnail rounded shadow-sm"
                                                     style={{ height: '290px' }}

@@ -26,7 +26,7 @@ function Reports() {
     const [existingItem, setExistingItem] = useState(null);
     const fetchReports = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/maintenance-reports/");
+            const response = await axios.get(`${import.meta.env.VITE_MAINTENANCE_REPORT}`);
             setReports(response.data.reports || []);
             setFilteredReports(response.data.reports || []);
         } catch (error) {
@@ -39,13 +39,12 @@ function Reports() {
         
         fetchReports();
 
-        const socket = io('http://localhost:5000'); // Connect to your backend server
+        const socket = io(`${import.meta.env.VITE_API_URL}`); 
         socket.on('update', () => {
-            // setReports((prevReports) => [newReport, ...prevReports]);
+           
             fetchReports();
         });
 
-        // Clean up the socket connection on component unmount
         return () => {
             socket.disconnect();
         };
@@ -121,7 +120,7 @@ const handleMessage = (item) => {
 
         try {
             const response = await axios.put(
-                `http://localhost:5000/api/maintenance-reports/admin/edit/${selectedReport.id}`,
+                `${import.meta.env.VITE_MAINTENANCE_REPORT_UPDATE_STATUS}/${selectedReport.id}`,
                 { status: selectedReport.status },
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -149,7 +148,7 @@ const handleMessage = (item) => {
         }
 
         try {
-            const response = await axios.delete(`http://localhost:5000/api/reports/admin/report/${reportToDelete}`, {
+            const response = await axios.delete(`${import.meta.env.VITE_MAINTENANCE_REMOVE_REPORTS}/${reportToDelete}`, {
                 data: {
                     role: role
                 },
@@ -392,7 +391,7 @@ const handleMessage = (item) => {
                                             {/* Right Side: Image */}
                                             <div className="w-25">
                                                 <img
-                                                    src={`http://localhost:5000/uploads/${report.image_path}` || "https://via.placeholder.com/150"}
+                                                    src={`${import.meta.env.VITE_IMAGES}/${report.image_path}` || "https://via.placeholder.com/150"}
                                                     alt="No image attached"
                                                     className="img-thumbnail rounded shadow-sm"
                                                     style={{ height: '290px' }}
@@ -564,7 +563,7 @@ const handleMessage = (item) => {
                                 <div className="mb-3 d-flex flex-column align-items-center text-center">
                                     <strong>Attached Image:</strong>
                                     <img
-                                        src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
+                                        src={`${import.meta.env.VITE_IMAGES}/${selectedReport.image_path}`}
                                         alt="Report"
                                         className="img-fluid mt-2"
                                         style={{ maxHeight: "300px", borderRadius: "10px" }}

@@ -36,7 +36,9 @@ class NotificationManager {
 
     async fetchNotifications() {
         try {
-            const endpoint = `http://localhost:5000/api/notifications/${this.role === "admin" ? "get-admin-notifications" : `get-notifications/${this.userId}`}`;
+            const endpoint = this.role === "admin" 
+                ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
+                : `${import.meta.env.VITE_USER_NOTIFICATION}/${this.userId}`;
             const response = await axios.get(endpoint);
             return response.data.filter(notification => !notification.is_read);
         } catch (error) {
@@ -46,7 +48,7 @@ class NotificationManager {
     }
 
     initializeSocket(onUpdate) {
-        this.socket = io("http://localhost:5000");
+        this.socket = io(`${import.meta.env.VITE_API_URL}`);
         this.socket.on("update", onUpdate);
     }
 

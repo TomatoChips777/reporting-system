@@ -29,8 +29,8 @@ function NavigationBar() {
     const fetchNotifications = async () => {
         try {
             const endpoint = role === "admin" 
-                ? "http://localhost:5000/api/notifications/get-admin-notifications"
-                : `http://localhost:5000/api/notifications/get-notifications/${user.id}`;
+                ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
+                : `${import.meta.env.VITE_USER_NOTIFICATION}/${user.id}`;
             
             const response = await axios.get(endpoint);
             const unreadNotifications = response.data.filter(notification => notification.is_read === 0);
@@ -42,7 +42,7 @@ function NavigationBar() {
   
     useEffect(() => {
         fetchNotifications();
-        const socket = io("http://localhost:5000");
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
         socket.on("update", () => {
             fetchNotifications();
         });
@@ -58,12 +58,12 @@ function NavigationBar() {
         if (!notif.is_read) {
             try {
                 if (role === "admin") {
-                    const response = await axios.put(`http://localhost:5000/api/notifications/admin/mark-notification-read/${notif.id}`);
+                    const response = await axios.put(`${import.meta.env.VITE_ADMIN_READ_NOTIFICATION_API}/${notif.id}`);
                     if (response.success) {
                         fetchNotifications();
                     }
                 } else {
-                    const response = await axios.put(`http://localhost:5000/api/notifications/mark-notification-read/${notif.id}`);
+                    const response = await axios.put(`${import.meta.env.VITE_USER_READ_NOTIFICATION_API}/${notif.id}`);
                     if (response.success) {
                         fetchNotifications();
                     }

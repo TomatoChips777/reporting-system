@@ -67,7 +67,7 @@ const MessageModal = ({ show, handleClose, existingItem, fetchItems }) => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/messages/send-message', messageData, {
+            const response = await axios.post(`${import.meta.env.VITE_SEND_MESSAGE}`, messageData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 

@@ -44,7 +44,7 @@ const ViewReportModal = ({ show, onHide, report, onUpdateType, onUpdateStatus, o
                                 <div className="mb-3 d-flex flex-column align-items-center text-center">
                                     <strong>Attached Image:</strong>
                                     <img
-                                        src={`http://localhost:5000/uploads/${report.image_path}`}
+                                        src={`${import.meta.env.VITE_IMAGES}/${report.image_path}`}
                                         alt="Report"
                                         className="img-fluid mt-2"
                                         style={{ maxHeight: "300px", borderRadius: "10px" }}
