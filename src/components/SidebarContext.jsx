@@ -28,13 +28,23 @@ class NavigationManager {
     initializeSections() {
         return {
             home: new Section('Home', '/home', []),
-            maintenance: new Section('Maintenance Reporting', '/dashboard', [
-                { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
+
+            reports: new Section('Reports', '/reports', [
+                // { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
                 { path: '/reports', name: 'Reports', icon: 'reports' }
+                
             ]),
-            lostFound: new Section('Lost and Found', '/lost-and-found', [
-                { path: '/lost-and-found', name: 'Lost & Found', icon: 'search' },
-                { path: '/lost-and-found-reports', name: 'My Reports', icon: 'reports' }
+            maintenance: new Section('Maintenance Reporting', '/maintenace-report-dashboard', [
+                { path: '/maintenace-report-dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
+                { path: '/maintenance-reports', name: 'Maintenance Reports', icon: 'reports' }
+                
+            ]),
+           admin_messages: new Section('Messages', '/admin-messages', [
+                { path: '/admin-messages', name: 'Messages', icon: 'reports', adminOnly: true },
+            ]),
+            lostFound: new Section('Lost and Found', '/lost-and-found-dashboard', [
+                { path: '/lost-and-found-dashboard', name: 'Lost & Found', icon: 'search', adminOnly: true },
+                { path: '/lost-and-found-reports', name: 'Lost And Found Reports', icon: 'reports' }
             ]),
             incidentReporting: new Section('Incident Reporting', '/incidents', [
                 { path: '/incidents', name: 'Incidents', icon: 'warning' },

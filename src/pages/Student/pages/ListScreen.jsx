@@ -8,8 +8,9 @@ import LostAndFoundModal from '../components/LostAndFoundModal';
 import ClaimModal from '../components/ClaimModal';
 import FoundModal from '../components/FoundModal';
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
-
+import { useNavigate } from 'react-router-dom';
 function ListScreen() {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -86,9 +87,10 @@ function ListScreen() {
                                     {/* Opens the modal to create a new lost and found report */}
                                     <Button
                                         className="btn btn-light btn-lg rounded-0"
-                                        onClick={() => handleOpenModal()}
+                                        // onClick={() => }
+                                            onClick={() => navigate('/reports-screen')}
                                     >
-                                        <i className="bi bi-plus-lg me-2"></i>Post Item
+                                        <i className="bi bi-plus-lg me-2"></i>Create Report
                                     </Button>
                                 </div>
                             </div>
@@ -132,7 +134,7 @@ function ListScreen() {
                                         <option value="other">Other</option>
                                     </Form.Select>
                                 </div>
-                                
+
                             </div>
                         </div>
                     </div>
@@ -159,9 +161,12 @@ function ListScreen() {
                                     </Badge>
                                     <Card.Text className="mt-2 text-truncate">
                                         <small className='text-muted small'>Location:</small> {item.location}<br />
-                                        <small className='text-muted small'>Description:</small> {item.description.length > 50
-                                            ? item.description.substring(0, 50) + "..."
-                                            : item.description}<br />
+                                        <small className='text-muted small'>Description:</small> {item.description
+                                            ? (item.description.length > 50
+                                                ? item.description.substring(0, 50) + "..."
+                                                : item.description)
+                                            : "No description provided"}
+                                        <br />
                                         <small className='text-muted small'>Contact:</small> {item.contact_info}<br />
                                         <small className='text-muted small'>Reported By:</small> {item.user_name}
                                     </Card.Text>
@@ -224,10 +229,10 @@ function ListScreen() {
                 fetchItems={fetchItems}
             />
             <FoundModal
-            show={showFoundModal}
-            handleClose={handleCloseFoundModal}
-            existingItem={existingItem}
-            fetchItems={fetchItems}
+                show={showFoundModal}
+                handleClose={handleCloseFoundModal}
+                existingItem={existingItem}
+                fetchItems={fetchItems}
             />
         </div>
     );

@@ -4,7 +4,7 @@ import NavigationBar from './components/NavigationBar.jsx';
 import LoginScreen from './pages/LoginScreen.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../AuthContext.jsx';
-import Reports from './pages/Maintenance Reports/Reports.jsx';
+import MaintenanaceReports from './pages/Maintenance Reports/MaintenanaceReports.jsx';
 import HomeScreen from './pages/Home.jsx';
 import Sample from './pages/Maintenance Reports/Sample.jsx';
 import AdminDashboard from './pages/Maintenance Reports/AdminDashboard.jsx';
@@ -19,6 +19,7 @@ import ListScreen from './pages/Student/pages/ListScreen.jsx';
 import Messages from './pages/Student/pages/Messages.jsx';
 import GuestScreen from './pages/GuestScreen.jsx';
 import Testing from './pages/Student/pages/Testing.jsx';
+import AdminMessages from './pages/Messages/Messages.jsx';
 
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
@@ -39,11 +40,11 @@ function App() {
                                         <>
                                             <Route path="/home" element={<HomeScreen />} />
                                             <Route path='/reports' element={<ReportScreen />} />
-                                            <Route path="/dashboard" element={<AdminDashboard />} />
-                                            <Route path="/maintenance-reports" element={<Reports />} />
-                                            <Route path="/lf-dashboard" element={<LostAndFoundDashboard />} />
-                                            <Route path="/lostandfound" element={<AdminLostAndFound />} />
-                                            <Route path="/maintenance-requests" element={<Sample />} />
+                                            <Route path="/maintenace-report-dashboard" element={<AdminDashboard />} />
+                                            <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
+                                            <Route path="/lost-and-found-dashboard" element={<LostAndFoundDashboard />} />
+                                            <Route path="/lost-and-found-reports" element={<AdminLostAndFound />} />
+                                            <Route path="/admin-messages" element={<AdminMessages />} />
                                             <Route path='/notifications' element={<Notifications />} />
                                             <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>

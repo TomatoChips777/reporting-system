@@ -82,29 +82,29 @@ router.post('/send-message', upload.single("image"), (req, res) => {
             }
 
             // Step 4: Check if claim exists
-            const checkClaimQuery = `
-                SELECT * FROM tbl_claim_items WHERE item_id = ? AND claimer_id = ? AND holder_id = ?
-            `;
+            // const checkClaimQuery = `
+            //     SELECT * FROM tbl_claim_items WHERE item_id = ? AND claimer_id = ? AND holder_id = ?
+            // `;
 
-            db.query(checkClaimQuery, [report_id, sender_id, receiver_id], (err, claimResult) => {
-                if (err) {
-                    console.error('Database error during claim check:', err);
-                    return res.status(500).json({ success: false, message: 'Database error during claim check' });
-                }
+            // db.query(checkClaimQuery, [report_id, sender_id, receiver_id], (err, claimResult) => {
+            //     if (err) {
+            //         console.error('Database error during claim check:', err);
+            //         return res.status(500).json({ success: false, message: 'Database error during claim check' });
+            //     }
 
-                if (claimResult.length === 0) {
-                    const claimQuery = `
-                        INSERT INTO tbl_claim_items (item_id, claimer_id, holder_id) 
-                        VALUES (?, ?, ?)
-                    `;
+            //     if (claimResult.length === 0) {
+            //         const claimQuery = `
+            //             INSERT INTO tbl_claim_items (item_id, claimer_id, holder_id) 
+            //             VALUES (?, ?, ?)
+            //         `;
 
-                    db.query(claimQuery, [report_id, sender_id, receiver_id], (err) => {
-                        if (err) {
-                            console.error('Database error during claim insert:', err);
-                            return res.status(500).json({ success: false, message: 'Database error during claim insert' });
-                        }
-                    });
-                }
+            //         db.query(claimQuery, [report_id, sender_id, receiver_id], (err) => {
+            //             if (err) {
+            //                 console.error('Database error during claim insert:', err);
+            //                 return res.status(500).json({ success: false, message: 'Database error during claim insert' });
+            //             }
+            //         });
+            //     }
 
                 // Step 5: Fetch sender & receiver details
                 const fetchUserQuery = `
@@ -143,7 +143,7 @@ router.post('/send-message', upload.single("image"), (req, res) => {
                     res.json({ success: true, message: newMessage });
                 });
             });
-        });
+        // });
     }
 });
 

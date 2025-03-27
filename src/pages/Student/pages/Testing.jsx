@@ -33,7 +33,7 @@ function Reports() {
         }
     };
     useEffect(() => {
-       
+
         fetchReports();
 
         const socket = io('http://localhost:5000'); // Connect to your backend server
@@ -124,7 +124,7 @@ function Reports() {
         }
     };
 
-    const handleDelete = async () => {
+    const handleRemove = async () => {
         if (!reportToDelete) {
             console.error("Invalid report selection.");
             return;
@@ -235,9 +235,6 @@ function Reports() {
                             </Form.Select>
                         </div>
 
-                        {/* <div className="col-auto">
-                            <Form.Control type="text" placeholder="Search reports..." value={searchTerm} onChange={handleSearch} />
-                        </div> */}
                         <div className="col-auto">
                             <div className="btn-group ">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
@@ -280,7 +277,7 @@ function Reports() {
                                                     </Badge>
                                                 </p>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -332,7 +329,7 @@ function Reports() {
                                             </td>
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Delete</Button>
+                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -343,14 +340,14 @@ function Reports() {
                     </div>
                     <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
                         <Modal.Header closeButton>
-                            <Modal.Title>Confirm Delete</Modal.Title>
+                            <Modal.Title>Confirm Remove</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            Are you sure you want to delete this report? This action cannot be undone.
+                            Are you sure you want to remove this report? This action cannot be undone.
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                            <Button variant="danger" className="rounded-0" onClick={handleDelete}>Delete</Button>
+                            <Button variant="danger" className="rounded-0" onClick={handleRemove}>Remove</Button>
                         </Modal.Footer>
                     </Modal>
 
@@ -418,57 +415,87 @@ function Reports() {
                 </Modal.Header>
                 <Modal.Body>
                     {selectedReport ? (
-                        <div>
-                            <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
-                                timeZone: 'Asia/Manila',
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true,
-                            })}</p>
-                            <p className="text-break"><strong>Reported By:</strong> {selectedReport.reporter_name}</p>
-                            <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
-                            {/* <p className="text-break"><strong>Issue Type:</strong> {selectedReport.issue_type}</p> */}
-                            <p className="text-break"><strong>Description:</strong> {selectedReport.description}</p>
-                            {/* Image Display */}
-                            {selectedReport.image_path && (
-                                <div className="mb-3 d-flex flex-column align-items-center text-center">
-                                    <strong>Attached Image:</strong>
-                                    <img
-                                        src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
-                                        alt="Report"
-                                        className="img-fluid mt-2"
-                                        style={{ maxHeight: "300px", borderRadius: "10px" }}
-                                    />
-                                </div>
-                            )}
+                         <Card className="mb-3">
+                         <Card.Body>
+                             <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
+                                 timeZone: 'Asia/Manila',
+                                 month: 'long',
+                                 day: 'numeric',
+                                 year: 'numeric',
+                                 hour: 'numeric',
+                                 minute: '2-digit',
+                                 hour12: true,
+                             })}</p>
+                             <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
+                             <p className="text-break"><strong>Description:</strong></p>
+                             <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '5px', minHeight: '50px' }}>
+                                 <p className="m-0">{selectedReport.description}</p>
+                             </div>
+                         </Card.Body>
+                         {/* Image Display */}
+                         {selectedReport.image_path && (
+                             <div className="mb-3 d-flex flex-column align-items-center text-center">
+                                 <strong>Attached Image:</strong>
+                                 <img
+                                     src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
+                                     alt="Report"
+                                     className="img-fluid mt-2"
+                                     style={{ maxHeight: "300px", borderRadius: "10px" }}
+                                 />
+                             </div>
+                         )}
+                     </Card>
+                        // <div>
+                        //     <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
+                        //         timeZone: 'Asia/Manila',
+                        //         month: 'long',
+                        //         day: 'numeric',
+                        //         year: 'numeric',
+                        //         hour: 'numeric',
+                        //         minute: '2-digit',
+                        //         hour12: true,
+                        //     })}</p>
+                        //     <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
 
-                            <Form.Group controlId="statusSelect">
-                                <Form.Label><strong>Status:</strong></Form.Label>
-                                <Form.Select value={selectedReport.status} onChange={handleStatusChange} className="rounded-0">
-                                    <option value="pending">Pending</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="resolved">Resolved</option>
-                                </Form.Select>
-                            </Form.Group>
-                        </div>
+                        //     {/* Description Label and Text Box with Gray Background */}
+                        //     <p className="text-break"><strong>Description:</strong></p>
+                        //     <div style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '5px', minHeight: '50px' }}>
+                        //         <p className="m-0">{selectedReport.description}</p>
+                        //     </div>
+
+                        //     {/* Image Display */}
+                        //     {selectedReport.image_path && (
+                        //         <div className="mb-3 d-flex flex-column align-items-center text-center">
+                        //             <strong>Attached Image:</strong>
+                        //             <img
+                        //                 src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
+                        //                 alt="Report"
+                        //                 className="img-fluid mt-2"
+                        //                 style={{ maxHeight: "300px", borderRadius: "10px" }}
+                        //             />
+                        //         </div>
+                        //     )}
+
+                        //     <strong>Status:</strong>
+                        //     <Badge bg={selectedReport.status === "pending" ? "warning" : selectedReport.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0">
+                        //         {selectedReport.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                        //     </Badge>
+                        // </div>
                     ) : (
                         <p>No details available.</p>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
-                    <Button variant="primary" className="rounded-0" onClick={handleUpdateStatus}>Update Status</Button>
                 </Modal.Footer>
             </Modal>
 
+
             <CreateReportModal
-             show={showCreateModal}
-             handleClose={() => handleCloseModal()}
-             fetchItems={fetchReports}
-             existingItem={null}
+                show={showCreateModal}
+                handleClose={() => handleCloseModal()}
+                fetchItems={fetchReports}
+                existingItem={null}
             />
 
 

@@ -2,75 +2,95 @@ import React from 'react';
 import { Card, Row, Col, Container } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { IoSettings, IoSearch, IoWarning, IoList } from 'react-icons/io5';
-import { useNavigation } from '../components/SidebarContext';
 import { useAuth } from '../../AuthContext';
 
 const HomeScreen = () => {
-    const {role} = useAuth();
+    const { role } = useAuth();
     const navigate = useNavigate();
-    const { setSection } = useNavigation();
 
-    const sections = [
+    // Sections for ADMIN users
+    const adminSections = [
+        {
+            key: 'reports',
+            title: 'Reports',
+            icon: <IoSettings size={40} />,
+            description: 'View and manage reports requests',
+            color: '#2ecc71',
+            path: '/reports'
+        },
+        {
+            key: 'lostFound',
+            title: 'Lost and Found Reports',
+            icon: <IoSearch size={40} />,
+            description: 'Manage lost and found reports',
+            color: '#3498db',
+            path: '/lost-and-found-reports'
+        },
+        {
+            key: 'maintenance',
+            title: 'Maintenance Reports',
+            icon: <IoSettings size={40} />,
+            description: 'View and manage maintenance reports',
+            color: '#2ecc71',
+            path: '/maintenance-reports'
+        },
+        {
+            key: 'incidentReporting',
+            title: 'Incident Reporting',
+            icon: <IoWarning size={40} />,
+            description: 'View and investigate incidents',
+            color: '#e74c3c',
+            path: '/incidents'
+        },
+        {
+            key: 'borrowing',
+            title: 'Borrowing Management',
+            icon: <IoList size={40} />,
+            description: 'Manage item borrowing requests',
+            color: '#9b59b6',
+            path: '/borrow-items'
+        }
+    ];
+
+    // Sections for STUDENT users
+    const studentSections = [
         {
             key: 'lostFound',
             title: 'Lost and Found',
             icon: <IoSearch size={40} />,
             description: 'Report or search for lost items',
             color: '#3498db',
-            studentAccess: true
+            path: '/list-screen'
         },
         {
             key: 'maintenance',
             title: 'Report Screen',
             icon: <IoSettings size={40} />,
-            description: 'Submit new reports and track your requests',
+            description: 'Submit and track report requests',
             color: '#2ecc71',
-            studentAccess: true
+            path: '/reports-screen'
         },
         {
-            key: 'incidentReporting',
-            title: 'Incident Reporting',
-            icon: <IoWarning size={40} />,
-            description: 'Report security incidents or concerns',
-            color: '#e74c3c',
-            studentAccess: false
-        },
-        {
-            key: 'borrowing',
-            title: 'Borrow Items',
+            key: 'messages',
+            title: 'Messages',
             icon: <IoList size={40} />,
-            description: 'Browse and borrow available items',
-            color: '#9b59b6',
-            studentAccess: false
+            description: 'View messages related to reports',
+            color: '#f39c12',
+            path: '/messages'
         }
     ];
 
-    const handleSectionSelect = (sectionKey) => {
-        setSection(sectionKey);
-        switch (sectionKey) {
-            case 'maintenance':
-                navigate(role === 'admin' ? '/dashboard' : '/reports-screen');
-                break;
-            case 'lostFound':
-                navigate(role === 'admin' ? '/lost-and-found' : '/list-screen');
-                break;
-            default:
-                navigate('/home');
-        }
-    };
+    const selectedSections = role === 'admin' ? adminSections : studentSections;
 
-    const filteredSections = sections.filter(section => 
-        role === 'admin' || section.studentAccess
-    );
     return (
         <Container className="py-5">
             <h2 className="mb-4">Welcome! Select a Service</h2>
             <Row className="g-4">
-                {filteredSections.map((section) => (
+                {selectedSections.map((section) => (
                     <Col key={section.key} xs={12} md={6} lg={3}>
                         <Card 
                             className="h-100 shadow-sm hover-card" 
-                            onClick={() => handleSectionSelect(section.key)}
+                            onClick={() => navigate(section.path)}
                             style={{ cursor: 'pointer' }}
                         >
                             <Card.Body className="d-flex flex-column align-items-center text-center p-4">

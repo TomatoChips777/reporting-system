@@ -5,100 +5,6 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = 'uploads/';
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage });
-
-router.post('/create-report', upload.single('image_path'), (req, res) => {
-
-    if (!req.body.user_id || !req.body.location || !req.body.description) {
-        return res.status(400).json({ success: false, message: "Missing required fields" });
-    }
-
-    const { user_id, location, description } = req.body;
-    const image_path = req.file ? req.file.filename : null;
-    
-
-    const query = `INSERT INTO tbl_reports (user_id, location, description, image_path) VALUES ( ?, ?, ?, ?)`;
-    db.query(query, [user_id, location, description, image_path], (err, result) => {
-        if (err) {
-            console.error("Error creating report:", err);
-            return res.status(500).json({ success: false, message: 'Failed to submit report' });
-        }
-        // const newReport = { id: result.insertId, user_id, location, issue_type, description ,status: 'pending'};
-        const newReport = {
-            id: result.insertId,
-            user_id,
-            location,
-            description,
-            status: "pending",  // Initially set to 'pending'
-            image_path: image_path || null // set image path if not null or null
-        };
-        // $message = "New report submitted {$issueType} issue at {$location}";
-        const title = "Maintenance Report";
-        const message = `New report submitted  issue at ${location}`;
-        const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
-
-        db.query(notificationQuery, [result.insertId, user_id, message, title], (err, notificationResult) => {
-            if (err) {
-                console.error("Error creating notification:", err);
-                return res.status(500).json({ success: false, message: 'Failed to create notification' });
-            }
-        });
-        req.io.emit('update');
-        req.io.emit('createdReport', newReport);
-        // req.io.emit('new-notification');
-        res.json({ success: true, message: 'Report submitted successfully', reportId: result.insertId });
-    });
-});
-
-router.put('/:reportId', upload.single('image_path'), (req, res) => {
-    const { reportId } = req.params;
-    const { user_id, location, issue_type, description } = req.body;
-    const image_path = req.file ? req.file.filename : null;
-
-    // Fetch the current image path from the database
-    const getImageQuery = `SELECT image_path FROM tbl_reports WHERE id = ? AND user_id = ?`;
-    db.query(getImageQuery, [reportId, user_id], (err, rows) => {
-        if (err) {
-            console.error("Error fetching existing image:", err);
-            return res.status(500).json({ success: false, message: "Failed to fetch report" });
-        }
-
-        const existingImagePath = rows[0]?.image_path;
-
-        // Delete old image if a new one is uploaded
-        if (image_path && existingImagePath) {
-            const oldImagePath = path.join('uploads', existingImagePath);
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlinkSync(oldImagePath);
-            }
-        }
-
-        // Update report with new data and image path
-        const query = `UPDATE tbl_reports SET location = ?, issue_type = ?, description = ?, image_path = ? WHERE id = ? AND user_id = ?`;
-        db.query(query, [location, issue_type, description, image_path || existingImagePath, reportId, user_id], (err, result) => {
-            if (err) {
-                console.error("Error updating report:", err);
-                return res.status(500).json({ success: false, message: "Failed to update report" });
-            }
-            // req.io.emit('reportUpdated', { reportId, location, issue_type, description, imagePath: image_path || existingImagePath });
-            req.io.emit('update');
-            res.json({ success: true, message: "Report updated successfully" });
-        });
-    });
-});
 
 router.delete('/admin/report/:id', (req, res) => {
     const { id } = req.params;
@@ -208,21 +114,30 @@ router.put('/reports/archive-maintenance-report/:id', (req, res) => {
     
 });
 
-// Get All Reports
 router.get('/', (req, res) => {
     const query = `
-        SELECT r.*, u.name as reporter_name 
-        FROM tbl_reports r 
-        JOIN tbl_users u ON r.user_id = u.id WHERE archived = 0 AND report_type = ''
-        ORDER BY r.created_at DESC`;
+        SELECT 
+            mr.*, 
+            u.name AS reporter_name, 
+            tmr.category AS maintenance_category, 
+            tmr.priority, 
+            tmr.assigned_staff, 
+            mr.status 
+        FROM tbl_reports mr
+        JOIN tbl_users u ON mr.user_id = u.id
+        LEFT JOIN tbl_maintenance_reports tmr ON mr.id = tmr.report_id
+        WHERE mr.archived = 0  and mr.report_type = 'Maintenance Report'
+        ORDER BY mr.created_at DESC;`;
+
     db.query(query, (err, rows) => {
         if (err) {
             console.error("Error fetching all reports:", err);
-            return res.status(500).json([]);
+            return res.status(500).json({ success: false, message: "Server error" });
         }
-        res.json(rows);
+        res.json({ success: true, reports: rows });
     });
 });
+
 
 
 router.get('/user/:userId', (req, res) => {
@@ -245,7 +160,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
     const { status } = req.body;
 
     // Step 1: Retrieve the user_id associated with this report
-    const getUserQuery = `SELECT user_id, issue_type, location FROM tbl_reports WHERE id = ?`;
+    const getUserQuery = `SELECT user_id, location FROM tbl_reports WHERE id = ?`;
 
     db.query(getUserQuery, [reportId], (err, result) => {
         if (err) {
@@ -257,7 +172,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
             return res.status(404).json({ success: false, message: 'Report not found' });
         }
 
-        const { user_id, issue_type, location } = result[0];
+        const { user_id, location } = result[0];
 
         const updateQuery = `UPDATE tbl_reports SET status = ? WHERE id = ?`;
 
@@ -267,17 +182,11 @@ router.put('/admin/edit/:reportId', (req, res) => {
                 return res.status(500).json({ success: false, message: 'Failed to update status' });
             }
 
-            db.query(notificationQuery, [reportId, user_id, message, title], (err, notificationResult) => {
-                if (err) {
-                    console.error("Error creating notification:", err);
-                    return res.status(500).json({ success: false, message: 'Failed to create notification' });
-                }
-
+           
                 req.io.emit('updatedStatus', { reportId, status });
                 req.io.emit('update');
 
                 res.json({ success: true, message: 'Status updated successfully' });
-            });
         });
     });
 });
@@ -286,10 +195,10 @@ router.put('/admin/edit/:reportId', (req, res) => {
 router.put("/admin/edit-report-type/:reportId", (req, res) => {
     const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, sender_id, location,description, } = req.body;
     const { reportId } = req.params;
-    // Update `tbl_reports`
-    const updateReportQuery = "UPDATE tbl_reports SET report_type = ?, status = ? WHERE id = ?";
+    // Update `tbl_reports` first
+    const updateReportQuery = "UPDATE tbl_reports SET report_type = ? WHERE id = ?";
 
-    db.query(updateReportQuery, [report_type,"in_progress", reportId], (err, result) => {
+    db.query(updateReportQuery, [report_type, reportId], (err, result) => {
         if (err) {
             console.error("Error updating report type:", err);
             return res.status(500).json({ success: false, message: "Failed to update report type" });
@@ -297,14 +206,14 @@ router.put("/admin/edit-report-type/:reportId", (req, res) => {
 
         if (report_type === "Maintenance Report") {
             const maintenanceQuery = `
-                INSERT INTO tbl_maintenance_reports (report_id, category, priority, assigned_staff) 
-                VALUES (?, ?, ?, ?) 
+                INSERT INTO tbl_maintenance_reports (report_id, category, priority, assigned_staff, status) 
+                VALUES (?, ?, ?, ?, ?) 
                 ON DUPLICATE KEY UPDATE 
-                category = ?, priority = ?, assigned_staff = ?`;
+                category = ?, priority = ?, assigned_staff = ?, status = ?`;
 
             db.query(
                 maintenanceQuery,
-                [reportId, category, priority, assigned_staff, category, priority, assigned_staff],
+                [reportId, category, priority, assigned_staff, status, category, priority, assigned_staff, status],
                 (err, maintenanceResult) => {
                     if (err) {
                         console.error("Error updating maintenance report:", err);

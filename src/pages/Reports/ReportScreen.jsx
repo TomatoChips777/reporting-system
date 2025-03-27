@@ -20,6 +20,7 @@ function Reports() {
     const [viewType, setViewType] = useState("list");
     const [monthFilter, setMonthFilter] = useState(""); // Month filter state
     const [yearFilter, setYearFilter] = useState("");   // Year filter state
+    const [dayFilter, setDayFilter] = useState(""); // Day filter state
 
 
 
@@ -53,8 +54,9 @@ function Reports() {
             const search = searchTerm.toLowerCase();
             const reportDate = new Date(report.created_at);
 
-            const selectedMonth = parseInt(monthFilter, 10); 
+            const selectedMonth = parseInt(monthFilter, 10);
             const selectedYear = parseInt(yearFilter, 10);
+            const selectedDay = parseInt(dayFilter, 10);
 
             return (
                 (report.description.toLowerCase().includes(search) ||
@@ -62,11 +64,13 @@ function Reports() {
                     report.location.toLowerCase().includes(search)) &&
                 (monthFilter === "" || reportDate.getMonth() + 1 === selectedMonth) &&
                 (yearFilter === "" || reportDate.getFullYear() === selectedYear)
+                &&
+                (dayFilter === "" || reportDate.getDate() === selectedDay)
             );
         });
 
         setFilteredReports(updatedReports);
-    }, [searchTerm, monthFilter, yearFilter, reports]);
+    }, [searchTerm, monthFilter, yearFilter,dayFilter, reports]);
 
 
     const uniqueYears = [...new Set(reports.map(report => new Date(report.created_at).getFullYear()))].sort((a, b) => b - a);
@@ -94,25 +98,46 @@ function Reports() {
         console.log(e);
         setSelectedReport((prev) => ({ ...prev, report_type: e.target.value }));
     };
+
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setSelectedReport((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
     
     const handleUpdateStatus = async () => {
-
         if (!selectedReport || !selectedReport.report_type) {
-            console.error("Invalid report selection or missing status.");
+            console.error("Invalid report selection or missing report type.");
             return;
         }
-
+    
         try {
+            // Send full report data along with report_type
             const response = await axios.put(
                 `http://localhost:5000/api/reports/admin/edit-report-type/${selectedReport.id}`,
-                { report_type: selectedReport.report_type },
+                {
+                    report_type: selectedReport.report_type,
+                    type: selectedReport.type || "lost",
+                    item_name: selectedReport.item_name || "",
+                    category: selectedReport.category || "",
+                    contact_info: selectedReport.contact_info || "",
+                    priority: selectedReport.priority || "",
+                    assigned_staff: selectedReport.assigned_staff || "",
+                    status: selectedReport.status || "",
+                    sender_id: selectedReport.user_id || "",
+                    location: selectedReport.location || "",
+                    description: selectedReport.description || '',
+                },
                 { headers: { "Content-Type": "application/json" } }
             );
-
+    
             if (response.data.success) {
                 setReports((prevReports) =>
                     prevReports.map((report) =>
-                        report.id === selectedReport.id ? { ...report, report_type: selectedReport.report_type } : report
+                        report.id === selectedReport.id ? { ...report, ...selectedReport } : report
                     )
                 );
                 setShowModal(false);
@@ -124,7 +149,7 @@ function Reports() {
             alert("Failed to update report status. Please try again.");
         }
     };
-
+    
     const handleDelete = async () => {
         if (!reportToDelete) {
             console.error("Invalid report selection.");
@@ -166,91 +191,78 @@ function Reports() {
 
 
     return (
-        <div className="container mt-5">
-            {/* <div className="row mb-3">
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaFileAlt className="text-success mb-2" size={30} />
-                        <h6>Total Reports</h6>
-                        <strong className='fs-1'>{totalReports}</strong>
+        <div className="container">
+            <div className="row mb-2">
+                <div className="col-12">
+                    <div className="card bg-success text-white rounded-0">
+                        <div className="card-body p-4">
+                            <div className="row align-items-center">
+                                <div className="col-auto">
+                                    <i className="bi bi-exclamation-triangle-fill display-4"></i>
+                                </div>
+                                <div className="col">
+                                    <h5 className="mb-0">All Reports</h5>
+                                </div>
+                                <div className="col-auto d-flex align-items-center ">
+                                    {/* Search Bar: Make it take more space */}
+                                    <div className="input-group" style={{ maxWidth: "auto" }}>
+                                        <Form.Control
+                                            type="text"
+                                            className="rounded-0"
+                                            placeholder="Search reports..."
+                                            value={searchTerm}
+                                            onChange={handleSearch}
+                                        />
+                                        <span className="input-group-text rounded-0">
+                                            <FaSearch />
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="col-auto">
+                                    <Form.Select
+                                        value={viewType}
+                                        onChange={(e) => setViewType(e.target.value)}
+                                        className="me-2 rounded-0"
+                                    >
+                                        <option value="list">List View</option>
+                                        <option value="table">Table View</option>
+                                    </Form.Select>
+                                </div>
+                                <div className="col-auto">
+                                    <Form.Select value={dayFilter} onChange={(e) => setDayFilter(e.target.value)} className="me-2 rounded-0">
+                                        <option value="">Filter by Day</option>
+                                        {[...Array(31)].map((_, index) => (
+                                            <option key={index + 1} value={index + 1}>{index + 1}</option>
+                                        ))}
+                                    </Form.Select>
+                                </div>
+                                <div className="col-auto">
+                                    <Form.Select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="me-2 rounded-0">
+                                        <option value="">Filter by Months</option>
+                                        {[
+                                            "January", "February", "March", "April", "May", "June",
+                                            "July", "August", "September", "October", "November", "December"
+                                        ].map((month, index) => (
+                                            <option key={index + 1} value={index + 1}>{month}</option>
+                                        ))}
+                                    </Form.Select>
+                                </div>
+                                <div className="col-auto">
+                                    <Form.Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="me-2 rounded-0">
+                                        <option value="">Filter by Years</option>
+                                        {uniqueYears.map(year => (
+                                            <option key={year} value={year}>{year}</option>
+                                        ))}
+                                    </Form.Select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaClock className="text-warning mb-2" size={30} />
-                        <h6>Pending</h6>
-                        <strong className='fs-1'>{pendingCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaTasks className="text-primary mb-2" size={30} />
-                        <h6>In Progress</h6>
-                        <strong className='fs-1'>{inProgressCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaCheckCircle className="text-success mb-2" size={30} />
-                        <h6>Resolved</h6>
-                        <strong className='fs-1'>{resolvedCount}</strong>
-                    </div>
-                </div>
-            </div> */}
-
+            </div>
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white py-3">
-                    <div className="row align-items-center">
-                        <div className="col">
-                            <h5 className="mb-0">All Reports</h5>
-                        </div>
-                        <div className="col-auto d-flex align-items-center ">
-                            {/* Search Bar: Make it take more space */}
-                            <div className="input-group" style={{ maxWidth: "auto" }}>
-                                <Form.Control
-                                    type="text"
-                                    className="rounded-0"
-                                    placeholder="Search reports..."
-                                    value={searchTerm}
-                                    onChange={handleSearch}
-                                />
-                                <span className="input-group-text rounded-0">
-                                    <FaSearch />
-                                </span>
-                            </div>
-                        </div>
-                        <div className="col-auto">
-                            <Form.Select
-                                value={viewType}
-                                onChange={(e) => setViewType(e.target.value)}
-                                className="me-2 rounded-0"
-                            >
-                                <option value="list">List View</option>
-                                <option value="table">Table View</option>
-                            </Form.Select>
-                        </div>
-
-                        <div className="col-auto">
-                            <Form.Select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="me-2 rounded-0">
-                                <option value="">All Months</option>
-                                {[
-                                    "January", "February", "March", "April", "May", "June",
-                                    "July", "August", "September", "October", "November", "December"
-                                ].map((month, index) => (
-                                    <option key={index + 1} value={index + 1}>{month}</option>
-                                ))}
-                            </Form.Select>
-                        </div>
-                        <div className="col-auto">
-                            <Form.Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="me-2 rounded-0">
-                                <option value="">All Years</option>
-                                {uniqueYears.map(year => (
-                                    <option key={year} value={year}>{year}</option>
-                                ))}
-                            </Form.Select>
-                        </div>
-                    </div>
                 </Card.Header>
                 <Card.Body>
                     <div className="table-responsive">
@@ -416,14 +428,23 @@ function Reports() {
                 </Card.Body>
             </Card>
             {/* View Details Modal */}
-        
-            <ViewReportModal 
-                show={showModal} 
-                onHide={() => setShowModal(false)} 
-                report={selectedReport} 
-                onUpdateType={handleReportTypeChange} 
-                onUpdateStatus={handleUpdateStatus} 
-            />
+
+            {/* <ViewReportModal
+                show={showModal}
+                onHide={() => setShowModal(false)}
+                report={selectedReport}
+                onUpdateType={handleReportTypeChange}
+                onUpdateStatus={handleUpdateStatus}
+            /> */}
+
+<ViewReportModal
+    show={showModal}
+    onHide={() => setShowModal(false)}
+    report={selectedReport}
+    onUpdateType={handleReportTypeChange}
+    onUpdateStatus={handleUpdateStatus}
+    onChange={handleChange} // 🔥 Pass handleChange to update form fields
+/>
 
 
 

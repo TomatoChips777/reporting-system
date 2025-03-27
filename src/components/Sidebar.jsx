@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { IoHome, IoDocumentText, IoPerson, IoSettings, IoSearch } from 'react-icons/io5';
+import { IoHome, IoDocumentText, IoPerson, IoSettings, IoSearch,IoInformationCircle  } from 'react-icons/io5';
 import { Bell } from 'react-bootstrap-icons';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../AuthContext';
@@ -66,10 +66,13 @@ class SidebarManager {
     getSectionLinks() {
         if (this.role === 'admin') {
             return [
+                { key: 'reports', name: 'Reports', icon: <IoInformationCircle /> },
                 { key: 'maintenance', name: 'Maintenance Reporting', icon: <IoSettings /> },
                 { key: 'lostFound', name: 'Lost & Found', icon: <IoSearch /> },
                 { key: 'incidentReporting', name: 'Incident Reporting', icon: <IoDocumentText /> },
-                { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> }
+                { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> },
+                { key: 'admin_messages', name: 'Messages', icon: <IoDocumentText /> }
+
             ];
         }
         return [
