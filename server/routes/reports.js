@@ -26,12 +26,12 @@ router.post('/create-report', upload.single('image_path'), (req, res) => {
         return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    const { user_id, location, description } = req.body;
+    const { user_id, location, description ,is_anonymous } = req.body;
     const image_path = req.file ? req.file.filename : null;
     
 
-    const query = `INSERT INTO tbl_reports (user_id, location, description, image_path) VALUES ( ?, ?, ?, ?)`;
-    db.query(query, [user_id, location, description, image_path], (err, result) => {
+    const query = `INSERT INTO tbl_reports (user_id, location, description, image_path, is_anonymous) VALUES (?, ?, ?, ?, ?)`;
+    db.query(query, [user_id, location, description, image_path, is_anonymous], (err, result) => {
         if (err) {
             console.error("Error creating report:", err);
             return res.status(500).json({ success: false, message: 'Failed to submit report' });
@@ -211,7 +211,11 @@ router.put('/reports/archive-maintenance-report/:id', (req, res) => {
 // Get All Reports
 router.get('/', (req, res) => {
     const query = `
-        SELECT r.*, u.name as reporter_name 
+        SELECT r.*,
+        CASE 
+                WHEN r.is_anonymous = 1 THEN 'Anonymous'
+                ELSE u.name 
+            END AS reporter_name
         FROM tbl_reports r 
         JOIN tbl_users u ON r.user_id = u.id WHERE archived = 0 AND report_type = ''
         ORDER BY r.created_at DESC`;

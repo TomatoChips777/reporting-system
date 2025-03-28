@@ -4,7 +4,7 @@ const db = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "unified-reports",
+    database: "ticketing_database",
 
 });
 

@@ -157,7 +157,26 @@ router.get('/get-messages/:userId', (req, res) => {
             message: 'User ID is required'
         });
     }
-
+//     SELECT 
+//     ms.id AS message_session_id,
+//     m.id AS message_id,
+//     m.sender_id,
+//     m.message AS text,
+//     m.image_path,
+//     m.created_at,
+//     m.report_id,
+//     u1.id AS sender_id,
+//     u1.name AS sender_name,
+//     u1.image_url AS sender_avatar,
+//     u2.id AS receiver_id,
+//     u2.name AS receiver_name,
+//     u2.image_url AS receiver_avatar
+// FROM tbl_messages m
+// JOIN tbl_message_sessions ms ON ms.id = m.message_session_id
+// LEFT JOIN tbl_users u1 ON m.sender_id = u1.id
+// LEFT JOIN tbl_users u2 ON (ms.user1_id = u2.id OR ms.user2_id = u2.id) AND u2.id != m.sender_id
+// WHERE ms.user1_id = ? OR ms.user2_id = ?
+// ORDER BY m.created_at DESC
     const query = `SELECT 
     ms.id AS message_session_id,
     m.id AS message_id,
@@ -172,14 +191,27 @@ router.get('/get-messages/:userId', (req, res) => {
     u2.id AS receiver_id,
     u2.name AS receiver_name,
     u2.image_url AS receiver_avatar,
-    r.item_name,
-    r.type,
-    r.is_anonymous
+    r.location AS item_location,
+    r.is_anonymous,
+    -- Set item_name based on report type
+    CASE 
+        WHEN r.report_type = 'Maintenance Report' THEN r.location 
+        WHEN r.report_type = 'Lost And Found' THEN lf.item_name
+        ELSE NULL 
+    END AS item_name,
+    -- Set type based on report type
+    CASE 
+        WHEN r.report_type = 'Maintenance Report' THEN r.report_type 
+        WHEN r.report_type = 'Lost And Found' THEN lf.type 
+        ELSE r.report_type
+    END AS type
 FROM tbl_messages m
 JOIN tbl_message_sessions ms ON ms.id = m.message_session_id
 LEFT JOIN tbl_users u1 ON m.sender_id = u1.id
 LEFT JOIN tbl_users u2 ON (ms.user1_id = u2.id OR ms.user2_id = u2.id) AND u2.id != m.sender_id
-LEFT JOIN tbl_lost_found r ON m.report_id = r.id
+LEFT JOIN tbl_reports r ON m.report_id = r.id
+LEFT JOIN tbl_maintenance_reports mr ON r.id = mr.report_id
+LEFT JOIN tbl_lost_found lf ON r.id = lf.report_id
 WHERE ms.user1_id = ? OR ms.user2_id = ?
 ORDER BY m.created_at DESC;
 `;
@@ -235,7 +267,7 @@ ORDER BY m.created_at DESC;
 
             conversations[conversationKey].messages.unshift({
                 id: msg.message_id,
-                senderId: msg.sender_id,
+                senderId: msg.sender_id, 
                 receiverId: msg.receiver_id,
                 report_id: msg.report_id,
                 message_session_id: msg.message_session_id,

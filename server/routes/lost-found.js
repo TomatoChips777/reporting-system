@@ -46,72 +46,109 @@ router.use('/uploads', express.static('uploads'));
  * @route POST /create-lost-found
  * @desc Create a new lost or found item
  */
+// router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
+//     try {
+
+//         const { user_id, type, item_name, category, description, location, contact_info, is_anonymous } = req.body;
+//         const image_path = req.file ? req.file.filename : null;
+//         const status = 'open'; // Default status for new items
+
+//         if (!user_id || !type || !item_name || !category || !location) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Missing required fields: user_id, type, item_name, category, and location are required"
+//             });
+//         }
+
+//         const query = `
+//             INSERT INTO tbl_lost_found (
+//                 user_id, type, item_name, category, description, 
+//                 location, status, image_path, contact_info, is_anonymous
+//             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//         `;
+
+//         db.query(
+//             query,
+//             [user_id, type, item_name, category, description, location, status, image_path, contact_info, is_anonymous],
+//             (err, result) => {
+//                 if (err) {
+//                     console.error('Database error:', err);
+//                     return res.status(500).json({ success: false, message: 'Database error' });
+//                 }
+//                 // $message = "New report submitted {$issueType} issue at {$location}";
+//                 const title = "Lost And Found Report";
+//                 const message = `A new ${type} item "${item_name}" has been reported at ${location}.`;
+
+//                 const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
+
+//                 db.query(notificationQuery, [result.insertId, user_id, message, title], (err, notificationResult) => {
+//                     if (err) {
+//                         console.error("Error creating notification:", err);
+//                         return res.status(500).json({ success: false, message: 'Failed to create notification' });
+//                     }
+//                 });
+//                 // Emit socket events if available
+//                 if (req.io) {
+//                     req.io.emit('update');
+//                     req.io.emit('createdReport', {
+//                         id: result.insertId,
+//                         item_name,
+//                         type
+//                     });
+//                 }
+
+//                 res.json({
+//                     success: true,
+//                     message: 'Item posted successfully',
+//                     itemId: result.insertId
+//                 });
+//             }
+//         );
+//     } catch (error) {
+//         console.error('Server error:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Internal server error'
+//         });
+//     }
+// });
+
+
 router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
-    try {
+    if (!req.body.user_id || !req.body.location || !req.body.description || !req.body.item_name) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
 
-        const { user_id, type, item_name, category, description, location, contact_info, is_anonymous } = req.body;
-        const image_path = req.file ? req.file.filename : null;
-        const status = 'open'; // Default status for new items
-
-        if (!user_id || !type || !item_name || !category || !location) {
-            return res.status(400).json({
-                success: false,
-                message: "Missing required fields: user_id, type, item_name, category, and location are required"
-            });
+    const { user_id, location, description, type, item_name, category, contact_info, is_anonymous } = req.body;
+    const image_path = req.file ? req.file.filename : null;
+    const report_type = "Lost And Found";
+    // Insert into tbl_reports first
+    const reportQuery = `INSERT INTO tbl_reports (user_id, report_type, location, description, image_path, is_anonymous, status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.query(reportQuery, [user_id, report_type,location, description, image_path, is_anonymous ? 1 : 0, 'in_progress'], (err, reportResult) => {
+        if (err) {
+            console.error("Error creating report:", err);
+            return res.status(500).json({ success: false, message: 'Failed to submit report' });
         }
 
-        const query = `
-            INSERT INTO tbl_lost_found (
-                user_id, type, item_name, category, description, 
-                location, status, image_path, contact_info, is_anonymous
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        const report_id = reportResult.insertId;
+
+        // Insert into tbl_lost_found using the report_id
+        const lostFoundQuery = `
+            INSERT INTO tbl_lost_found (user_id, report_id, type, item_name, category, description, location, image_path, contact_info, is_anonymous) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-
-        db.query(
-            query,
-            [user_id, type, item_name, category, description, location, status, image_path, contact_info, is_anonymous],
-            (err, result) => {
-                if (err) {
-                    console.error('Database error:', err);
-                    return res.status(500).json({ success: false, message: 'Database error' });
-                }
-                // $message = "New report submitted {$issueType} issue at {$location}";
-                const title = "Lost And Found Report";
-                const message = `A new ${type} item "${item_name}" has been reported at ${location}.`;
-
-                const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
-
-                db.query(notificationQuery, [result.insertId, user_id, message, title], (err, notificationResult) => {
-                    if (err) {
-                        console.error("Error creating notification:", err);
-                        return res.status(500).json({ success: false, message: 'Failed to create notification' });
-                    }
-                });
-                // Emit socket events if available
-                if (req.io) {
-                    req.io.emit('update');
-                    req.io.emit('createdReport', {
-                        id: result.insertId,
-                        item_name,
-                        type
-                    });
-                }
-
-                res.json({
-                    success: true,
-                    message: 'Item posted successfully',
-                    itemId: result.insertId
-                });
+        db.query(lostFoundQuery, [user_id, report_id, type, item_name, category, description, location, image_path, contact_info, is_anonymous ? 1 : 0], (err, lostFoundResult) => {
+            if (err) {
+                console.error("Error inserting lost & found record:", err);
+                return res.status(500).json({ success: false, message: 'Failed to submit lost and found item' });
             }
-        );
-    } catch (error) {
-        console.error('Server error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
+
+            req.io.emit('update');
+            res.json({ success: true, message: 'Lost & Found item submitted successfully', reportId: report_id });
         });
-    }
+    });
 });
+
 
 /**
  * @route GET /items
@@ -120,14 +157,18 @@ router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
 router.get('/items', (req, res) => {
     const query = `
         SELECT 
-            lf.*,
-            CASE 
-                WHEN lf.is_anonymous = 1 THEN 'Anonymous'
-                ELSE u.name 
-            END AS user_name
-        FROM tbl_lost_found lf
-        LEFT JOIN tbl_users u ON lf.user_id = u.id where lf.archived = 0
-        ORDER BY lf.date_reported DESC
+    lf.*,
+    CASE 
+        WHEN lf.is_anonymous = 1 THEN 'Anonymous'
+        ELSE u.name 
+    END AS user_name
+FROM tbl_lost_found lf
+LEFT JOIN tbl_users u ON lf.user_id = u.id 
+LEFT JOIN tbl_reports r ON lf.report_id = r.id
+WHERE lf.archived = 0
+    AND COALESCE(r.report_type, '') != ''
+ORDER BY lf.date_reported DESC;
+
     `;
 
     db.query(query, (err, results) => {
@@ -325,71 +366,145 @@ router.put('/items/:id', upload.single('image_path'), (req, res) => {
     const { user_id, type, item_name, category, description, location, status, contact_info, is_anonymous } = req.body;
     const image_path = req.file ? req.file.filename : null;
 
-    const getImageQuery = 'SELECT image_path FROM tbl_lost_found WHERE id = ?';
+    // Get the existing lost_found item to fetch report_id and old image path
+    const getItemQuery = `SELECT report_id, image_path FROM tbl_lost_found WHERE id = ?`;
 
-    db.query(getImageQuery, [id], (err, result) => {
+    db.query(getItemQuery, [id], (err, result) => {
         if (err) {
             console.error('Database error:', err);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to fetch error'
-            });
+            return res.status(500).json({ success: false, message: 'Failed to fetch item' });
         }
 
-        const exisntingImagePath = result[0].image_path;
+        if (result.length === 0) {
+            return res.status(404).json({ success: false, message: 'Item not found' });
+        }
 
-        if (image_path && exisntingImagePath) {
-            const oldImagePath = path.join('uploads', exisntingImagePath);
+        const { report_id, image_path: existingImagePath } = result[0];
+
+        // Remove old image if a new one is uploaded
+        if (image_path && existingImagePath) {
+            const oldImagePath = path.join('uploads', existingImagePath);
             if (fs.existsSync(oldImagePath)) {
                 fs.unlinkSync(oldImagePath);
             }
         }
-    })
 
-    const updateQuery = `UPDATE tbl_lost_found SET user_id = ?,
-     type = ?, item_name = ?, category = ?, description = ?, 
-    location = ?, status = ?, contact_info = ?, is_anonymous = ? 
-    WHERE id = ?`;
+        // Update tbl_reports first
+        const updateReportQuery = `UPDATE tbl_reports SET location = ?, description = ?, image_path = ?, is_anonymous = ? WHERE id = ?`;
+        db.query(updateReportQuery, [location, description, image_path || existingImagePath,is_anonymous ? 1 : 0, report_id], (err, reportResult) => {
+            if (err) {
+                console.error('Database error updating report:', err);
+                return res.status(500).json({ success: false, message: 'Failed to update report' });
+            }
 
-    db.query(updateQuery, [user_id, type, item_name, category, description, location, status, contact_info, is_anonymous, id], (err, result) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({
-                success: false,
-                message: 'Database error'
+            // Now update tbl_lost_found
+            const updateLostFoundQuery = `
+                UPDATE tbl_lost_found SET 
+                type = ?, item_name = ?, category = ?, description = ?, 
+                location = ?, status = ?, contact_info = ?, is_anonymous = ? , image_path = ?
+                WHERE id = ?`;
+
+            db.query(updateLostFoundQuery, [type, item_name, category, description, location, status, contact_info, is_anonymous, image_path || existingImagePath, id], (err, lostFoundResult) => {
+                if (err) {
+                    console.error('Database error updating lost & found:', err);
+                    return res.status(500).json({ success: false, message: 'Failed to update lost and found item' });
+                }
+
+                // Emit socket event if available
+                if (req.io) {
+                    req.io.emit('update');
+                    req.io.emit('updatedItem', {
+                        id,
+                        report_id,
+                        user_id,
+                        type,
+                        item_name,
+                        category,
+                        description,
+                        location,
+                        status,
+                        contact_info,
+                        is_anonymous,
+                        image_path: image_path || existingImagePath
+                    });
+                }
+
+                res.json({ success: true, message: 'Item updated successfully' });
             });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Item not found'
-            });
-        }
-        // Emit socket event if available
-        if (req.io) {
-            req.io.emit('update');
-            req.io.emit('updatedItem', {
-                id,
-                user_id,
-                type,
-                item_name,
-                category,
-                description,
-                location,
-                status,
-                contact_info,
-                is_anonymous
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Item updated successfully'
         });
     });
+});
 
-})
+// router.put('/items/:id', upload.single('image_path'), (req, res) => {
+//     const { id } = req.params;
+//     const { user_id, type, item_name, category, description, location, status, contact_info, is_anonymous } = req.body;
+//     const image_path = req.file ? req.file.filename : null;
+
+//     const getImageQuery = 'SELECT image_path FROM tbl_lost_found WHERE id = ?';
+
+//     db.query(getImageQuery, [id], (err, result) => {
+//         if (err) {
+//             console.error('Database error:', err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Failed to fetch error'
+//             });
+//         }
+
+//         const exisntingImagePath = result[0].image_path;
+
+//         if (image_path && exisntingImagePath) {
+//             const oldImagePath = path.join('uploads', exisntingImagePath);
+//             if (fs.existsSync(oldImagePath)) {
+//                 fs.unlinkSync(oldImagePath);
+//             }
+//         }
+//     })
+
+//     const updateQuery = `UPDATE tbl_lost_found SET 
+//      type = ?, item_name = ?, category = ?, description = ?, 
+//     location = ?, status = ?, contact_info = ?, is_anonymous = ? 
+//     WHERE id = ?`;
+
+//     db.query(updateQuery, [type, item_name, category, description, location, status, contact_info, is_anonymous, id], (err, result) => {
+//         if (err) {
+//             console.error('Database error:', err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Database error'
+//             });
+//         }
+
+//         if (result.affectedRows === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Item not found'
+//             });
+//         }
+//         // Emit socket event if available
+//         if (req.io) {
+//             req.io.emit('update');
+//             req.io.emit('updatedItem', {
+//                 id,
+//                 user_id,
+//                 type,
+//                 item_name,
+//                 category,
+//                 description,
+//                 location,
+//                 status,
+//                 contact_info,
+//                 is_anonymous
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             message: 'Item updated successfully'
+//         });
+//     });
+
+// })
 
 router.post('/claim-item/:id',upload.single('image'), (req, res) => {
     const { id } = req.params;  // Get item ID from the URL params

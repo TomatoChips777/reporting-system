@@ -127,7 +127,7 @@ router.get('/', (req, res) => {
         JOIN tbl_users u ON mr.user_id = u.id
         LEFT JOIN tbl_maintenance_reports tmr ON mr.id = tmr.report_id
         WHERE mr.archived = 0  and mr.report_type = 'Maintenance Report'
-        ORDER BY mr.created_at DESC;`;
+        ORDER BY mr.created_at DESC`;
 
     db.query(query, (err, rows) => {
         if (err) {
@@ -160,7 +160,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
     const { status } = req.body;
 
     // Step 1: Retrieve the user_id associated with this report
-    const getUserQuery = `SELECT user_id, location FROM tbl_reports WHERE id = ?`;
+    const getUserQuery = `SELECT r.user_id, r.location, mr.category FROM tbl_reports r LEFT JOIN tbl_maintenance_reports mr ON r.id = mr.report_id WHERE r.id = ?`;
 
     db.query(getUserQuery, [reportId], (err, result) => {
         if (err) {
@@ -172,7 +172,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
             return res.status(404).json({ success: false, message: 'Report not found' });
         }
 
-        const { user_id, location } = result[0];
+        const { user_id, location, category } = result[0];
 
         const updateQuery = `UPDATE tbl_reports SET status = ? WHERE id = ?`;
 
@@ -182,11 +182,22 @@ router.put('/admin/edit/:reportId', (req, res) => {
                 return res.status(500).json({ success: false, message: 'Failed to update status' });
             }
 
-           
+            const title = "Report";
+            const formattedStatus = req.body.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+            const message = `Your report about ${category} at ${location} has been marked as "${formattedStatus}".`;
+            const notificationQuery = `INSERT INTO tbl_user_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
+
+            db.query(notificationQuery, [reportId, user_id, message, title], (err, notificationResult) => {
+                if (err) {
+                    console.error("Error creating notification:", err);
+                    return res.status(500).json({ success: false, message: 'Failed to create notification' });
+                }
+
                 req.io.emit('updatedStatus', { reportId, status });
                 req.io.emit('update');
 
                 res.json({ success: true, message: 'Status updated successfully' });
+            });
         });
     });
 });
