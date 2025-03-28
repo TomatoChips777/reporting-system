@@ -95,60 +95,46 @@ function Reports() {
         setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
     };
 
-    const handleUpdateStatus = async () => {
-        if (!selectedReport || !selectedReport.status) {
-            console.error("Invalid report selection or missing status.");
-            return;
-        }
-
-        try {
-            const response = await axios.put(
-                `http://localhost:5000/api/reports/admin/edit/${selectedReport.id}`,
-                { status: selectedReport.status },
-                { headers: { "Content-Type": "application/json" } }
-            );
-
-            if (response.data.success) {
-                setReports((prevReports) =>
-                    prevReports.map((report) =>
-                        report.id === selectedReport.id ? { ...report, status: selectedReport.status } : report
-                    )
-                );
-                setShowModal(false);
-            } else {
-                alert("Failed to update report status.");
-            }
-        } catch (error) {
-            console.error("Error updating status:", error);
-            alert("Failed to update report status. Please try again.");
-        }
-    };
-
     const handleRemove = async () => {
         if (!reportToDelete) {
             console.error("Invalid report selection.");
             return;
         }
-
-        try {
-            const response = await axios.delete(`http://localhost:5000/api/reports/admin/report/${reportToDelete}`, {
-                data: {
-                    role: role
-                },
-            });
-
-            if (response.data.success) {
-                setReports((prevReports) => prevReports.filter((report) => report.id !== reportToDelete));
-                setShowDeleteModal(false);
-                setReportToDelete(null);
-            } else {
-                alert("Failed to delete report.");
-            }
-        } catch (error) {
-            console.error("Error deleting report:", error);
-            alert("Failed to delete report. Please try again.");
+        const response = await axios.put(`http://localhost:5000/api/reports/reports/archive-maintenance-report/${reportToDelete}`);
+        if (response.data.success) {
+            setShowDeleteModal(false);
+            setReportToDelete(null);
+            alert("Report deleted successfully.");
         }
+
     }
+
+
+    // const handleRemove = async () => {
+    //     if (!reportToDelete) {
+    //         console.error("Invalid report selection.");
+    //         return;
+    //     }
+
+    //     try {
+    //         const response = await axios.delete(`http://localhost:5000/api/reports/user/report/${reportToDelete}`, {
+    //             data: {
+    //                 role: role
+    //             },
+    //         });
+
+    //         if (response.data.success) {
+    //             setReports((prevReports) => prevReports.filter((report) => report.id !== reportToDelete));
+    //             setShowDeleteModal(false);
+    //             setReportToDelete(null);
+    //         } else {
+    //             alert("Failed to delete report.");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error deleting report:", error);
+    //         alert("Failed to delete report. Please try again.");
+    //     }
+    // }
     const confirmDelete = (reportID) => {
         setReportToDelete(reportID);
         setShowDeleteModal(true);
@@ -277,7 +263,17 @@ function Reports() {
                                                     </Badge>
                                                 </p>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
+                                                {/* <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button> */}
+                                                {report.status === "pending" && (
+                                                    <Button
+                                                        variant="outline-danger rounded-0"
+                                                        size="sm"
+                                                        onClick={() => confirmDelete(report.id)}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                )}
+
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -329,7 +325,17 @@ function Reports() {
                                             </td>
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
+                                                {/* <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button> */}
+                                                {report.status === "pending" && (
+                                                    <Button
+                                                        variant="outline-danger rounded-0"
+                                                        size="sm"
+                                                        onClick={() => confirmDelete(report.id)}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                )}
+
                                             </td>
                                         </tr>
                                     ))}
@@ -415,36 +421,36 @@ function Reports() {
                 </Modal.Header>
                 <Modal.Body>
                     {selectedReport ? (
-                         <Card className="mb-3">
-                         <Card.Body>
-                             <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
-                                 timeZone: 'Asia/Manila',
-                                 month: 'long',
-                                 day: 'numeric',
-                                 year: 'numeric',
-                                 hour: 'numeric',
-                                 minute: '2-digit',
-                                 hour12: true,
-                             })}</p>
-                             <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
-                             <p className="text-break"><strong>Description:</strong></p>
-                             <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '5px', minHeight: '50px' }}>
-                                 <p className="m-0">{selectedReport.description}</p>
-                             </div>
-                         </Card.Body>
-                         {/* Image Display */}
-                         {selectedReport.image_path && (
-                             <div className="mb-3 d-flex flex-column align-items-center text-center">
-                                 <strong>Attached Image:</strong>
-                                 <img
-                                     src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
-                                     alt="Report"
-                                     className="img-fluid mt-2"
-                                     style={{ maxHeight: "300px", borderRadius: "10px" }}
-                                 />
-                             </div>
-                         )}
-                     </Card>
+                        <Card className="mb-3">
+                            <Card.Body>
+                                <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
+                                    timeZone: 'Asia/Manila',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                })}</p>
+                                <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
+                                <p className="text-break"><strong>Description:</strong></p>
+                                <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '5px', minHeight: '50px' }}>
+                                    <p className="m-0">{selectedReport.description}</p>
+                                </div>
+                            </Card.Body>
+                            {/* Image Display */}
+                            {selectedReport.image_path && (
+                                <div className="mb-3 d-flex flex-column align-items-center text-center">
+                                    <strong>Attached Image:</strong>
+                                    <img
+                                        src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
+                                        alt="Report"
+                                        className="img-fluid mt-2"
+                                        style={{ maxHeight: "300px", borderRadius: "10px" }}
+                                    />
+                                </div>
+                            )}
+                        </Card>
                         // <div>
                         //     <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
                         //         timeZone: 'Asia/Manila',

@@ -244,7 +244,7 @@ const Messages = () => {
                                                 <div className="d-flex justify-content-between align-items-center">
                                                     <h6 className="mb-0">
                                                         {conversation.user?.name || 'Unknown'}
-                                                        <span className="text-muted"> [{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span>
+                                                        <span className="text-muted"> [{ conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span>
                                                     </h6>
                                                     <small className="text-muted">
                                                         {formatTime(conversation.created_at)}

@@ -1,13 +1,23 @@
 import React from 'react';
-import { Card, Row, Col, Container } from 'react-bootstrap';
+import { Card, Row, Col, Container, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { IoSettings, IoSearch, IoWarning, IoList } from 'react-icons/io5';
+import { IoSettings, IoSearch, IoWarning, IoList, IoAddCircle } from 'react-icons/io5';
 import { useAuth } from '../../AuthContext';
-
+import CreateReportModal from './Student/components/CreateReportModal';
+import { useState } from 'react';
 const HomeScreen = () => {
     const { role } = useAuth();
     const navigate = useNavigate();
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
+    const handleCloseModal = () => {
+        setShowCreateModal(false);
+    };
+
+
+    const handleOpenCreateModal = () => {
+        setShowCreateModal(true);
+    };
     // Sections for ADMIN users
     const adminSections = [
         {
@@ -84,7 +94,29 @@ const HomeScreen = () => {
 
     return (
         <Container className="py-5">
-            <h2 className="mb-4">Welcome! Select a Service</h2>
+            <h2 className="mb-4 text-center">Welcome! Select a Service</h2>
+            
+            {/* Submit a Report Section */}
+            {role === 'student' && (
+                <Row className="mb-4">
+                    <Col xs={12}>
+                        <Card 
+                            className="shadow-lg text-center p-4"
+                            style={{ backgroundColor: '#e74c3c', color: 'white', cursor: 'pointer' }}
+                            onClick={() => handleOpenCreateModal()}
+                        >
+                            <Card.Body>
+                                <IoAddCircle size={50} />
+                                <h3 className="mt-3">Submit a Report</h3>
+                                <p>Report maintenance issues, lost items, or incidents.</p>
+                                <Button variant="light" size="lg">Report Now</Button>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            )}
+
+            {/* Services Section */}
             <Row className="g-4">
                 {selectedSections.map((section) => (
                     <Col key={section.key} xs={12} md={6} lg={3}>
@@ -114,6 +146,13 @@ const HomeScreen = () => {
                     </Col>
                 ))}
             </Row>
+
+            <CreateReportModal
+                show={showCreateModal}
+                handleClose={() => handleCloseModal()}
+                fetchItems={null}
+                existingItem={null}
+            />
         </Container>
     );
 };

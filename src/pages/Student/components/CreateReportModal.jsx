@@ -72,7 +72,9 @@ const CreateReportModal = ({ show, handleClose, fetchItems, existingItem }) => {
             if (response.data.success) {
                 alert(`Item ${existingItem ? 'updated' : 'posted'} successfully!`);
                 handleClose();
-                fetchItems();
+                if(fetchItems){
+                  fetchItems();
+                }
                 resetForm();
             }
         } catch (error) {
@@ -95,7 +97,7 @@ const CreateReportModal = ({ show, handleClose, fetchItems, existingItem }) => {
     return (
         <Modal show={show} onHide={handleClose} size='lg'>
             <Modal.Header closeButton>
-                <Modal.Title>{existingItem ? 'Edit' : 'Post'} Report</Modal.Title>
+                <Modal.Title>{existingItem ? 'Edit' : 'Submit'} Report</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>

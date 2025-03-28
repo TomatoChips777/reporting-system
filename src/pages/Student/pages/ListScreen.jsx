@@ -88,7 +88,7 @@ function ListScreen() {
                                     <Button
                                         className="btn btn-light btn-lg rounded-0"
                                         // onClick={() => }
-                                            onClick={() => navigate('/reports-screen')}
+                                            onClick={() => handleOpenModal()}
                                     >
                                         <i className="bi bi-plus-lg me-2"></i>Create Report
                                     </Button>

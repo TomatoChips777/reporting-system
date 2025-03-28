@@ -20,7 +20,7 @@ const Messages = () => {
 
     const fetchItems = async () => {
         try {
-            const response = await axios.get(`${import.meta.env.VITE_GET_MESSAGES}/${user.id}`);
+            const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
             if (response.data.success) {
                 setMessages(response.data.messages.map(convo => ({
                     ...convo,
@@ -33,7 +33,7 @@ const Messages = () => {
     };
 
     useEffect(() => {
-        const socket = io(`${import.meta.env.VITE_API_URL}`);
+        const socket = io('http://localhost:5000');
 
         socket.on('updateMessage', ({ senderId, receiverId, newMsg, report_id, message_session_id }) => {
 
@@ -131,7 +131,7 @@ const Messages = () => {
 
         console.log(formData);
         try {
-            const response = await axios.post(`${import.meta.env.VITE_SEND_MESSAGE}`, formData, {
+            const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
@@ -178,42 +178,10 @@ const Messages = () => {
                             <h5 className="mb-0">Messages</h5>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            {/* <div className="conversation-items">
-                                {messages.map((conversation) => (
-                                    <div
-                                        key={`${conversation.report_id}-${conversation.id}`} // Unique key per report
-                                        className={`conversation-item p-3 ${selectedConversation?.id === conversation.id 
-                                            && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
-                                        onClick={() => setSelectedConversation(conversation)}
-                                    >
-                                        <div className="d-flex align-items-center">
-                                            <div className="avatar-container">
-                                                {conversation.user?.avatar ? (
-                                                    <img src={conversation.user.avatar} width="40" height="40" className="rounded-circle" alt="User" />
-                                                ) : (
-                                                    <BsPersonCircle size={40} className="text-secondary" />
-                                                )}
-                                            </div>
-                                            <div className="ms-3 flex-grow-1">
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <h6 className="mb-0">{conversation.user?.name || 'Unknown'}</h6>
-                                                    <small className="text-muted">
-                                                        {formatTime(conversation.created_at)}
-                                                    </small>
-                                                </div>
-                                                <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
-                                                    {conversation.lastMessage || 'No messages yet'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                            </div> */}
                             <div className="conversation-items">
                                 {messages.map((conversation) => (
                                     <div
-                                        key={`${conversation.report_id}-${conversation.id}`} // Unique key per report
+                                        key={`${conversation.report_id}-${conversation.id}`}
                                         className={`conversation-item p-3 ${selectedConversation?.id === conversation.id && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
                                         onClick={() => setSelectedConversation(conversation)}
                                     >
@@ -232,14 +200,6 @@ const Messages = () => {
                                                     />
                                                 )}
                                             </div>
-
-                                            {/* <div className="avatar-container">
-                                                {conversation.user?.avatar ? (
-                                                    <img src={conversation.user.avatar} width="40" height="40" className="rounded-circle" alt="User" />
-                                                ) : (
-                                                    <BsPersonCircle size={40} className="text-secondary" />
-                                                )}
-                                            </div> */}
                                             <div className="ms-3 flex-grow-1">
                                                 <div className="d-flex justify-content-between align-items-center">
                                                     <h6 className="mb-0">
@@ -293,7 +253,6 @@ const Messages = () => {
                                                     {message.text && message.text.trim() && (
                                                         <div className="message-bubble">
                                                             {message.text}
-
                                                             <div className="message-meta">
                                                                 <small className="text-muted">{formatTime(message.created_at)}</small>
                                                                 {message.senderId === user.id && (
@@ -352,13 +311,12 @@ const Messages = () => {
                                                     {message.image_path && (
                                                         <div className="image-container">
                                                             <img
-                                                                src={`${import.meta.env.VITE_IMAGES}/${message.image_path}`}
+                                                                src={`http://localhost:5000/uploads/${message.image_path}`}
                                                                 alt="Sent"
                                                                 className="message-image"
                                                             />
                                                         </div>
                                                     )}
-
                                                 </div>
                                             </div>
                                         ))}

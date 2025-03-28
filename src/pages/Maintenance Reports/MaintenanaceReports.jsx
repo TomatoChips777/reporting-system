@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Table, Card, Form, Button, Badge, Modal,OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Table, Card, Form, Button, Badge, Modal, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { FaFileAlt, FaClock, FaTasks, FaCheckCircle, FaSearch, FaArrowDown, FaEquals, FaArrowUp, FaExclamationTriangle } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 import MessageModal from "../Messages/components/MessageModal";
@@ -22,6 +22,8 @@ function Reports() {
     const [monthFilter, setMonthFilter] = useState(""); // Month filter state
     const [yearFilter, setYearFilter] = useState("");   // Year filter state
     const [dayFilter, setDayFilter] = useState(""); // Day filter state
+    const [priorityFilter, setPriorityFilter] = useState("all");
+
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
     const fetchReports = async () => {
@@ -36,12 +38,12 @@ function Reports() {
         }
     };
     useEffect(() => {
-        
+
         fetchReports();
 
-        const socket = io(`${import.meta.env.VITE_API_URL}`); 
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
         socket.on('update', () => {
-           
+
             fetchReports();
         });
 
@@ -50,6 +52,7 @@ function Reports() {
         };
 
     }, []);
+
     useEffect(() => {
         let updatedReports = reports.filter(report => {
             const search = searchTerm.toLowerCase();
@@ -65,6 +68,8 @@ function Reports() {
                 &&
                 (statusFilter === "all" || report.status === statusFilter)
                 &&
+                (priorityFilter === "all" || report.priority === priorityFilter)
+                &&
                 (monthFilter === "" || reportDate.getMonth() + 1 === selectedMonth)
                 &&
                 (yearFilter === "" || reportDate.getFullYear() === selectedYear)
@@ -74,18 +79,17 @@ function Reports() {
         });
 
         setFilteredReports(updatedReports);
-    }, [searchTerm, monthFilter, yearFilter, dayFilter, reports, statusFilter]);
-
+    }, [searchTerm, monthFilter, yearFilter, dayFilter, reports, statusFilter, priorityFilter]);
 
 
     const uniqueYears = [...new Set(reports.map(report => new Date(report.created_at).getFullYear()))].sort((a, b) => b - a);
 
 
-const handleMessage = (item) => {
-    setExistingItem(item);
-    setShowMessageInputModal(true);
-}
- const handleCloseMessageModal = () => {
+    const handleMessage = (item) => {
+        setExistingItem(item);
+        setShowMessageInputModal(true);
+    }
+    const handleCloseMessageModal = () => {
         setShowMessageInputModal(false);
     }
 
@@ -254,66 +258,101 @@ const handleMessage = (item) => {
                     </div>
                 </div>
             </div>
-            <div className="row mb-3">
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaFileAlt className="text-success mb-2" size={30} />
-                        <h6>Total Reports</h6>
-                        <strong className='fs-1'>{totalReports}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaClock className="text-warning mb-2" size={30} />
-                        <h6>Pending</h6>
-                        <strong className='fs-1'>{pendingCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaTasks className="text-primary mb-2" size={30} />
-                        <h6>In Progress</h6>
-                        <strong className='fs-1'>{inProgressCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaCheckCircle className="text-success mb-2" size={30} />
-                        <h6>Resolved</h6>
-                        <strong className='fs-1'>{resolvedCount}</strong>
-                    </div>
-                </div>
-            </div>
             <div className="row mb-2">
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaArrowDown className="text-success mb-2" size={30} />
-                        <h6>Low Priority</h6>
-                        <strong className='fs-4'>{lowCount}</strong>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${statusFilter === "all" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => handleFilterChange("all")}
+                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                    >
+                        <FaFileAlt className="text-success mb-1" size={20} />
+                        <h6 className="mb-0">Total</h6>
+                        <strong className='fs-5'>{totalReports}</strong>
                     </div>
                 </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaEquals className="text-warning mb-2" size={30} />
-                        <h6>Medium Priority</h6>
-                        <strong className='fs-4'>{mediumCount}</strong>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${statusFilter === "pending" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => handleFilterChange("pending")}
+                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                    >
+                        <FaClock className="text-warning mb-1" size={20} />
+                        <h6 className="mb-0">Pending</h6>
+                        <strong className='fs-5'>{pendingCount}</strong>
                     </div>
                 </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaArrowUp className="text-danger mb-2" size={30} />
-                        <h6>High Priority</h6>
-                        <strong className='fs-4'>{highCount}</strong>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${statusFilter === "in_progress" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => handleFilterChange("in_progress")}
+                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                    >
+                        <FaTasks className="text-primary mb-1" size={20} />
+                        <h6 className="mb-0">In Progress</h6>
+                        <strong className='fs-5'>{inProgressCount}</strong>
                     </div>
                 </div>
-                <div className="col-md-3">
-                    <div className="card p-3 text-center rounded-0">
-                        <FaExclamationTriangle className="text-danger mb-2" size={30} />
-                        <h6>Urgent Priority</h6>
-                        <strong className='fs-4'>{urgentCount}</strong>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${statusFilter === "resolved" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => handleFilterChange("resolved")}
+                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
+                    >
+                        <FaCheckCircle className="text-success mb-1" size={20} />
+                        <h6 className="mb-0">Resolved</h6>
+                        <strong className='fs-5'>{resolvedCount}</strong>
                     </div>
                 </div>
             </div>
+
+            <div className="row mb-2">
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${priorityFilter === "Low" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => setPriorityFilter(priorityFilter === "Low" ? "all" : "Low")}
+                        style={{ cursor: "pointer", fontSize: "0.9rem" }}
+                    >
+                        <FaArrowDown className="text-success mb-1" size={20} />
+                        <h6 className="mb-0">Low</h6>
+                        <strong className='fs-5'>{lowCount}</strong>
+                    </div>
+                </div>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${priorityFilter === "Medium" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => setPriorityFilter(priorityFilter === "Medium" ? "all" : "Medium")}
+                        style={{ cursor: "pointer", fontSize: "0.9rem" }}
+                    >
+                        <FaEquals className="text-primary mb-1" size={20} />
+                        <h6 className="mb-0">Medium</h6>
+                        <strong className='fs-5'>{mediumCount}</strong>
+                    </div>
+                </div>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${priorityFilter === "High" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => setPriorityFilter(priorityFilter === "High" ? "all" : "High")}
+                        style={{ cursor: "pointer", fontSize: "0.9rem" }}
+                    >
+                        <FaArrowUp className="text-warning mb-1" size={20} />
+                        <h6 className="mb-0">High</h6>
+                        <strong className='fs-5'>{highCount}</strong>
+                    </div>
+                </div>
+                <div className="col-md-3 col-6">
+                    <div
+                        className={`card p-2 text-center rounded-1 ${priorityFilter === "Urgent" ? "border border-primary bg-light" : ""}`}
+                        onClick={() => setPriorityFilter(priorityFilter === "Urgent" ? "all" : "Urgent")}
+                        style={{ cursor: "pointer", fontSize: "0.9rem" }}
+                    >
+                        <FaExclamationTriangle className="text-danger mb-1" size={20} />
+                        <h6 className="mb-0">Urgent</h6>
+                        <strong className='fs-5'>{urgentCount}</strong>
+                    </div>
+                </div>
+            </div>
+
+
 
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
@@ -365,9 +404,9 @@ const handleMessage = (item) => {
                                                     <Badge
                                                         bg={
                                                             report.priority === "Low" ? "success" :
-                                                                report.priority === "Medium" ? "warning" :
-                                                                    report.priority === "High" ? "danger" :
-                                                                        report.priority === "Urgent" ? "dark" : "secondary"
+                                                                report.priority === "Medium" ? "primary" :
+                                                                    report.priority === "High" ? "warning" :
+                                                                        report.priority === "Urgent" ? "danger" : "secondary"
                                                         }
                                                         className="ms-2 rounded-0"
                                                     >
@@ -412,7 +451,7 @@ const handleMessage = (item) => {
                                         <th>Description</th>
                                         <th>Priority</th>
                                         <th>Status</th>
-                                        <th style={{ width: "16%" }}>Actions</th>
+                                        <th >Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -435,19 +474,19 @@ const handleMessage = (item) => {
                                                     ? report.description.substring(0, 50) + "..."
                                                     : report.description}
                                             </td>
-                                            <p>
+                                            <td>
                                                 <Badge
                                                     bg={
                                                         report.priority === "Low" ? "success" :
-                                                            report.priority === "Medium" ? "warning" :
-                                                                report.priority === "High" ? "danger" :
-                                                                    report.priority === "Urgent" ? "dark" : "secondary"
+                                                            report.priority === "Medium" ? "primary" :
+                                                                report.priority === "High" ? "warning" :
+                                                                    report.priority === "Urgent" ? "danger" : "secondary"
                                                     }
                                                     className="ms-2 rounded-0"
                                                 >
                                                     {report.priority}
                                                 </Badge>
-                                            </p>
+                                            </td>
                                             <td>
                                                 <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0">
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
