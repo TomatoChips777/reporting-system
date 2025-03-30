@@ -6,12 +6,17 @@ const db = require('../config/db');
 router.get('/analytics', async (req, res) => {
     try {
         const queries = {
-            totalReports: `SELECT COUNT(*) AS total FROM tbl_reports`,
-            statusCount: `SELECT status, COUNT(*) as count FROM tbl_reports GROUP BY status`,
-            reportsPerDay: `SELECT DATE(created_at) as date, COUNT(*) as count FROM tbl_reports GROUP BY DATE(created_at)`,
-            reportsPerMonth: `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count FROM tbl_reports GROUP BY DATE_FORMAT(created_at, '%Y-%m')`,
-            issueDistribution: `SELECT issue_type, COUNT(*) as count FROM tbl_reports GROUP BY issue_type ORDER BY count DESC`,
-            latestReports: `SELECT id, location, issue_type, status, created_at FROM tbl_reports ORDER BY created_at DESC LIMIT 5`
+            totalReports: `SELECT COUNT(*) AS total FROM tbl_reports WHERE report_type ='Maintenance Report'`,
+            statusCount: `SELECT status, COUNT(*) as count FROM tbl_reports WHERE report_type ='Maintenance Report' GROUP BY status`,
+
+            reportsPerDay: `SELECT DATE(created_at) as date, COUNT(*) as count FROM tbl_reports WHERE report_type ='Maintenance Report' GROUP BY DATE(created_at)`,
+            reportsPerMonth: `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count FROM tbl_reports WHERE report_type ='Maintenance Report' GROUP BY DATE_FORMAT(created_at, '%Y-%m')`,
+            issueDistribution: `SELECT tmr.category, COUNT(*) as count 
+                FROM tbl_maintenance_reports tmr 
+                LEFT JOIN tbl_reports r ON r.id = tmr.report_id 
+                GROUP BY tmr.category 
+                ORDER BY count DESC;`,
+            latestReports: `SELECT r.id, r.location, tmr.category,tmr.priority, r.status, r.created_at FROM tbl_reports r LEFT JOIN tbl_maintenance_reports tmr ON r.id = tmr.report_id WHERE r.report_type ='Maintenance Report'  ORDER BY r.created_at DESC LIMIT 5;`
         };
 
         let results = {};

@@ -10,7 +10,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     const [formData, setFormData] = useState({
         sender_id: user?.id,
         receiver_id: existingItem?.user_id,
-        report_id: existingItem?.id,
+        report_id: existingItem?.report_id,
         message: '',
         type: '',
         image: null,
@@ -22,7 +22,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                 setFormData({
                     sender_id: user?.id,
                     receiver_id: existingItem?.user_id,
-                    report_id: existingItem?.id,
+                    report_id: existingItem?.report_id,
                     message: '',
                     type: '',
                     image: null,
@@ -65,7 +65,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         const messageData = new FormData();
         messageData.append("sender_id", user.id);
         messageData.append("receiver_id", existingItem?.user_id);
-        messageData.append("report_id", existingItem?.id);
+        messageData.append("report_id", existingItem?.report_id);
         messageData.append("message", message.trim());
         messageData.append('item_type', existingItem?.type);
         if (image) {
@@ -97,7 +97,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         setFormData({
             sender_id: user?.id,
             receiver_id: existingItem?.user_id,
-            report_id: existingItem?.id,
+            report_id: existingItem?.report_id,
             message: '',
             type: '',
             image: null,

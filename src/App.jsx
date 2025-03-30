@@ -13,7 +13,7 @@ import AdminLostAndFound from './pages/LostAndFound/LostAndFound.jsx';
 import { NavigationProvider } from './components/SidebarContext.jsx';
 import { SidebarStateProvider } from './components/SidebarStateContext.jsx';
 import Notifications from './pages/Notifications.jsx';
-import LostAndFoundDashboard from './pages/LostAndFound/Dashboard.jsx';
+import LostAndFoundDashboard from './pages/LostAndFound/LostAndFoundDashboard.jsx';
 import ReportScreen from './pages/Reports/ReportScreen.jsx';
 import ListScreen from './pages/Student/pages/ListScreen.jsx';
 import Messages from './pages/Student/pages/Messages.jsx';
@@ -44,9 +44,33 @@ function App() {
                                             <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
                                             <Route path="/lost-and-found-dashboard" element={<LostAndFoundDashboard />} />
                                             <Route path="/lost-and-found-reports" element={<AdminLostAndFound />} />
-                                            <Route path="/admin-messages" element={<AdminMessages />} />
+                                            <Route path="/messages" element={<AdminMessages />} />
                                             <Route path='/notifications' element={<Notifications />} />
                                             <Route path="*" element={<Navigate to="/home" replace />} />
+                                        </>
+                                    )}
+                                    {role === 'report-manager' && (
+                                        <>
+                                         <Route path="/home" element={<HomeScreen />} />
+                                         <Route path='/reports' element={<ReportScreen />} />
+                                         <Route path="/messages" element={<AdminMessages />} />
+                                         <Route path="*" element={<Navigate to="/home" replace />} />
+                                        </>
+                                    )}
+                                     {role === 'maintenance-report-manager' && (
+                                        <>
+                                         <Route path="/home" element={<HomeScreen />} />
+                                         <Route path='/reports' element={<ReportScreen />} />
+                                         <Route path="/messages" element={<AdminMessages />} />
+                                         <Route path="*" element={<Navigate to="/home" replace />} />
+                                        </>
+                                    )}
+                                     {role === 'incident-report-manager' && (
+                                        <>
+                                         <Route path="/home" element={<HomeScreen />} />
+                                         <Route path='/reports' element={<ReportScreen />} />
+                                         <Route path="/messages" element={<AdminMessages />} />
+                                         <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}
                                     {role === 'student' && (
@@ -55,7 +79,9 @@ function App() {
                                            {/* <Route path="/reports-screen" element={<ReportScreen />} /> */}
                                            <Route path="/list-screen" element={<ListScreen />} />
                                            <Route path='/notifications' element={<Notifications />} />
-                                           <Route path='/messages' element={<Messages />} />
+                                           {/* <Route path='/messages' element={<Messages />} /> */}
+                                           <Route path="/messages" element={<AdminMessages />} />
+
                                            <Route path="/reports-screen" element={<Testing />} />
 
 
@@ -69,8 +95,8 @@ function App() {
                 </NavigationProvider>
             ) : (
                 <Routes>
-                    <Route path="/" element={<GuestScreen />} />
-                    <Route path="/login" element={<LoginScreen />} />
+                    <Route path="/guest" element={<GuestScreen />} />
+                    <Route path="/" element={<LoginScreen />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             )}

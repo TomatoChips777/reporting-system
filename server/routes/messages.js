@@ -139,7 +139,7 @@ router.post('/send-message', upload.single("image"), (req, res) => {
 
                     // Emit message via socket
                     req.io.emit('updateMessage', { senderId: sender.sender_id, receiverId: sender.receiver_id, newMsg: newMessage, report_id: report_id, message_session_id: chatSessionId });
-
+                    req.io.emit('messageCount', {senderId: sender.sender_id, receiverId: sender.receiver_id})
                     res.json({ success: true, message: newMessage });
                 });
             });
@@ -184,8 +184,9 @@ router.get('/get-messages/:userId', (req, res) => {
     m.message AS text,
     m.image_path,
     m.created_at,
+    m.status,
     m.report_id,
-    u1.id AS sender_id,
+    u1.id AS sender_id,  -- Aliased sender_id from u1
     u1.name AS sender_name,
     u1.image_url AS sender_avatar,
     u2.id AS receiver_id,
@@ -193,17 +194,18 @@ router.get('/get-messages/:userId', (req, res) => {
     u2.image_url AS receiver_avatar,
     r.location AS item_location,
     r.is_anonymous,
+    r.user_id,
     -- Set item_name based on report type
     CASE 
         WHEN r.report_type = 'Maintenance Report' THEN r.location 
         WHEN r.report_type = 'Lost And Found' THEN lf.item_name
-        ELSE NULL 
+        ELSE r.location
     END AS item_name,
     -- Set type based on report type
     CASE 
         WHEN r.report_type = 'Maintenance Report' THEN r.report_type 
         WHEN r.report_type = 'Lost And Found' THEN lf.type 
-        ELSE r.report_type
+        ELSE "About"
     END AS type
 FROM tbl_messages m
 JOIN tbl_message_sessions ms ON ms.id = m.message_session_id
@@ -212,8 +214,9 @@ LEFT JOIN tbl_users u2 ON (ms.user1_id = u2.id OR ms.user2_id = u2.id) AND u2.id
 LEFT JOIN tbl_reports r ON m.report_id = r.id
 LEFT JOIN tbl_maintenance_reports mr ON r.id = mr.report_id
 LEFT JOIN tbl_lost_found lf ON r.id = lf.report_id
-WHERE ms.user1_id = ? OR ms.user2_id = ?
+WHERE (ms.user1_id = ? OR ms.user2_id = ?) AND r.status != 'resolved' 
 ORDER BY m.created_at DESC;
+
 `;
 
     db.query(query, [userId, userId], (err, results) => {
@@ -230,7 +233,7 @@ ORDER BY m.created_at DESC;
 
         results.forEach(msg => {
             const conversationPartner = msg.sender_id == userId ? msg.receiver_id : msg.sender_id;
-            const isReceiverAnonymous = msg.is_anonymous === 1 && msg.receiver_id == conversationPartner;
+            const isReceiverAnonymous = msg.is_anonymous === 1 && msg.user_id == conversationPartner;
 
             const conversationKey = `${msg.report_id}-${conversationPartner}`;
 
@@ -252,6 +255,7 @@ ORDER BY m.created_at DESC;
                     report_id: msg.report_id,
                     item_name: msg.item_name,
                     item_type: msg.type,
+                    status: msg.status,
                     message_session_id: msg.message_session_id,
                     lastMessage: msg.text,
                     image_path: msg.image_path,
@@ -273,6 +277,7 @@ ORDER BY m.created_at DESC;
                 message_session_id: msg.message_session_id,
                 // image_path: isReceiverAnonymous ? null : msg.image_path,
                 image_path: msg.image_path,
+                status: msg.status,
                 text: msg.text,
                 created_at: msg.created_at
             });
@@ -295,6 +300,23 @@ ORDER BY m.created_at DESC;
             messages: Object.values(conversations)
         });
     });
+});
+
+
+router.post('/mark-as-read', async (req, res) => {
+    const { senderId, receiverId, message_session_id } = req.body;
+    
+    try {
+         db.query(
+            "UPDATE tbl_messages SET status = 'read' WHERE sender_id = ? AND receiver_id = ? AND message_session_id = ? AND status != 'read'",
+            [senderId, receiverId, message_session_id]
+        );
+        req.io.emit('messageCount',{senderId: senderId, receiverId: receiverId})
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating messages:', error);
+        res.status(500).json({ success: false, error: 'Failed to update messages' });
+    }
 });
 
 module.exports = router;

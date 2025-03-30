@@ -118,11 +118,16 @@ router.get('/', (req, res) => {
     const query = `
         SELECT 
             mr.*, 
-            u.name AS reporter_name, 
+            --u.name AS reporter_name, 
+              CASE 
+                WHEN mr.is_anonymous = 1 THEN 'Anonymous'
+                ELSE u.name 
+            END AS reporter_name,
+            tmr.report_id,
             tmr.category AS maintenance_category, 
             tmr.priority, 
             tmr.assigned_staff, 
-            mr.status 
+            mr.status
         FROM tbl_reports mr
         JOIN tbl_users u ON mr.user_id = u.id
         LEFT JOIN tbl_maintenance_reports tmr ON mr.id = tmr.report_id

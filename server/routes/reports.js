@@ -146,6 +146,18 @@ router.delete('/admin/report/:id', (req, res) => {
     });
 });
 
+router.put('/report/archive-maintenance-report/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.query("UPDATE tbl_reports SET archived = 1 WHERE id = ?", [id]);
+        req.io.emit('update');
+        res.json({ success: true, message: "Report archived successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error archiving report" });
+    }
+});
+
 router.delete('/report/:id', (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
@@ -288,7 +300,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
 
 
 router.put("/admin/edit-report-type/:reportId", (req, res) => {
-    const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, sender_id, location,description, } = req.body;
+    const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, sender_id, location,description,is_anonymous } = req.body;
     const { reportId } = req.params;
     // Update `tbl_reports`
     const updateReportQuery = "UPDATE tbl_reports SET report_type = ?, status = ? WHERE id = ?";
@@ -320,14 +332,14 @@ router.put("/admin/edit-report-type/:reportId", (req, res) => {
             );
         } else if (report_type === "Lost And Found") {
             const lostFoundQuery = `
-                INSERT INTO tbl_lost_found (user_id, report_id, type, category, location, description, item_name, contact_info) 
-                VALUES (?, ?, ?, ?, ?, ? , ? , ?) 
+                INSERT INTO tbl_lost_found (user_id, report_id, type, category, location, description, item_name, contact_info, is_anonymous) 
+                VALUES (?, ?, ?, ?, ?, ? , ? , ?, ?) 
                 ON DUPLICATE KEY UPDATE 
                 type = ?, item_name = ?, contact_info = ?`;
 
             db.query(
                 lostFoundQuery,
-                [sender_id ,reportId, type,category, location, description, item_name, contact_info, type, item_name, contact_info],
+                [sender_id ,reportId, type,category, location, description, item_name, contact_info,is_anonymous, type, item_name, contact_info],
                 (err, lostFoundResult) => {
                     if (err) {
                         console.error("Error updating lost and found report:", err);

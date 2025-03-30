@@ -22,10 +22,22 @@ const Messages = () => {
         try {
             const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
             if (response.data.success) {
-                setMessages(response.data.messages.map(convo => ({
-                    ...convo,
-                    lastMessage: convo.messages.length > 0 ? convo.messages[convo.messages.length - 1].text : ''
-                })));
+                setMessages(response.data.messages.map(convo => {
+                    const unreadCount = convo.messages.filter(msg => 
+                        msg.status !== 'read' && msg.receiverId === user.id
+                    ).length;
+                    return {
+                        ...convo,
+                        lastMessage: convo.messages.length > 0 ? convo.messages[convo.messages.length - 1].text : '',
+                        unreadCount  // Store unread count
+                    };
+                }));
+                // setMessages(response.data.messages.map(convo => ({
+                    
+                //     ...convo,
+                //     lastMessage: convo.messages.length > 0 ? convo.messages[convo.messages.length - 1].text : '',
+                //     messageCount: convo.messages.length 
+                // })));
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -116,35 +128,77 @@ const Messages = () => {
         fileInputRef.current.click();
     };
 
+    // const handleSendMessage = async (e) => {
+    //     e.preventDefault();
+    //     if (!newMessage.trim() && !selectedImage) return;
+
+    //     const formData = new FormData();
+    //     formData.append("sender_id", user.id);
+    //     formData.append("receiver_id", selectedConversation.id);
+    //     formData.append("message", newMessage);
+    //     formData.append("report_id", selectedConversation.report_id);
+    //     if (selectedImage) {
+    //         formData.append("image", selectedImage);
+    //     }
+
+    //     console.log(formData);
+    //     try {
+    //         const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
+    //             headers: { "Content-Type": "multipart/form-data" }
+    //         });
+
+    //         if (response.data.success) {
+    //             const newMsg = response.data.message;
+    //             setNewMessage('');
+    //             setSelectedImage(null);
+    //         }
+    //     } catch (error) {
+    //         console.error('Error sending message:', error);
+    //     }
+    // };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() && !selectedImage) return;
-
-        const formData = new FormData();
-        formData.append("sender_id", user.id);
-        formData.append("receiver_id", selectedConversation.id);
-        formData.append("message", newMessage);
-        formData.append("report_id", selectedConversation.report_id);
-        if (selectedImage) {
-            formData.append("image", selectedImage);
-        }
-
-        console.log(formData);
+    
         try {
+            // Mark unread messages as read first
+            await axios.post('http://localhost:5000/api/messages/mark-as-read', {
+                senderId: selectedConversation.id, // The person who sent the unread messages
+                receiverId: user.id, // Current user
+                message_session_id: selectedConversation.message_session_id
+            });
+    
+            // Reset unread count in UI
+            setMessages(prevMessages => prevMessages.map(convo =>
+                convo.message_session_id === selectedConversation.message_session_id
+                    ? { ...convo, unreadCount: 0 }
+                    : convo
+            ));
+    
+            // Proceed with sending the new message
+            const formData = new FormData();
+            formData.append("sender_id", user.id);
+            formData.append("receiver_id", selectedConversation.id);
+            formData.append("message", newMessage);
+            formData.append("report_id", selectedConversation.report_id);
+            if (selectedImage) {
+                formData.append("image", selectedImage);
+            }
+    
             const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-
+    
             if (response.data.success) {
-                const newMsg = response.data.message;
                 setNewMessage('');
                 setSelectedImage(null);
             }
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('Error sending message or marking as read:', error);
         }
     };
-
+    
     const handleClaimAction = async (messageId, action) => {
         try {
             const response = await axios.post(`http://localhost:5000/api/messages/claim-action`, {
@@ -168,7 +222,30 @@ const Messages = () => {
             console.error('Error handling claim action:', error);
         }
     };
-
+    const handleSelectConversation = async (conversation) => {
+        setSelectedConversation(conversation);
+    
+        // If there are unread messages, mark them as read
+        if (conversation.unreadCount > 0) {
+            try {
+                await axios.post('http://localhost:5000/api/messages/mark-as-read', {
+                    senderId: conversation.id,  // User who sent the messages
+                    receiverId: user.id,  // Current user (who is reading)
+                    message_session_id: conversation.message_session_id // Ensure only this conversation is updated
+                });
+    
+                // Update messages state: Set unreadCount to 0
+                setMessages(prevMessages => prevMessages.map(convo => 
+                    convo.id === conversation.id && convo.message_session_id === conversation.message_session_id 
+                        ? { ...convo, unreadCount: 0 } 
+                        : convo
+                ));
+            } catch (error) {
+                console.error('Error marking messages as read:', error);
+            }
+        }
+    };
+    
     return (
         <Container fluid className="messages-page p-4">
             <Row className="h-100">
@@ -183,7 +260,7 @@ const Messages = () => {
                                     <div
                                         key={`${conversation.report_id}-${conversation.id}`}
                                         className={`conversation-item p-3 ${selectedConversation?.id === conversation.id && selectedConversation?.report_id === conversation.report_id ? 'active' : ''}`}
-                                        onClick={() => setSelectedConversation(conversation)}
+                                        onClick={() => handleSelectConversation(conversation)}
                                     >
                                         <div className="d-flex align-items-center">
                                             <div className="avatar-container">
@@ -202,10 +279,16 @@ const Messages = () => {
                                             </div>
                                             <div className="ms-3 flex-grow-1">
                                                 <div className="d-flex justify-content-between align-items-center">
-                                                    <h6 className="mb-0">
+                                                    <small className="mb-0">
                                                         {conversation.user?.name || 'Unknown'}
-                                                        <span className="text-muted"> [{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span>
-                                                    </h6>
+                                                        <span className="text-muted">
+                                                        {(() => {
+                                                            const text = `${conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - ${conversation.item_name}`;
+                                                            return `[${text.length > 15 ? text.substring(0, 15) + "..." : text}]`;
+                                                        })()}
+                                                        </span>
+                                                        {/* <span className="text-muted">[{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span> */}
+                                                    </small>
                                                     <small className="text-muted">
                                                         {formatTime(conversation.created_at)}
                                                     </small>
@@ -214,6 +297,13 @@ const Messages = () => {
                                                     {conversation.lastMessage || 'No messages yet'}
                                                 </p>
                                             </div>
+                                            {conversation.unreadCount > 0 && (
+    <Badge bg="danger" pill className="ms-2">
+        {conversation.unreadCount}
+    </Badge>
+)}
+
+                                            
                                         </div>
                                     </div>
                                 ))}

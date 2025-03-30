@@ -176,7 +176,7 @@ function NavigationBar() {
                                     <span className="ms-2 text-white">{user.name}</span>
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu align="end">
-                                    <Dropdown.Item as={Link} to="/profile">Profile</Dropdown.Item>
+                                    <Dropdown.Item as={Link} to="/messages">Profile</Dropdown.Item>
                                     <Dropdown.Item as={Link} to="/settings">Settings</Dropdown.Item>
                                     <Dropdown.Divider />
                                     <Dropdown.Item onClick={signOut}>Sign out</Dropdown.Item>

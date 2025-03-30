@@ -6,6 +6,7 @@ import ViewReportModal from "./Components/ViewReportModal";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
+import MessageModal from "../Messages/components/MessageModal";
 function Reports() {
     const { role } = useAuth();
     const [reports, setReports] = useState([]);
@@ -22,18 +23,19 @@ function Reports() {
     const [yearFilter, setYearFilter] = useState("");   // Year filter state
     const [dayFilter, setDayFilter] = useState(""); // Day filter state
 
-
-
+    const [showMessageInputModal, setShowMessageInputModal] = useState(false);
+    const [existingItem, setExistingItem] = useState(null);
+    const fetchReports = async () => {
+        try {
+            const response = await axios.get(`${import.meta.env.VITE_GET_REPORTS}`);
+            setReports(response.data);
+            setFilteredReports(response.data);
+        } catch (error) {
+            console.error("Error fetching reports:", error);
+        }
+    };
     useEffect(() => {
-        const fetchReports = async () => {
-            try {
-                const response = await axios.get(`${import.meta.env.VITE_GET_REPORTS}`);
-                setReports(response.data);
-                setFilteredReports(response.data);
-            } catch (error) {
-                console.error("Error fetching reports:", error);
-            }
-        };
+       
         fetchReports();
 
         const socket = io(`${import.meta.env.VITE_API_URL}`);
@@ -74,6 +76,20 @@ function Reports() {
 
 
     const uniqueYears = [...new Set(reports.map(report => new Date(report.created_at).getFullYear()))].sort((a, b) => b - a);
+
+    const handleMessage = (item) => {
+        // setExistingItem(item);
+        setExistingItem({
+            report_id: item.id,
+            ...item, 
+        });
+        
+        console.log(item);
+        setShowMessageInputModal(true);
+    }
+    const handleCloseMessageModal = () => {
+        setShowMessageInputModal(false);
+    }
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
@@ -130,6 +146,7 @@ function Reports() {
                     sender_id: selectedReport.user_id || "",
                     location: selectedReport.location || "",
                     description: selectedReport.description || '',
+                    is_anonymous: selectedReport.is_anonymous || 0,
                 },
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -157,7 +174,7 @@ function Reports() {
         }
 
         try {
-            const response = await axios.delete(`${import.meta.env.VITE_REMOVE_REPORT}/${reportToDelete}`, {
+            const response = await axios.put(`${import.meta.env.VITE_REMOVE_REPORT}/${reportToDelete}`, {
                 data: {
                     role: role
                 },
@@ -295,6 +312,9 @@ function Reports() {
                                                 </p>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
+                                                <Button variant="outline-warning rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                    Message
+                                                </Button>
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -349,6 +369,9 @@ function Reports() {
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
+                                                <Button variant="outline-warning rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                    Message
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -447,7 +470,12 @@ function Reports() {
 />
 
 
-
+            <MessageModal
+                show={showMessageInputModal}
+                handleClose={handleCloseMessageModal}
+                existingItem={existingItem}
+                fetchItems={fetchReports}
+            />
         </div>
     );
 }

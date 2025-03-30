@@ -12,7 +12,7 @@ function Reports() {
     const [filteredReports, setFilteredReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
@@ -420,9 +420,9 @@ function Reports() {
                                                         {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                     </Badge>
                                                 </p>
-                                                <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
-                                                <Button variant="outline-warning rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
+                                                <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </div>
@@ -493,9 +493,9 @@ function Reports() {
                                                 </Badge>
                                             </td>
                                             <td>
-                                                <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
-                                                <Button variant="outline-warning rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
+                                                <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </td>
@@ -523,10 +523,11 @@ function Reports() {
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
                             <Form.Select value={pageSize} onChange={handlePageSizeChange} className="me-2 rounded-0">
-                                <option value="5">5 per page</option>
                                 <option value="10">10 per page</option>
-                                <option value="15">15 per page</option>
                                 <option value="20">20 per page</option>
+                                <option value="30">35 per page</option>
+                                <option value="40">40 per page</option>
+                                <option value="50">50 per page</option>
                             </Form.Select>
                             <span>{filteredReports.length} records</span>
                         </div>

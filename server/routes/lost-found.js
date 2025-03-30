@@ -124,7 +124,7 @@ router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
     const report_type = "Lost And Found";
     // Insert into tbl_reports first
     const reportQuery = `INSERT INTO tbl_reports (user_id, report_type, location, description, image_path, is_anonymous, status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.query(reportQuery, [user_id, report_type,location, description, image_path, is_anonymous ? 1 : 0, 'in_progress'], (err, reportResult) => {
+    db.query(reportQuery, [user_id, report_type,location, description, image_path, is_anonymous, 'in_progress'], (err, reportResult) => {
         if (err) {
             console.error("Error creating report:", err);
             return res.status(500).json({ success: false, message: 'Failed to submit report' });
@@ -391,7 +391,7 @@ router.put('/items/:id', upload.single('image_path'), (req, res) => {
 
         // Update tbl_reports first
         const updateReportQuery = `UPDATE tbl_reports SET location = ?, description = ?, image_path = ?, is_anonymous = ? WHERE id = ?`;
-        db.query(updateReportQuery, [location, description, image_path || existingImagePath,is_anonymous ? 1 : 0, report_id], (err, reportResult) => {
+        db.query(updateReportQuery, [location, description, image_path || existingImagePath,is_anonymous, report_id], (err, reportResult) => {
             if (err) {
                 console.error('Database error updating report:', err);
                 return res.status(500).json({ success: false, message: 'Failed to update report' });
