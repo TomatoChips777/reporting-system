@@ -23,7 +23,7 @@ const Messages = () => {
             const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
             if (response.data.success) {
                 setMessages(response.data.messages.map(convo => {
-                    const unreadCount = convo.messages.filter(msg => 
+                    const unreadCount = convo.messages.filter(msg =>
                         msg.status !== 'read' && msg.receiverId === user.id
                     ).length;
                     return {
@@ -32,12 +32,6 @@ const Messages = () => {
                         unreadCount  // Store unread count
                     };
                 }));
-                // setMessages(response.data.messages.map(convo => ({
-                    
-                //     ...convo,
-                //     lastMessage: convo.messages.length > 0 ? convo.messages[convo.messages.length - 1].text : '',
-                //     messageCount: convo.messages.length 
-                // })));
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -79,6 +73,7 @@ const Messages = () => {
                         lastMessage: newMsg.text,
                         created_at: newMsg.created_at,
                         item_type: newMsg.item_type,
+                        action: newMsg.action,
                         unread: 1,
                         messages: [newMsg]
                         // messages: newMsg.message_session_id === message_session_id
@@ -90,7 +85,7 @@ const Messages = () => {
                 // console.log(selectedConversation);
                 // Update selected conversation if it's the active chat
                 if (selectedConversation && (selectedConversation.message_session_id === message_session_id)) {
-                    console.log(selectedConversation);
+                    // console.log(selectedConversation);
                     setSelectedConversation(prev => ({
                         ...prev,
                         // messages: [...prev.messages, newMsg]
@@ -127,40 +122,10 @@ const Messages = () => {
     const handleFileButtonClick = () => {
         fileInputRef.current.click();
     };
-
-    // const handleSendMessage = async (e) => {
-    //     e.preventDefault();
-    //     if (!newMessage.trim() && !selectedImage) return;
-
-    //     const formData = new FormData();
-    //     formData.append("sender_id", user.id);
-    //     formData.append("receiver_id", selectedConversation.id);
-    //     formData.append("message", newMessage);
-    //     formData.append("report_id", selectedConversation.report_id);
-    //     if (selectedImage) {
-    //         formData.append("image", selectedImage);
-    //     }
-
-    //     console.log(formData);
-    //     try {
-    //         const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
-    //             headers: { "Content-Type": "multipart/form-data" }
-    //         });
-
-    //         if (response.data.success) {
-    //             const newMsg = response.data.message;
-    //             setNewMessage('');
-    //             setSelectedImage(null);
-    //         }
-    //     } catch (error) {
-    //         console.error('Error sending message:', error);
-    //     }
-    // };
-
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() && !selectedImage) return;
-    
+
         try {
             // Mark unread messages as read first
             await axios.post('http://localhost:5000/api/messages/mark-as-read', {
@@ -168,14 +133,14 @@ const Messages = () => {
                 receiverId: user.id, // Current user
                 message_session_id: selectedConversation.message_session_id
             });
-    
+
             // Reset unread count in UI
             setMessages(prevMessages => prevMessages.map(convo =>
                 convo.message_session_id === selectedConversation.message_session_id
                     ? { ...convo, unreadCount: 0 }
                     : convo
             ));
-    
+
             // Proceed with sending the new message
             const formData = new FormData();
             formData.append("sender_id", user.id);
@@ -185,11 +150,11 @@ const Messages = () => {
             if (selectedImage) {
                 formData.append("image", selectedImage);
             }
-    
+
             const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-    
+
             if (response.data.success) {
                 setNewMessage('');
                 setSelectedImage(null);
@@ -198,7 +163,7 @@ const Messages = () => {
             console.error('Error sending message or marking as read:', error);
         }
     };
-    
+
     const handleClaimAction = async (messageId, action) => {
         try {
             const response = await axios.post(`http://localhost:5000/api/messages/claim-action`, {
@@ -211,7 +176,7 @@ const Messages = () => {
                 // Update the message status locally
                 setSelectedConversation(prev => ({
                     ...prev,
-                    messages: prev.messages.map(msg =>
+                    messages: prev.message.map(msg =>
                         msg.id === messageId
                             ? { ...msg, claimStatus: action }
                             : msg
@@ -222,9 +187,42 @@ const Messages = () => {
             console.error('Error handling claim action:', error);
         }
     };
+    const handleSendClaimRequest = async () => {
+        if (!selectedConversation || !user) return;
+    
+        try {
+            const formData = new FormData();
+            formData.append("sender_id", user.id);
+            formData.append("receiver_id", selectedConversation.receiverId);
+            formData.append("message", "Requesting to claim this item."); // Fixed: Use static message for claim request
+            formData.append("report_id", selectedConversation.report_id);
+            formData.append("action", "claim");
+    
+            if (selectedImage) {
+                formData.append("image", selectedImage);
+            }
+    
+            const response = await axios.post("http://localhost:5000/api/messages/send-message/", formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+    
+            if (response.data.success) {
+                // setSelectedConversation((prev) => ({
+                //     ...prev,
+                //     messages: [...prev.messages, response.data.message], // Append new message
+                // }));
+            } else {
+                console.error("Failed to send claim request:", response.data);
+            }
+        } catch (error) {
+            console.error("Error sending claim request:", error);
+        }
+    };
+    
+    
     const handleSelectConversation = async (conversation) => {
         setSelectedConversation(conversation);
-    
+
         // If there are unread messages, mark them as read
         if (conversation.unreadCount > 0) {
             try {
@@ -233,11 +231,11 @@ const Messages = () => {
                     receiverId: user.id,  // Current user (who is reading)
                     message_session_id: conversation.message_session_id // Ensure only this conversation is updated
                 });
-    
+
                 // Update messages state: Set unreadCount to 0
-                setMessages(prevMessages => prevMessages.map(convo => 
-                    convo.id === conversation.id && convo.message_session_id === conversation.message_session_id 
-                        ? { ...convo, unreadCount: 0 } 
+                setMessages(prevMessages => prevMessages.map(convo =>
+                    convo.id === conversation.id && convo.message_session_id === conversation.message_session_id
+                        ? { ...convo, unreadCount: 0 }
                         : convo
                 ));
             } catch (error) {
@@ -245,7 +243,7 @@ const Messages = () => {
             }
         }
     };
-    
+
     return (
         <Container fluid className="messages-page p-4">
             <Row className="h-100">
@@ -282,10 +280,10 @@ const Messages = () => {
                                                     <small className="mb-0">
                                                         {conversation.user?.name || 'Unknown'}
                                                         <span className="text-muted">
-                                                        {(() => {
-                                                            const text = `${conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - ${conversation.item_name}`;
-                                                            return `[${text.length > 15 ? text.substring(0, 15) + "..." : text}]`;
-                                                        })()}
+                                                            {(() => {
+                                                                const text = `${conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - ${conversation.item_name}`;
+                                                                return `[${text.length > 15 ? text.substring(0, 15) + "..." : text}]`;
+                                                            })()}
                                                         </span>
                                                         {/* <span className="text-muted">[{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span> */}
                                                     </small>
@@ -298,12 +296,10 @@ const Messages = () => {
                                                 </p>
                                             </div>
                                             {conversation.unreadCount > 0 && (
-    <Badge bg="danger" pill className="ms-2">
-        {conversation.unreadCount}
-    </Badge>
-)}
-
-                                            
+                                                <Badge bg="danger" pill className="ms-2">
+                                                    {conversation.unreadCount}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -359,33 +355,35 @@ const Messages = () => {
                                                     )}
 
                                                     {/* Display claim action card */}
-                                                    {message.type === 'claim' && message.receiverId === user.id && !message.claimStatus && (
-                                                        <Card className="claim-action-card mt-2">
-                                                            <Card.Body>
-                                                                <div className="d-flex justify-content-between align-items-center">
-                                                                    <span>Item Claim Request</span>
-                                                                    <div>
+                                                    {message.action === 'claim' && message.senderId !== user.id &&
+                                                         (
+                                                            <Card className="claim-action-card mt-2 p-2">
+                                                                <Card.Body className="text-center">
+                                                                    {/* <span className="fw-bold d-block mb-2">Requesting to claim the item</span> */}
+                                                                    <div className="d-flex justify-content-center">
                                                                         <Button
                                                                             variant="success"
-                                                                            className="me-2"
-                                                                            onClick={() => handleClaimAction(message.id, 'accepted')}
+                                                                            className="me-2 px-3"
+                                                                            disabled={message.senderId === user.id}
+                                                                            onClick={() => console.log('Accepted')}
                                                                         >
                                                                             <BsCheckCircle className="me-1" /> Accept
                                                                         </Button>
                                                                         <Button
                                                                             variant="danger"
-                                                                            onClick={() => handleClaimAction(message.id, 'rejected')}
+                                                                            className="px-3"
+
+                                                                            disabled={message.senderId === user.id}
+                                                                            onClick={() => console.log('Rejected')}
                                                                         >
-                                                                            <BsXCircle className="me-1" /> Reject
+                                                                            <BsXCircle className="me-1"/> Reject
                                                                         </Button>
                                                                     </div>
-                                                                </div>
-                                                            </Card.Body>
-                                                        </Card>
-                                                    )}
-
+                                                                </Card.Body>
+                                                            </Card>
+                                                        )}
                                                     {/* Display claim status if action was taken */}
-                                                    {message.type === 'claim' && message.claimStatus && (
+                                                    {message.action === 'claim' && message.claimStatus && (
                                                         <div className={`claim-status mt-2 text-${message.claimStatus === 'accepted' ? 'success' : 'danger'}`}>
                                                             <small>
                                                                 {message.claimStatus === 'accepted' ? (
@@ -414,6 +412,18 @@ const Messages = () => {
                                     </div>
                                 </Card.Body>
                                 <Card.Footer className="bg-light">
+                                    {/* Request Claim Button (Only for Claimer, Not Holder) */}
+                                    {selectedConversation.receiverId !== user.id && (
+                                        <div className="mb-2 text-center">
+                                            <Button
+                                                variant="primary"
+                                                className="w-100"
+                                                onClick={handleSendClaimRequest}
+                                            >
+                                                Request Claim
+                                            </Button>
+                                        </div>
+                                    )}
                                     <Form onSubmit={handleSendMessage}>
                                         <InputGroup>
                                             <Button variant="light" onClick={handleFileButtonClick}>
@@ -429,11 +439,12 @@ const Messages = () => {
                                             <Button type="submit" variant="primary" disabled={!newMessage.trim() && !selectedImage}>
                                                 <BsSend />
                                             </Button>
+
                                         </InputGroup>
                                     </Form>
+
                                 </Card.Footer>
                             </>
-
                         ) : (
 
                             <Card.Body className="d-flex align-items-center justify-content-center text-muted">

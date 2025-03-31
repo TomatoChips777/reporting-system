@@ -88,9 +88,6 @@ const ViewReportModal = ({ show, onHide, report, onUpdateType, onUpdateStatus, o
                                 </Form.Group>
                             </>
                         )}
-
-
-
                         {/* Maintenance Report Fields */}
                         {report.report_type === "Maintenance Report" && (
                             <>
@@ -157,5 +154,4 @@ const ViewReportModal = ({ show, onHide, report, onUpdateType, onUpdateStatus, o
         </Modal>
     );
 };
-
 export default ViewReportModal;

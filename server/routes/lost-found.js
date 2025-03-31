@@ -137,7 +137,7 @@ router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
             INSERT INTO tbl_lost_found (user_id, report_id, type, item_name, category, description, location, image_path, contact_info, is_anonymous) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        db.query(lostFoundQuery, [user_id, report_id, type, item_name, category, description, location, image_path, contact_info, is_anonymous ? 1 : 0], (err, lostFoundResult) => {
+        db.query(lostFoundQuery, [user_id, report_id, type, item_name, category, description, location, image_path, contact_info, is_anonymous], (err, lostFoundResult) => {
             if (err) {
                 console.error("Error inserting lost & found record:", err);
                 return res.status(500).json({ success: false, message: 'Failed to submit lost and found item' });

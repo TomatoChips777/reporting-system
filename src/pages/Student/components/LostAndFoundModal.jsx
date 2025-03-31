@@ -59,11 +59,7 @@ const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
         const formDataObj = new FormData();
 
         Object.keys(formData).forEach((key) => {
-            if (key === 'is_anonymous') {
-                formDataObj.append(key, formData[key] ? '1' : '0');
-            } else {
-                formDataObj.append(key, formData[key]);
-            }
+            formDataObj.append(key, formData[key] === true ? '1' : formData[key]);
         });
 
         try {

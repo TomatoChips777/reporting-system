@@ -68,7 +68,7 @@ function ListScreen() {
     });
 
     return (
-        <div className="container">
+        <div className="container-fluid">
             {/* Header Section with Additional Information */}
             <div className="row mb-2">
                 <div className="col-12">
@@ -76,19 +76,17 @@ function ListScreen() {
                         <div className="card-body p-4">
                             <div className="row align-items-center">
                                 <div className="col-auto">
-                                    <i className="bi bi-exclamation-triangle-fill display-4"></i>
+                                <i className="bi bi-box-fill display-4"></i>
                                 </div>
                                 <div className="col">
                                     <h2 className="mb-0">Lost And Found</h2>
                                     <p className="mb-0">Report lost and found items on campus</p>
-
                                 </div>
                                 <div className="col-auto">
                                     {/* Opens the modal to create a new lost and found report */}
                                     <Button
                                         className="btn btn-light btn-lg rounded-0"
-                                        // onClick={() => }
-                                            onClick={() => handleOpenModal()}
+                                        onClick={() => handleOpenModal()}
                                     >
                                         <i className="bi bi-plus-lg me-2"></i>Create Report
                                     </Button>
@@ -142,10 +140,11 @@ function ListScreen() {
             </div>
 
             {/* Item List Container with Scrollable Feature */}
-            <div className="row" style={{ maxHeight: "calc(100vh - 250px)", overflowY: "auto" }}>
+            <div className="row">
                 {filteredItems.length > 0 ? (
                     filteredItems.map((item) => (
-                        <div key={item.id} className="col-md-3 mb-3">
+                        // <div key={item.id} className="col-md-3 mb-3">
+                        <div key={item.id} className="col-sm-12 col-md-6 col-lg-4 col-xl-3 mb-3">
                             <Card className="shadow-sm border-0 rounded h-100">
                                 <Card.Img
                                     variant="top"
@@ -211,7 +210,7 @@ function ListScreen() {
                     ))
                 ) : (
                     <div className="text-center py-5">
-                        <h5 className="text-muted">No items found.</h5>
+                        <h5 className="text-muted">No items posted.</h5>
                     </div>
                 )}
             </div>

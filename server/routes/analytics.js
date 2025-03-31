@@ -8,6 +8,14 @@ router.get('/analytics', async (req, res) => {
         const queries = {
             totalReports: `SELECT COUNT(*) AS total FROM tbl_reports WHERE report_type ='Maintenance Report'`,
             statusCount: `SELECT status, COUNT(*) as count FROM tbl_reports WHERE report_type ='Maintenance Report' GROUP BY status`,
+            
+            reportsTrend: `SELECT DATE(created_at) as date, tmr.category, COUNT(*) as count 
+FROM tbl_reports r
+LEFT JOIN tbl_maintenance_reports tmr ON r.id = tmr.report_id
+WHERE r.report_type = 'Maintenance Report'
+GROUP BY DATE(created_at), tmr.category
+ORDER BY DATE(created_at) ASC;
+`,
 
             reportsPerDay: `SELECT DATE(created_at) as date, COUNT(*) as count FROM tbl_reports WHERE report_type ='Maintenance Report' GROUP BY DATE(created_at)`,
             reportsPerMonth: `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count FROM tbl_reports WHERE report_type ='Maintenance Report' GROUP BY DATE_FORMAT(created_at, '%Y-%m')`,

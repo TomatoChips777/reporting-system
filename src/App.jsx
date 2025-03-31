@@ -60,7 +60,8 @@ function App() {
                                      {role === 'maintenance-report-manager' && (
                                         <>
                                          <Route path="/home" element={<HomeScreen />} />
-                                         <Route path='/reports' element={<ReportScreen />} />
+                                         <Route path="/maintenace-report-dashboard" element={<AdminDashboard />} />
+                                         <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
                                          <Route path="/messages" element={<AdminMessages />} />
                                          <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>

@@ -438,5 +438,4 @@ function ReportScreen() {
         </div>
     );
 }
-
 export default ReportScreen;

@@ -25,6 +25,7 @@ router.post('/send-message', upload.single("image"), (req, res) => {
     const image = req.file ? req.file.filename : null;
     
     const item_type = req.body.item_type && req.body.item_type.trim() !== "" ? req.body.item_type : null;
+    const action = req.body.action && req.body.action.trim() !== "" ? req.body.action : null;
 
     if (!sender_id || !receiver_id || (!message.trim() && !image) || !report_id) {
         return res.status(400).json({ success: false, message: 'Message or image is required, and report_id is mandatory' });
@@ -71,11 +72,11 @@ router.post('/send-message', upload.single("image"), (req, res) => {
     // Step 3: Insert message into tbl_messages
     function insertMessage(chatSessionId) {
         const messageQuery = `
-            INSERT INTO tbl_messages (message_session_id, sender_id, receiver_id, report_id, message, image_path) 
-            VALUES (?, ?, ?, ? ,?, ?)
+            INSERT INTO tbl_messages (message_session_id, sender_id, receiver_id, report_id, message, image_path, action) 
+            VALUES (?, ?, ?, ? ,?, ?, ?)
         `;
 
-        db.query(messageQuery, [chatSessionId, sender_id, receiver_id, report_id, textMessage, image], (err, result) => {
+        db.query(messageQuery, [chatSessionId, sender_id, receiver_id, report_id, textMessage, image, action], (err, result) => {
             if (err) {
                 console.error('Database error during message insert:', err);
                 return res.status(500).json({ success: false, message: 'Database error during message insert' });
@@ -129,6 +130,7 @@ router.post('/send-message', upload.single("image"), (req, res) => {
                         senderId: sender.sender_id,
                         item_type: item_type,
                         text: textMessage,
+                        action: action,
                         created_at: new Date().toISOString(),
                         user: {
                             id: sender.receiver_id,
@@ -186,6 +188,7 @@ router.get('/get-messages/:userId', (req, res) => {
     m.created_at,
     m.status,
     m.report_id,
+    m.action,
     u1.id AS sender_id,  -- Aliased sender_id from u1
     u1.name AS sender_name,
     u1.image_url AS sender_avatar,
@@ -256,6 +259,7 @@ ORDER BY m.created_at DESC;
                     item_name: msg.item_name,
                     item_type: msg.type,
                     status: msg.status,
+                    action: msg.action,
                     message_session_id: msg.message_session_id,
                     lastMessage: msg.text,
                     image_path: msg.image_path,
@@ -277,6 +281,7 @@ ORDER BY m.created_at DESC;
                 message_session_id: msg.message_session_id,
                 // image_path: isReceiverAnonymous ? null : msg.image_path,
                 image_path: msg.image_path,
+                action: msg.action,
                 status: msg.status,
                 text: msg.text,
                 created_at: msg.created_at
