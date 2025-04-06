@@ -189,7 +189,7 @@ const Messages = () => {
     };
     const handleSendClaimRequest = async () => {
         if (!selectedConversation || !user) return;
-    
+
         try {
             const formData = new FormData();
             formData.append("sender_id", user.id);
@@ -197,15 +197,15 @@ const Messages = () => {
             formData.append("message", "Requesting to claim this item."); // Fixed: Use static message for claim request
             formData.append("report_id", selectedConversation.report_id);
             formData.append("action", "claim");
-    
+
             if (selectedImage) {
                 formData.append("image", selectedImage);
             }
-    
+
             const response = await axios.post("http://localhost:5000/api/messages/send-message/", formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-    
+
             if (response.data.success) {
                 // setSelectedConversation((prev) => ({
                 //     ...prev,
@@ -218,8 +218,8 @@ const Messages = () => {
             console.error("Error sending claim request:", error);
         }
     };
-    
-    
+
+
     const handleSelectConversation = async (conversation) => {
         setSelectedConversation(conversation);
 
@@ -339,6 +339,66 @@ const Messages = () => {
                                                     {message.text && message.text.trim() && (
                                                         <div className="message-bubble">
                                                             {message.text}
+
+                                                            {message.action === 'claim' &&
+                                                                (
+                                                                    <Card className="claim-action-card mt-2 p-2">
+                                                                        <Card.Body className="text-center">
+                                                                            <div className="d-flex justify-content-center">
+                                                                                {message.senderId !== user.id ? (
+                                                                                    <>
+                                                                                        <Button
+                                                                                            variant="success"
+                                                                                            className="me-2 px-3"
+                                                                                            disabled={message.senderId === user.id}
+                                                                                            onClick={() => console.log('Accepted')}
+                                                                                            style={{ fontSize: '0.8rem' }}
+
+                                                                                        >
+                                                                                            <BsCheckCircle className="me-1" /> Accept
+                                                                                        </Button>
+                                                                                        <Button
+                                                                                            variant="danger"
+                                                                                            className="px-3"
+                                                                                            disabled={message.senderId === user.id}
+                                                                                            onClick={() => console.log('Rejected')}
+                                                                                            style={{ fontSize: '0.8rem' }}
+
+                                                                                        >
+                                                                                            <BsXCircle className="me-1" /> Reject
+                                                                                        </Button>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        {/* <p className="text-muted mb-2" style={{ fontSize: '0.9rem' }}>
+                                                                                            Waiting for response...
+                                                                                        </p> */}
+                                                                                        <div className="d-flex justify-content-center">
+                                                                                            <Button
+                                                                                                variant="secondary"
+                                                                                                className="me-2 px-2"
+                                                                                                disabled
+                                                                                                style={{ fontSize: '0.8rem' }}
+                                                                                            >
+                                                                                                <BsCheckCircle className="me-1" /> Accepted
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="secondary"
+                                                                                                className="px-2"
+                                                                                                disabled
+                                                                                                style={{ fontSize: '0.8rem' }}
+                                                                                            >
+                                                                                                <BsXCircle className="me-1" /> Rejected
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </>
+
+                                                                                )}
+                                                                            </div>
+                                                                        </Card.Body>
+                                                                    </Card>
+
+                                                                )}
                                                             <div className="message-meta">
                                                                 <small className="text-muted">{formatTime(message.created_at)}</small>
                                                                 {message.senderId === user.id && (
@@ -353,36 +413,6 @@ const Messages = () => {
                                                             </div>
                                                         </div>
                                                     )}
-
-                                                    {/* Display claim action card */}
-                                                    {message.action === 'claim' && message.senderId !== user.id &&
-                                                         (
-                                                            <Card className="claim-action-card mt-2 p-2">
-                                                                <Card.Body className="text-center">
-                                                                    {/* <span className="fw-bold d-block mb-2">Requesting to claim the item</span> */}
-                                                                    <div className="d-flex justify-content-center">
-                                                                        <Button
-                                                                            variant="success"
-                                                                            className="me-2 px-3"
-                                                                            disabled={message.senderId === user.id}
-                                                                            onClick={() => console.log('Accepted')}
-                                                                        >
-                                                                            <BsCheckCircle className="me-1" /> Accept
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="danger"
-                                                                            className="px-3"
-
-                                                                            disabled={message.senderId === user.id}
-                                                                            onClick={() => console.log('Rejected')}
-                                                                        >
-                                                                            <BsXCircle className="me-1"/> Reject
-                                                                        </Button>
-                                                                    </div>
-                                                                </Card.Body>
-                                                            </Card>
-                                                        )}
-                                                    {/* Display claim status if action was taken */}
                                                     {message.action === 'claim' && message.claimStatus && (
                                                         <div className={`claim-status mt-2 text-${message.claimStatus === 'accepted' ? 'success' : 'danger'}`}>
                                                             <small>
@@ -413,7 +443,7 @@ const Messages = () => {
                                 </Card.Body>
                                 <Card.Footer className="bg-light">
                                     {/* Request Claim Button (Only for Claimer, Not Holder) */}
-                                    {selectedConversation.receiverId !== user.id && (
+                                    {(selectedConversation.receiverId !== user.id && selectedConversation.report_type === "Lost And Found") && (
                                         <div className="mb-2 text-center">
                                             <Button
                                                 variant="primary"

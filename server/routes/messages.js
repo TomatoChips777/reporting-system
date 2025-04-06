@@ -197,6 +197,7 @@ router.get('/get-messages/:userId', (req, res) => {
     u2.image_url AS receiver_avatar,
     r.location AS item_location,
     r.is_anonymous,
+    r.report_type,
     r.user_id,
     -- Set item_name based on report type
     CASE 
@@ -260,6 +261,8 @@ ORDER BY m.created_at DESC;
                     item_type: msg.type,
                     status: msg.status,
                     action: msg.action,
+                    report_type: msg.report_type,
+
                     message_session_id: msg.message_session_id,
                     lastMessage: msg.text,
                     image_path: msg.image_path,
@@ -279,6 +282,7 @@ ORDER BY m.created_at DESC;
                 receiverId: msg.receiver_id,
                 report_id: msg.report_id,
                 message_session_id: msg.message_session_id,
+                report_type: msg.report_type,
                 // image_path: isReceiverAnonymous ? null : msg.image_path,
                 image_path: msg.image_path,
                 action: msg.action,
