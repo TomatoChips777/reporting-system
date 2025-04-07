@@ -154,21 +154,55 @@ router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
  * @route GET /items
  * @desc Fetch all lost and found items with user names (or "Anonymous" if set)
  */
+// router.get('/items', (req, res) => {
+//     const query = `
+//         SELECT 
+//     lf.*,
+//     CASE 
+//         WHEN lf.is_anonymous = 1 THEN 'Anonymous'
+//         ELSE u.name 
+//     END AS user_name
+// FROM tbl_lost_found lf
+// LEFT JOIN tbl_users u ON lf.user_id = u.id 
+// LEFT JOIN tbl_reports r ON lf.report_id = r.id
+// WHERE lf.archived = 0
+//     AND COALESCE(r.report_type, '') != ''
+// ORDER BY lf.date_reported DESC;
+
+//     `;
+
+//     db.query(query, (err, results) => {
+//         if (err) {
+//             console.error('Database error:', err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Database error'
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             items: results
+//         });
+//     });
+// });
 router.get('/items', (req, res) => {
     const query = `
         SELECT 
-    lf.*,
-    CASE 
-        WHEN lf.is_anonymous = 1 THEN 'Anonymous'
-        ELSE u.name 
-    END AS user_name
-FROM tbl_lost_found lf
-LEFT JOIN tbl_users u ON lf.user_id = u.id 
-LEFT JOIN tbl_reports r ON lf.report_id = r.id
-WHERE lf.archived = 0
-    AND COALESCE(r.report_type, '') != ''
-ORDER BY lf.date_reported DESC;
-
+            lf.*,
+            CASE 
+                WHEN lf.is_anonymous = 1 THEN 'Anonymous'
+                ELSE u.name 
+            END AS user_name,
+            COUNT(c.id) AS claim_count
+        FROM tbl_lost_found lf
+        LEFT JOIN tbl_users u ON lf.user_id = u.id 
+        LEFT JOIN tbl_reports r ON lf.report_id = r.id
+        LEFT JOIN tbl_claims c ON c.item_id = lf.id  -- Join with tbl_claims to count claims
+        WHERE lf.archived = 0
+            AND COALESCE(r.report_type, '') != '' AND lf.status = 'open'
+        GROUP BY lf.id, u.name  -- Group by lf.id to get the count of claims per item
+        ORDER BY lf.date_reported DESC;
     `;
 
     db.query(query, (err, results) => {
@@ -186,7 +220,6 @@ ORDER BY lf.date_reported DESC;
         });
     });
 });
-
 
 
 
@@ -255,7 +288,7 @@ router.get('/items/:id', (req, res) => {
  * @route PUT /items/:id/status
  * @desc Update item status (e.g., open → claimed)
  */
-router.put('/items/:id/status', (req, res) => {
+router.put('/items/status-change/:id', (req, res) => {
     const { status } = req.body;
     const validStatuses = ['open', 'closed', 'claimed'];
 
@@ -266,38 +299,134 @@ router.put('/items/:id/status', (req, res) => {
         });
     }
 
-    const query = 'UPDATE tbl_lost_found SET status = ? WHERE id = ?';
+    // Map lost_found status to reports status
+    const statusMap = {
+        open: 'pending',
+        closed: 'resolved',
+        claimed: 'resolved'
+    };
+    const mappedReportStatus = statusMap[status];
 
-    db.query(query, [status, req.params.id], (err, result) => {
+    const updateLostFoundQuery = 'UPDATE tbl_lost_found SET status = ? WHERE id = ?';
+
+    db.query(updateLostFoundQuery, [status, req.params.id], (err, result) => {
         if (err) {
-            console.error('Database error:', err);
+            console.error('Database error (lost_found):', err);
             return res.status(500).json({
                 success: false,
-                message: 'Database error'
+                message: 'Database error on lost & found update'
             });
         }
 
         if (result.affectedRows === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'Item not found'
+                message: 'Lost & found item not found'
             });
         }
 
-        // Emit socket event if available
-        if (req.io) {
-            req.io.emit('updateStatus', {
-                id: req.params.id,
-                status
-            });
-        }
+        const updateReportQuery = 'UPDATE tbl_reports SET status = ? WHERE reference_id = ? AND category = "lost_found"';
 
-        res.json({
-            success: true,
-            message: 'Status updated successfully'
+        db.query(updateReportQuery, [mappedReportStatus, req.params.id], (err, reportResult) => {
+            if (err) {
+                console.error('Database error (reports):', err);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Database error on reports update'
+                });
+            }
+
+            // Emit socket event if needed
+            if (req.io) {
+                req.io.emit('updateStatus', {
+                    id: req.params.id,
+                    status
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Status updated successfully'
+            });
         });
     });
 });
+router.get('/claims/:itemId', (req, res) => {
+    const itemId = req.params.itemId;
+
+    const query = `
+        SELECT 
+            c.*, 
+            claimer.name AS claimer_name,
+            holder.name AS holder_name
+        FROM tbl_claims c
+        LEFT JOIN tbl_users claimer ON c.claimer_id = claimer.id
+        LEFT JOIN tbl_users holder ON c.holder_id = holder.id
+        WHERE c.item_id = ?
+    `;
+    db.query(query, [itemId], (err, results) => {
+        if (err) {
+            console.error('Error fetching claims:', err);
+            return res.status(500).json({ success: false, message: 'Server error' });
+        }
+        res.json({ success: true, claims: results });
+    });
+});
+
+
+// router.put('/items/status-change/:id', (req, res) => {
+//     const { status } = req.body;
+//     const validStatuses = ['open', 'closed', 'claimed'];
+
+//     if (!validStatuses.includes(status)) {
+//         return res.status(400).json({
+//             success: false,
+//             message: 'Invalid status. Must be one of: open, closed, claimed'
+//         });
+//     }
+
+//     const query = 'UPDATE tbl_lost_found SET status = ? WHERE id = ?';
+
+//     db.query(query, [status, req.params.id], (err, result) => {
+//         if (err) {
+//             console.error('Database error:', err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Database error'
+//             });
+//         }
+
+//         if (result.affectedRows === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Item not found'
+//             });
+//         }
+
+//         const reportStatusQuery = 'UPDATE tbl_reports SET status = ? WHERE id = ?';
+
+//         db.query(reportStatusQuery, [status, req.params.id], (err, result) => {
+//             if (err) {
+//                 console.error('Database error:', err);
+//                 return res.status(500).json({
+//                     success: false, message: 'Database error'
+//                 });
+//             }
+//         });
+//         // Emit socket event if available
+//         if (req.io) {
+//             req.io.emit('updateStatus', {
+//                 id: req.params.id,
+//                 status
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             message: 'Status updated successfully'
+//         });
+//     });
+// });
 
 /**
  * @route DELETE /items/:id
@@ -576,5 +705,122 @@ router.post('/found-item/:id',upload.single('image'), (req, res) => {
         });
     });
 });
+
+router.post('/item/claim-request', (req, res) => {
+    const { itemId, claimerId, holderId, description } = req.body;
+
+    // First check if the claim already exists
+    const checkQuery = `
+        SELECT * FROM tbl_claims 
+        WHERE item_id = ? AND claimer_id = ?
+    `;
+
+    db.query(checkQuery, [itemId, claimerId], (checkErr, checkResult) => {
+        if (checkErr) {
+            console.error('Error checking existing claim:', checkErr);
+            return res.status(500).json({
+                success: false,
+                message: 'Error checking existing claim'
+            });
+        }
+
+        if (checkResult.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'You already sent a claim request for this item'
+            });
+        }
+
+        // If not exists, insert the new claim
+        const insertQuery = `
+            INSERT INTO tbl_claims (item_id, claimer_id, holder_id, description)
+            VALUES (?, ?, ?, ?)
+        `;
+
+        db.query(insertQuery, [itemId, claimerId, holderId, description], (insertErr, insertResult) => {
+            if (insertErr) {
+                console.error('Error inserting claim request:', insertErr);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error inserting claim request'
+                });
+            }
+
+            return res.json({
+                success: true,
+                message: 'Claim request sent successfully'
+            });
+        });
+    });
+});
+
+router.put('/item/accept-claim', (req, res) => {
+    // const { itemId } = req.params;
+    const {item_id, holder_id, claimer_id } = req.body;  // Retrieve from request body
+
+    if (!item_id || !holder_id || !claimer_id) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing item_id, holder_id, or claimer_id'
+        });
+    }
+
+    const query = `
+        UPDATE tbl_claims 
+        SET status = 'accepted' 
+        WHERE item_id = ? AND holder_id = ? AND claimer_id = ?
+    `;
+
+    db.query(query, [item_id, holder_id, claimer_id], (err, result) => {
+        if (err) {
+            console.error('Error accepting claim:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'Error accepting claim'
+            });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No matching claim found to update'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Claim accepted successfully'
+        });
+    });
+});
+
+
+
+// // Route to handle the claim request
+// router.post('/item/claim-request', (req, res) => {
+//     const { item_id, claimerId, holderId } = req.body;
+
+//     // Insert a new claim into the tbl_claims table
+//     const query = `
+//         INSERT INTO tbl_claims (item_id, claimer_id, holder_id)
+//         VALUES (?, ?, ?)
+//     `;
+
+//     db.query(query, [itemId, claimerId, holderId], (err, result) => {
+//         if (err) {
+//             console.error('Error inserting claim request:', err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Error inserting claim request'
+//             });
+//         }
+        
+//         res.json({
+//             success: true,
+//             message: 'Claim request sent successfully'
+//         });
+//     });
+// });
+
 
 module.exports = router;

@@ -400,8 +400,8 @@ function Reports() {
                                                     : report.description}</p>
 
                                                 <p>
-                                                    <strong>Priority:</strong>
-                                                    <Badge
+                                                    <strong>Priority: </strong>
+                                                    {/* <Badge
                                                         bg={
                                                             report.priority === "Low" ? "success" :
                                                                 report.priority === "Medium" ? "primary" :
@@ -409,16 +409,16 @@ function Reports() {
                                                                         report.priority === "Urgent" ? "danger" : "secondary"
                                                         }
                                                         className="ms-2 rounded-0"
-                                                    >
-                                                        {report.priority}
-                                                    </Badge>
+                                                    > */}
+                                                          {report.priority}
+                                                    {/* </Badge> */}
                                                 </p>
 
                                                 <p>
-                                                    <strong>Status:</strong>
-                                                    <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0">
-                                                        {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                    </Badge>
+                                                    <strong>Status: </strong>
+                                                    {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0"> */}
+                                                         {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                                    {/* </Badge> */}
                                                 </p>
                                                 <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
@@ -442,7 +442,7 @@ function Reports() {
                             </ul>
                         ) : (
                             <Table hover>
-                                <thead>
+                                <thead className="table-dark">
                                     <tr>
                                         <th>Date</th>
                                         <th>Reported By</th>
@@ -475,7 +475,7 @@ function Reports() {
                                                     : report.description}
                                             </td>
                                             <td>
-                                                <Badge
+                                                {/* <Badge
                                                     bg={
                                                         report.priority === "Low" ? "success" :
                                                             report.priority === "Medium" ? "primary" :
@@ -483,14 +483,14 @@ function Reports() {
                                                                     report.priority === "Urgent" ? "danger" : "secondary"
                                                     }
                                                     className="ms-2 rounded-0"
-                                                >
+                                                > */}
                                                     {report.priority}
-                                                </Badge>
+                                                {/* </Badge> */}
                                             </td>
                                             <td>
-                                                <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0">
+                                                {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0"> */}
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                </Badge>
+                                                {/* </Badge> */}
                                             </td>
                                             <td>
                                                 <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>

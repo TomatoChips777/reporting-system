@@ -332,7 +332,7 @@ function Reports() {
                             </ul>
                         ) : (
                             <Table hover>
-                                <thead>
+                                <thead className="table-dark striped">
                                     <tr>
                                         <th>Date</th>
                                         <th>Reported By</th>

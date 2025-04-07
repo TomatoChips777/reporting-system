@@ -164,6 +164,56 @@ const Messages = () => {
         }
     };
 
+   const handleClaimAction = async () => {
+    try {
+        const response = await axios.post('http://localhost:5000/api/lostandfound/item/claim-request', {
+            itemId: selectedConversation.report_id,
+            claimerId: user.id,
+            holderId: selectedConversation.receiverId
+        });
+
+        if (response.data.success) {
+            // Handle success (e.g., display success message or update UI)
+            alert('Claim request sent successfully');
+        } else {
+            // Handle error
+            alert('Failed to send claim request');
+        }
+    } catch (error) {
+        console.error('Error sending claim request:', error);
+        alert('Error sending claim request');
+    }
+};
+
+    const handleSendClaimRequest = async () => {
+        if (!selectedConversation || !user) return;
+
+        try {
+            const formData = new FormData();
+            formData.append("sender_id", user.id);
+            formData.append("receiver_id", selectedConversation.receiverId);
+            formData.append("message", "Requesting to claim this item."); // Fixed: Use static message for claim request
+            formData.append("report_id", selectedConversation.report_id);
+            formData.append("action", "claim");
+
+            if (selectedImage) {
+                formData.append("image", selectedImage);
+            }
+
+            const response = await axios.post("http://localhost:5000/api/messages/send-message/", formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            if (response.data.success) {
+            } else {
+                console.error("Failed to send claim request:", response.data);
+            }
+        } catch (error) {
+            console.error("Error sending claim request:", error);
+        }
+    };
+
+
     const handleSelectConversation = async (conversation) => {
         setSelectedConversation(conversation);
 
@@ -175,6 +225,7 @@ const Messages = () => {
                     receiverId: user.id,  // Current user (who is reading)
                     message_session_id: conversation.message_session_id // Ensure only this conversation is updated
                 });
+
                 // Update messages state: Set unreadCount to 0
                 setMessages(prevMessages => prevMessages.map(convo =>
                     convo.id === conversation.id && convo.message_session_id === conversation.message_session_id
@@ -282,6 +333,66 @@ const Messages = () => {
                                                     {message.text && message.text.trim() && (
                                                         <div className="message-bubble">
                                                             {message.text}
+
+                                                            {message.action === 'claim' &&
+                                                                (
+                                                                    <Card className="claim-action-card mt-2 p-2">
+                                                                        <Card.Body className="text-center">
+                                                                            <div className="d-flex justify-content-center">
+                                                                                {message.senderId !== user.id ? (
+                                                                                    <>
+                                                                                        <Button
+                                                                                            variant="success"
+                                                                                            className="me-2 px-3"
+                                                                                            disabled={message.senderId === user.id}
+                                                                                            onClick={() => console.log('Accepted')}
+                                                                                            style={{ fontSize: '0.8rem' }}
+
+                                                                                        >
+                                                                                            <BsCheckCircle className="me-1" /> Accept
+                                                                                        </Button>
+                                                                                        <Button
+                                                                                            variant="danger"
+                                                                                            className="px-3"
+                                                                                            disabled={message.senderId === user.id}
+                                                                                            onClick={() => console.log('Rejected')}
+                                                                                            style={{ fontSize: '0.8rem' }}
+
+                                                                                        >
+                                                                                            <BsXCircle className="me-1" /> Reject
+                                                                                        </Button>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        {/* <p className="text-muted mb-2" style={{ fontSize: '0.9rem' }}>
+                                                                                            Waiting for response...
+                                                                                        </p> */}
+                                                                                        <div className="d-flex justify-content-center">
+                                                                                            <Button
+                                                                                                variant="secondary"
+                                                                                                className="me-2 px-2"
+                                                                                                disabled
+                                                                                                style={{ fontSize: '0.8rem' }}
+                                                                                            >
+                                                                                                <BsCheckCircle className="me-1" /> Accepted
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="secondary"
+                                                                                                className="px-2"
+                                                                                                disabled
+                                                                                                style={{ fontSize: '0.8rem' }}
+                                                                                            >
+                                                                                                <BsXCircle className="me-1" /> Rejected
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </>
+
+                                                                                )}
+                                                                            </div>
+                                                                        </Card.Body>
+                                                                    </Card>
+
+                                                                )}
                                                             <div className="message-meta">
                                                                 <small className="text-muted">{formatTime(message.created_at)}</small>
                                                                 {message.senderId === user.id && (
@@ -325,6 +436,18 @@ const Messages = () => {
                                     </div>
                                 </Card.Body>
                                 <Card.Footer className="bg-light">
+                                    {/* Request Claim Button (Only for Claimer, Not Holder) */}
+                                    {(selectedConversation.receiverId !== user.id && selectedConversation.report_type === "Lost And Found") && (
+                                        <div className="mb-2 text-center">
+                                            <Button
+                                                variant="primary"
+                                                className="w-100"
+                                                onClick={handleSendClaimRequest}
+                                            >
+                                                Request Claim
+                                            </Button>
+                                        </div>
+                                    )}
                                     <Form onSubmit={handleSendMessage}>
                                         <InputGroup>
                                             <Button variant="light" onClick={handleFileButtonClick}>

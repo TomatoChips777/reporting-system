@@ -11,7 +11,7 @@
         const [formData, setFormData] = useState({
             sender_id: user?.id,
             receiver_id: existingItem?.user_id,
-            report_id: existingItem?.id,
+            report_id: existingItem?.report_id,
             message: '',
             type: '',
             image: null,
@@ -89,7 +89,7 @@
             setFormData({
                 sender_id: user?.id,
                 receiver_id: existingItem?.user_id,
-                report_id: existingItem?.id,
+                report_id: existingItem?.report_id,
                 message: '',
                 type: '',
                 image: null,

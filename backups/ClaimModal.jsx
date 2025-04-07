@@ -8,20 +8,24 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        itemId: existingItem?.id,
-        claimerId: user.id,
-        holderId: existingItem?.user_id,
-        description: '',
+        sender_id: user?.id,
+        receiver_id: existingItem?.user_id,
+        report_id: existingItem?.report_id,
+        message: '',
+        type: '',
+        image: null,
     });
 
     useEffect(() => {
         if (show) {
             if (existingItem) {
                 setFormData({
-                    itemId: existingItem?.id,
-                    claimerId: user.id,
-                    holderId: existingItem?.user_id,
-                    description: '',
+                    sender_id: user?.id,
+                    receiver_id: existingItem?.user_id,
+                    report_id: existingItem?.report_id,
+                    message: '',
+                    type: '',
+                    image: null,
                 });
             } else {
                 resetForm();
@@ -89,49 +93,14 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         }
     };
 
-
-    const handleClaimAction = async (e) => {
-        e.preventDefault();
-        const { description } = formData;
-    
-        if (!description.trim()) return;
-    
-        const claimData = {
-            itemId: existingItem?.id,
-            claimerId: user.id,
-            holderId: existingItem?.user_id,
-            description: description.trim(),
-        };
-    
-        setLoading(true);
-        try {
-            const response = await axios.post(
-                'http://localhost:5000/api/lostandfound/item/claim-request',
-                claimData
-            );
-    
-            if (response.data.success) {
-                resetForm();
-                fetchItems();
-                handleClose();
-                alert('Claim request sent successfully');
-            } else {
-                alert('Failed to send claim request');
-            }
-        } catch (error) {
-            console.error('Error sending claim request:', error);
-            alert('Error sending claim request');
-        } finally {
-            setLoading(false);
-        }
-    };
-    
     const resetForm = () => {
         setFormData({
-            itemId: existingItem?.id,
-            claimerId: user.id,
-            holderId: existingItem?.user_id,
-            description: '',
+            sender_id: user?.id,
+            receiver_id: existingItem?.user_id,
+            report_id: existingItem?.report_id,
+            message: '',
+            type: '',
+            image: null,
         });
     };
 
@@ -144,7 +113,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                 </OverlayTrigger>
             </Modal.Header>
             <Modal.Body>
-                <Form onSubmit={handleClaimAction}>
+                <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
                         <Form.Label>Item Name</Form.Label>
                         <Form.Control
@@ -159,8 +128,8 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                         <Form.Label>Message <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             as="textarea"
-                            name="description"
-                            value={formData.description}
+                            name="message"
+                            value={formData.message}
                             onChange={handleInputChange}
                             rows={3}
                             required
