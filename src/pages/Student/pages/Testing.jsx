@@ -7,6 +7,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../../AuthContext";
 import CreateReportModal from "../components/CreateReportModal";
+import formatDate from "../../../functions/DateFormat";
 function Reports() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);
@@ -100,7 +101,7 @@ function Reports() {
             console.error("Invalid report selection.");
             return;
         }
-        const response = await axios.put(`http://localhost:5000/api/reports/reports/archive-maintenance-report/${reportToDelete}`);
+        const response = await axios.put(`${import.meta.env.VITE_REMOVE_REPORT}/${reportToDelete}`);
         if (response.data.success) {
             setShowDeleteModal(false);
             setReportToDelete(null);
@@ -151,7 +152,33 @@ function Reports() {
 
 
     return (
-        <div className="container mt-5">
+        <div className="container-fluid">
+            <div className="row mb-2">
+                <div className="col-12">
+                    <div className="card bg-success text-white">
+                        <div className="card-body p-4">
+                            <div className="row align-items-center">
+                                <div className="col-auto">
+                                    <i className="bi bi-exclamation-triangle-fill display-4"></i>
+                                </div>
+                                <div className="col">
+                                    <h2 className="mb-0">Submit a Report</h2>
+                                    <p className="mb-0">Report maintenance issues, lost and found items, or incident</p>
+                                </div>
+                                <div className="col-auto">
+                                    {/* Opens the modal to create a new lost and found report */}
+                                    <Button
+                                        className="btn btn-light btn-lg rounded-0"
+                                        onClick={() => handleOpenCreateModal()}
+                                    >
+                                        <i className="bi bi-plus-lg me-2"></i>Create Report
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="row mb-3">
                 <div className="col-md-3">
                     <div className="card p-3 text-center rounded-0">
@@ -182,15 +209,15 @@ function Reports() {
                     </div>
                 </div>
             </div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            {/* <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2>My Reports</h2>
                 <button className="btn btn-success rounded-0" onClick={() => handleOpenCreateModal()}>
                     <FaPlusCircle className="me-1" /> Create Report
                 </button>
-            </div>
+            </div> */}
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-white py-3">
+                <Card.Header className="bg-success text-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
                             <h5 className="mb-0">All Reports</h5>
@@ -234,24 +261,16 @@ function Reports() {
                         </div>
                     </div>
                 </Card.Header>
-                <Card.Body style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                <Card.Body className="p-0">
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
                                 {currentReports.map((report) => (
-                                    <li key={report.id} className="list-group-item mb-3">
+                                    <li key={report.id} className="list-group-item">
                                         <div className="d-flex align-items-start justify-content-between">
                                             {/* Left Side: Report Details */}
                                             <div className="w-75 me-3">
-                                                <p><strong>Date:</strong> {new Date(report.created_at).toLocaleString('en-US', {
-                                                    timeZone: 'Asia/Manila',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                })}</p>
+                                                <p><strong>Date:</strong> {formatDate(report.created_at)}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
                                                 <p><strong>Description:</strong> {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
@@ -290,8 +309,8 @@ function Reports() {
                                 ))}
                             </ul>
                         ) : (
-                            <Table hover>
-                                <thead>
+                            <Table hover bordered className="mb-0">
+                                <thead className="table-success">
                                     <tr>
                                         <th>Date</th>
                                         <th>Location</th>
@@ -303,15 +322,7 @@ function Reports() {
                                 <tbody>
                                     {currentReports.map((report) => (
                                         <tr key={report.id}>
-                                            <td>{new Date(report.created_at).toLocaleString('en-US', {
-                                                timeZone: 'Asia/Manila',
-                                                month: 'long',
-                                                day: 'numeric',
-                                                year: 'numeric',
-                                                hour: 'numeric',
-                                                minute: '2-digit',
-                                                hour12: true,
-                                            })}</td>
+                                            <td>{formatDate(report.created_at)}</td>
                                             <td>{report.location}</td>
                                             <td>
                                                 {report.description.length > 50
@@ -325,7 +336,6 @@ function Reports() {
                                             </td>
                                             <td>
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                {/* <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button> */}
                                                 {report.status === "pending" && (
                                                     <Button
                                                         variant="outline-danger rounded-0"
@@ -344,19 +354,8 @@ function Reports() {
 
                         )}
                     </div>
-                    <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
-                        <Modal.Header closeButton>
-                            <Modal.Title>Confirm Remove</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            Are you sure you want to remove this report? This action cannot be undone.
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                            <Button variant="danger" className="rounded-0" onClick={handleRemove}>Remove</Button>
-                        </Modal.Footer>
-                    </Modal>
-
+                </Card.Body>
+                <Card.Footer>
                     {/* Pagination Controls */}
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
@@ -412,8 +411,22 @@ function Reports() {
                             </ul>
                         </nav>
                     </div>
-                </Card.Body>
+                </Card.Footer>
             </Card>
+
+
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Remove</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to remove this report? This action cannot be undone.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+                    <Button variant="danger" className="rounded-0" onClick={handleRemove}>Remove</Button>
+                </Modal.Footer>
+            </Modal>
             {/* View Details Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
                 <Modal.Header closeButton>
@@ -451,42 +464,6 @@ function Reports() {
                                 </div>
                             )}
                         </Card>
-                        // <div>
-                        //     <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
-                        //         timeZone: 'Asia/Manila',
-                        //         month: 'long',
-                        //         day: 'numeric',
-                        //         year: 'numeric',
-                        //         hour: 'numeric',
-                        //         minute: '2-digit',
-                        //         hour12: true,
-                        //     })}</p>
-                        //     <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
-
-                        //     {/* Description Label and Text Box with Gray Background */}
-                        //     <p className="text-break"><strong>Description:</strong></p>
-                        //     <div style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '5px', minHeight: '50px' }}>
-                        //         <p className="m-0">{selectedReport.description}</p>
-                        //     </div>
-
-                        //     {/* Image Display */}
-                        //     {selectedReport.image_path && (
-                        //         <div className="mb-3 d-flex flex-column align-items-center text-center">
-                        //             <strong>Attached Image:</strong>
-                        //             <img
-                        //                 src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
-                        //                 alt="Report"
-                        //                 className="img-fluid mt-2"
-                        //                 style={{ maxHeight: "300px", borderRadius: "10px" }}
-                        //             />
-                        //         </div>
-                        //     )}
-
-                        //     <strong>Status:</strong>
-                        //     <Badge bg={selectedReport.status === "pending" ? "warning" : selectedReport.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0">
-                        //         {selectedReport.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                        //     </Badge>
-                        // </div>
                     ) : (
                         <p>No details available.</p>
                     )}

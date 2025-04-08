@@ -73,7 +73,7 @@ const AdminDashboard = () => {
     
     
     return (
-        <div className="container mb-5">
+        <div className="container-fluid mb-5">
             {/* <h2 className="text-center mb-4 text-primary">
                 <IoPieChart className="me-2" /> Admin Dashboard Analytics
             </h2> */}
@@ -259,7 +259,7 @@ const AdminDashboard = () => {
                         <th>Issue Type</th>
                         <th>Priority</th>
                         <th>Status</th>
-                        <th className="text-center">Created At</th>
+                        <th className="text-center">Reported At</th>
                     </tr>
                 </thead>
                 <tbody>

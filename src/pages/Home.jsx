@@ -184,7 +184,7 @@ const HomeScreen = () => {
     );
 
     return (
-        <Container className="py-0">
+        <Container fluid className="py-0">
             {/* <h2 className="mb-4 text-center">Welcome! Select a Service</h2> */}
 
             {role === 'student' && (

@@ -4,6 +4,7 @@ import { BsPersonCircle, BsSend, BsCheck2All, BsCheck2, BsPaperclip, BsCheckCirc
 import { useAuth } from '../../../AuthContext';
 import axios from 'axios';
 import { io } from 'socket.io-client';
+import formatDate from '../../functions/DateFormat';
 
 const Messages = () => {
     const [messages, setMessages] = useState([]);
@@ -231,7 +232,7 @@ const Messages = () => {
                                                         {/* <span className="text-muted">[{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span> */}
                                                     </small>
                                                     <small className="text-muted">
-                                                        {formatTime(conversation.created_at)}
+                                                        {formatDate(conversation.created_at)}
                                                     </small>
                                                 </div>
                                                 <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
@@ -351,7 +352,7 @@ const Messages = () => {
                             <Card.Body className="d-flex align-items-center justify-content-center text-muted">
                                 <div className="text-center">
                                     <BsPersonCircle size={50} />
-                                    <h5 className="mt-3">Select a conversation to start messaging</h5>
+                                    <h5 className="mt-3">No conversation</h5>
                                 </div>
                             </Card.Body>
                         )}

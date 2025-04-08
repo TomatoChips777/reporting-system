@@ -146,17 +146,17 @@ router.delete('/admin/report/:id', (req, res) => {
     });
 });
 
-router.put('/report/archive-maintenance-report/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        await db.query("UPDATE tbl_reports SET archived = 1 WHERE id = ?", [id]);
-        req.io.emit('update');
-        res.json({ success: true, message: "Report archived successfully" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Error archiving report" });
-    }
-});
+// router.put('/report/archive-maintenance-report/:id', async (req, res) => {
+//     const { id } = req.params;
+//     try {
+//         await db.query("UPDATE tbl_reports SET archived = 1 WHERE id = ?", [id]);
+//         req.io.emit('update');
+//         res.json({ success: true, message: "Report archived successfully" });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, message: "Error archiving report" });
+//     }
+// });
 
 router.delete('/report/:id', (req, res) => {
     const { id } = req.params;
@@ -205,7 +205,7 @@ router.delete('/report/:id', (req, res) => {
     });
 });
 
-router.put('/reports/archive-maintenance-report/:id', (req, res) => {
+router.put('/report/archive-report/:id', (req, res) => {
     const { id } = req.params;
     const query = `UPDATE tbl_reports SET archived = 1 WHERE id = ?`;
 

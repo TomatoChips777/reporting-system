@@ -43,8 +43,8 @@ class NavigationManager {
         //         { path: '/admin-messages', name: 'Messages', icon: 'reports', adminOnly: true },
         //     ]),
             lostFound: new Section('Lost and Found', '/lost-and-found-dashboard', [
-                { path: '/lost-and-found-reports', name: 'Lost And Found', icon: 'search' },
                 { path: '/lost-and-found-dashboard', name: 'Lost And Found Dashboard', icon: 'reports', adminOnly: true },
+                { path: '/lost-and-found-reports', name: 'Lost And Found', icon: 'search' },
             ]),
             incidentReporting: new Section('Incident Reporting', '/incidents', [
                 { path: '/incidents', name: 'Incidents', icon: 'warning' },

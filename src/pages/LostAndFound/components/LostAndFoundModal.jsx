@@ -5,7 +5,6 @@ import { useAuth } from '../../../../AuthContext';
 
 const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
     const { user } = useAuth();
-    // Initialize form state based on existing item or default values
     const [formData, setFormData] = useState({
         user_id: user?.id,
         type: 'lost',
@@ -90,8 +89,6 @@ const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
             alert(`Error ${existingItem ? 'updating' : 'posting'} item`);
         }
     };
-
-
     const resetForm = () => {
         setFormData({
             user_id: user?.id,

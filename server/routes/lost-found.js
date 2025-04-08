@@ -190,6 +190,7 @@ router.get('/items', (req, res) => {
     const query = `
         SELECT 
             lf.*,
+
             CASE 
                 WHEN lf.is_anonymous = 1 THEN 'Anonymous'
                 ELSE u.name 
@@ -365,6 +366,26 @@ router.get('/claims/:itemId', (req, res) => {
         WHERE c.item_id = ?
     `;
     db.query(query, [itemId], (err, results) => {
+        if (err) {
+            console.error('Error fetching claims:', err);
+            return res.status(500).json({ success: false, message: 'Server error' });
+        }
+        res.json({ success: true, claims: results });
+    });
+});
+
+router.get('/item/claims', (req, res) => {
+    const query = `
+        SELECT 
+            c.*, 
+            claimer.name AS claimer_name,
+            holder.name AS holder_name
+        FROM tbl_claims c
+        LEFT JOIN tbl_users claimer ON c.claimer_id = claimer.id
+        LEFT JOIN tbl_users holder ON c.holder_id = holder.id
+        WHERE c.status = 'accepted'
+    `;
+    db.query(query, (err, results) => {
         if (err) {
             console.error('Error fetching claims:', err);
             return res.status(500).json({ success: false, message: 'Server error' });
@@ -754,9 +775,50 @@ router.post('/item/claim-request', (req, res) => {
     });
 });
 
+// router.put('/item/accept-claim', (req, res) => {
+//     // const { itemId } = req.params;
+//     const {item_id, holder_id, claimer_id } = req.body;  // Retrieve from request body
+
+//     if (!item_id || !holder_id || !claimer_id) {
+//         return res.status(400).json({
+//             success: false,
+//             message: 'Missing item_id, holder_id, or claimer_id'
+//         });
+//     }
+
+//     const query = `
+//         UPDATE tbl_claims 
+//         SET status = 'accepted' 
+//         WHERE item_id = ? AND holder_id = ? AND claimer_id = ?
+//     `;
+
+//     db.query(query, [item_id, holder_id, claimer_id], (err, result) => {
+//         if (err) {
+//             console.error('Error accepting claim:', err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Error accepting claim'
+//             });
+//         }
+
+//         if (result.affectedRows === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'No matching claim found to update'
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             message: 'Claim accepted successfully'
+//         });
+//     });
+// });
+
+
+
 router.put('/item/accept-claim', (req, res) => {
-    // const { itemId } = req.params;
-    const {item_id, holder_id, claimer_id } = req.body;  // Retrieve from request body
+    const { item_id, holder_id, claimer_id } = req.body;  // Retrieve from request body
 
     if (!item_id || !holder_id || !claimer_id) {
         return res.status(400).json({
@@ -765,35 +827,131 @@ router.put('/item/accept-claim', (req, res) => {
         });
     }
 
-    const query = `
-        UPDATE tbl_claims 
-        SET status = 'accepted' 
-        WHERE item_id = ? AND holder_id = ? AND claimer_id = ?
-    `;
-
-    db.query(query, [item_id, holder_id, claimer_id], (err, result) => {
+    // Start a transaction to ensure all updates happen atomically
+    db.beginTransaction((err) => {
         if (err) {
-            console.error('Error accepting claim:', err);
+            console.error('Error starting transaction:', err);
             return res.status(500).json({
                 success: false,
-                message: 'Error accepting claim'
+                message: 'Error starting transaction'
             });
         }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No matching claim found to update'
-            });
-        }
+        // Update claim status to 'accepted'
+        const updateClaimQuery = `
+            UPDATE tbl_claims 
+            SET status = 'accepted' 
+            WHERE item_id = ? AND holder_id = ? AND claimer_id = ?
+        `;
+        
+        db.query(updateClaimQuery, [item_id, holder_id, claimer_id], (err, result) => {
+            if (err) {
+                return db.rollback(() => {
+                    console.error('Error updating claim:', err);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Error updating claim'
+                    });
+                });
+            }
 
-        res.json({
-            success: true,
-            message: 'Claim accepted successfully'
+            // If no claim was found to update, rollback and respond with an error
+            if (result.affectedRows === 0) {
+                return db.rollback(() => {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'No matching claim found to update'
+                    });
+                });
+            }
+
+            // Update tbl_lost_found status to 'claimed'
+            const updateLostFoundQuery = `
+                UPDATE tbl_lost_found
+                SET status = 'claimed'
+                WHERE id = ?
+            `;
+            db.query(updateLostFoundQuery, [item_id], (err, result) => {
+                if (err) {
+                    return db.rollback(() => {
+                        console.error('Error updating tbl_lost_found status:', err);
+                        return res.status(500).json({
+                            success: false,
+                            message: 'Error updating tbl_lost_found status'
+                        });
+                    });
+                }
+
+                // Fetch the report_id from tbl_lost_found (because it references tbl_reports)
+                const fetchReportIdQuery = `
+                    SELECT report_id 
+                    FROM tbl_lost_found 
+                    WHERE id = ?
+                `;
+                db.query(fetchReportIdQuery, [item_id], (err, result) => {
+                    if (err) {
+                        return db.rollback(() => {
+                            console.error('Error fetching report_id from tbl_lost_found:', err);
+                            return res.status(500).json({
+                                success: false,
+                                message: 'Error fetching report_id from tbl_lost_found'
+                            });
+                        });
+                    }
+
+                    if (result.length === 0) {
+                        return db.rollback(() => {
+                            console.error('No report found for this item');
+                            return res.status(404).json({
+                                success: false,
+                                message: 'No report found for this item'
+                            });
+                        });
+                    }
+
+                    const reportId = result[0].report_id;
+
+                    // Update tbl_reports status to 'resolved'
+                    const updateReportsQuery = `
+                        UPDATE tbl_reports
+                        SET status = 'resolved'
+                        WHERE id = ?
+                    `;
+                    db.query(updateReportsQuery, [reportId], (err, result) => {
+                        if (err) {
+                            return db.rollback(() => {
+                                console.error('Error updating tbl_reports status:', err);
+                                return res.status(500).json({
+                                    success: false,
+                                    message: 'Error updating tbl_reports status'
+                                });
+                            });
+                        }
+
+                        // Commit the transaction if everything is successful
+                        db.commit((err) => {
+                            if (err) {
+                                return db.rollback(() => {
+                                    console.error('Error committing transaction:', err);
+                                    return res.status(500).json({
+                                        success: false,
+                                        message: 'Error committing transaction'
+                                    });
+                                });
+                            }
+
+                            // Respond with success if everything was updated successfully
+                            res.json({
+                                success: true,
+                                message: 'Claim accepted and statuses updated successfully'
+                            });
+                        });
+                    });
+                });
+            });
         });
     });
 });
-
 
 
 // // Route to handle the claim request
@@ -822,5 +980,61 @@ router.put('/item/accept-claim', (req, res) => {
 //     });
 // });
 
+
+router.get("/analytics", (req, res) => {
+    const summaryQuery = `
+        SELECT type, COUNT(*) as count
+        FROM tbl_lost_found
+        WHERE archived = 0
+        GROUP BY type
+    `;
+
+    db.query(summaryQuery, (err, summaryRows) => {
+        if (err) {
+            console.error("Error fetching summary:", err);
+            return res.status(500).json({ success: false, message: "Server Error" });
+        }
+
+        const claimedQuery = `
+            SELECT 
+                lf.id AS item_id,
+                lf.item_name,
+                lf.type,
+                lf.category,
+                lf.description,
+                lf.location,
+                lf.status AS item_status,
+                lf.date_reported,
+                CASE 
+                    WHEN lf.is_anonymous = 1 THEN 'Anonymous'
+                    ELSE reporter.name
+                END AS user_name,
+                c.id AS claim_id,
+                c.created_at AS claim_date,
+                claimer.name AS claimer_name,
+                holder.name AS holder_name
+            FROM tbl_claims c
+            LEFT JOIN tbl_lost_found lf ON c.item_id = lf.id
+            LEFT JOIN tbl_users reporter ON lf.user_id = reporter.id
+            LEFT JOIN tbl_users claimer ON c.claimer_id = claimer.id
+            LEFT JOIN tbl_users holder ON c.holder_id = holder.id
+            WHERE c.status = 'accepted' AND lf.archived = 0
+            ORDER BY c.created_at DESC
+        `;
+
+        db.query(claimedQuery, (err, claimedRows) => {
+            if (err) {
+                console.error("Error fetching claimed items:", err);
+                return res.status(500).json({ success: false, message: "Server Error" });
+            }
+
+            res.json({
+                success: true,
+                chart: summaryRows,
+                claimed: claimedRows,
+            });
+        });
+    });
+});
 
 module.exports = router;

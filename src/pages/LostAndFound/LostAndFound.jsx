@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css'; // Ensure Bootstrap Icons are imported
-import { Card, Badge, Button, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import { Card, Badge, Button, Form, Pagination } from 'react-bootstrap';
 import axios from 'axios';
 import { useAuth } from '../../../AuthContext';
 import LostAndFoundModal from './components/LostAndFoundModal';
-const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
-import { useNavigate } from 'react-router-dom';
-import MessageModal from '../Messages/components/MessageModal';
 import LostAndFoundViewModal from './components/LostAndFoundViewModal';
+import MessageModal from '../Messages/components/MessageModal';
+import { useNavigate } from 'react-router-dom';
+
+const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
+
 function AdminLostAndFound() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -19,13 +21,17 @@ function AdminLostAndFound() {
     const [showModal, setShowModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
-
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [claimData, setClaimData] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     useEffect(() => {
         fetchItems();
-    }, []);
+
+        setCurrentPage(1);
+    }, [searchTerm, filter, filterCategory]);
 
     const fetchItems = async () => {
         try {
@@ -46,29 +52,21 @@ function AdminLostAndFound() {
     const handleCloseModal = () => {
         setShowModal(false);
     };
+
     const handleMessage = (item) => {
         setExistingItem(item);
         setShowMessageInputModal(true);
-    }
+    };
+
     const handleCloseMessageModal = () => {
         setShowMessageInputModal(false);
-    }
-    const filteredItems = items.filter(item => {
-        const matchesSearch = item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.category.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filter === 'all' || item.type === filter;
-        const matchesFilterCategory = filterCategory === 'all' || item.category === filterCategory;
-        return matchesSearch && matchesFilter && matchesFilterCategory;
-    });
-
+    };
 
     const handleViewDetails = (item) => {
         getClaimData(item);
         setSelectedItem(item);
         setShowViewModal(true);
-    }
+    };
 
     const getClaimData = async (item) => {
         try {
@@ -77,14 +75,32 @@ function AdminLostAndFound() {
         } catch (error) {
             console.error("Error fetching claims", error);
         }
+    };
 
-    }
+    const filteredItems = items.filter(item => {
+        const matchesSearch =
+            item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.category.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesFilter = filter === 'all' || item.type === filter;
+        const matchesFilterCategory = filterCategory === 'all' || item.category === filterCategory;
+
+        return matchesSearch && matchesFilter && matchesFilterCategory;
+    });
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
     return (
         <div className="container-fluid">
-            {/* Header Section */}
+            {/* Header */}
             <div className="row mb-2">
                 <div className="col-12">
-                    <div className="card bg-success text-white rounded-0">
+                    <div className="card bg-success text-white">
                         <div className="card-body p-4">
                             <div className="row align-items-center">
                                 <div className="col-auto">
@@ -100,8 +116,7 @@ function AdminLostAndFound() {
                                     </Button>
                                 </div>
                             </div>
-
-                            {/* Search & Filters - Responsive */}
+                            {/* Filters */}
                             <div className="row mt-3 gy-2">
                                 <div className="col-12 col-md-5">
                                     <Form.Control
@@ -147,82 +162,132 @@ function AdminLostAndFound() {
                 </div>
             </div>
 
-            {/* Cards Section */}
-            <div className="row">
-                {filteredItems.length > 0 ? (
-                    filteredItems.map((item) => (
-                        <div key={item.id} className="col-sm-12 col-md-6 col-lg-4 col-xl-3 mb-3">
-                            <Card className="shadow-sm border-0 rounded h-100">
-                                <Card.Img
-                                    variant="top"
-                                    src={item.image_path ? `${import.meta.env.VITE_IMAGE}/${item.image_path}` : dummyImage}
-                                    alt="No image uploaded"
-                                    style={{ height: '200px', objectFit: 'cover' }}
-                                    className="rounded-top"
-                                />
-                                <Card.Body>
-                                    <Card.Title className="fw-bold text-truncate">{item.item_name}</Card.Title>
-                                    <Badge className="mb-2 rounded-0" bg={item.type === 'lost' ? 'danger' : 'success'}>
-                                        {item.type.toUpperCase()}
-                                    </Badge>
-                                    <Card.Text className="mt-2 text-truncate">
-                                        <small className='text-muted small'>Location:</small> {item.location}<br />
-                                        <small className='text-muted small'>Description:</small> {item.description
-                                            ? (item.description.length > 50
-                                                ? item.description.substring(0, 50) + "..."
-                                                : item.description)
-                                            : "No description provided"}
-                                        <br />
-                                        <small className='text-muted small'>Contact:</small> {item.contact_info}<br />
-                                        <small className='text-muted small'>Reported By:</small> {item.user_name}
-                                    </Card.Text>
-                                </Card.Body>
-                                <div className="p-2 d-flex flex-wrap justify-content-center gap-2">
-                                    <Button variant="primary" className="rounded-0 px-3" onClick={() => handleOpenModal(item)}>Edit</Button>
-                                    <Button
-                                        variant="success position-relative"
-                                        className="rounded-0 px-3"
-                                        onClick={() => handleViewDetails(item)}
-                                    >
-                                        View Claim Request
-                                        {item.claim_count > 0 && (
-                                            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                                {item.claim_count}
-                                            </span>
-                                        )}
-                                    </Button>
-                                    <Button
-                                        variant="info"
-                                        className="rounded-0 px-3"
-                                        onClick={() => handleMessage(item)}
-                                        disabled={user.id === item.user_id}
-                                    >
-                                        Message
-                                    </Button>
-                                </div>
-
-                            </Card>
-                        </div>
-                    ))
-                ) : (
-                    <div className="text-center py-5">
-                        <h5 className="text-muted">No items posted.</h5>
+            <Card className="shadow-sm">
+                <Card.Header className="bg-success text-white">
+                    <strong>Lost and Found Item List</strong>
+                </Card.Header>
+                <Card.Body className="p-0">
+                    <div className="table-responsive">
+                        {filteredItems.length > 0 ? (
+                            <table className="table table-bordered table-hover mb-0">
+                                <thead className="table-success">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Item Name</th>
+                                        <th>Type</th>
+                                        <th>Location</th>
+                                        <th>Description</th>
+                                        <th>Contact</th>
+                                        <th>Reported By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentItems.map((item) => (
+                                        <tr key={item.id}>
+                                           {/* <td style={{ width: '150px', height: '100px', padding: 0 }}>
+                                                <img
+                                                    src={item.image_path ? `${import.meta.env.VITE_IMAGES}/${item.image_path}` : dummyImage}
+                                                    alt="No image Attached"
+                                                    className="w-100 h-90"
+                                                    style={{ objectFit: 'cover', display: 'block' }}
+                                                />
+                                            </td> */}
+                                            <td>{item.id}</td>
+                                            <td>{item.item_name}</td>
+                                            <td>{item.type.toUpperCase()}</td>
+                                            <td>{item.location}</td>
+                                            <td style={{ maxWidth: '200px' }}>
+                                                {item.description
+                                                    ? (item.description.length > 50
+                                                        ? item.description.substring(0, 50) + "..."
+                                                        : item.description)
+                                                    : "No description"}
+                                            </td>
+                                            <td>{item.contact_info}</td>
+                                            <td>{item.user_name}</td>
+                                            <td className="">
+                                                <Button
+                                                    variant="primary"
+                                                    size="sm"
+                                                    className="rounded-0"
+                                                    onClick={() => handleOpenModal(item)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    variant="info"
+                                                    size="sm"
+                                                    className="rounded-0 position-relative"
+                                                    onClick={() => handleViewDetails(item)}
+                                                >
+                                                    View
+                                                    {item.claim_count > 0 && (
+                                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                            {item.claim_count}
+                                                        </span>
+                                                    )}
+                                                </Button>
+                                                <Button
+                                                    variant="success"
+                                                    size="sm"
+                                                    className="rounded-0"
+                                                    onClick={() => handleMessage(item)}
+                                                    disabled={user.id === item.user_id}
+                                                >
+                                                    Message
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="text-center py-5">
+                                <h5 className="text-muted">No items posted.</h5>
+                            </div>
+                        )}
                     </div>
+                </Card.Body>
+                {filteredItems.length > itemsPerPage && (
+                    <Card.Footer className="bg-light d-flex justify-content-end">
+                        <Pagination className="mb-0">
+                            <Pagination.Prev
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            />
+
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                                <Pagination.Item
+                                    key={pageNum}
+                                    active={pageNum === currentPage}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                >
+                                    {pageNum}
+                                </Pagination.Item>
+                            ))}
+
+                            <Pagination.Next
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            />
+                        </Pagination>
+                    </Card.Footer>
                 )}
-            </div>
-            <MessageModal
-                show={showMessageInputModal}
-                handleClose={handleCloseMessageModal}
-                existingItem={existingItem}
-                fetchItems={fetchItems}
-            />
+            </Card>
+
+            {/* Modals */}
             <LostAndFoundModal
                 show={showModal}
                 handleClose={handleCloseModal}
-                fetchItems={fetchItems}
                 existingItem={existingItem}
+                fetchItems={fetchItems}
             />
-
+            <MessageModal
+                show={showMessageInputModal}
+                handleClose={handleCloseMessageModal}
+                item={existingItem}
+            />
             <LostAndFoundViewModal
                 showModal={showViewModal}
                 setShowModal={setShowViewModal}
@@ -230,6 +295,12 @@ function AdminLostAndFound() {
                 fetchItems={fetchItems}
                 claimData={claimData}
             />
+            {/* <LostAndFoundViewModal
+                show={showViewModal}
+                handleClose={() => setShowViewModal(false)}
+                item={selectedItem}
+                claimData={claimData}
+            /> */}
         </div>
     );
 }

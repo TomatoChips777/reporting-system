@@ -100,7 +100,10 @@ function NavigationBar() {
 
     return (
         <>
-            <Navbar bg="success" variant="dark" expand="lg" sticky="top">
+            <Navbar 
+            bg="dark" 
+            // style={{backgroundColor: '#141414'}}
+            variant="dark" expand="lg" sticky="top">
                 <Container fluid>
                     <Button 
                         variant="outline-light" 

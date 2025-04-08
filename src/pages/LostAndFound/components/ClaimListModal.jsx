@@ -29,6 +29,7 @@ function ClaimListModal({ show, onHide, claimData = [] }) {
                         </tbody>
                     </Table>
                 ) : (
+                    
                     <p>No claims found for this item.</p>
                 )}
             </Modal.Body>

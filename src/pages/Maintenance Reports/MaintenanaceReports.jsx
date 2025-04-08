@@ -18,7 +18,7 @@ function Reports() {
     const [selectedReport, setSelectedReport] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [reportToDelete, setReportToDelete] = useState(null);
-    const [viewType, setViewType] = useState("list");
+    const [viewType, setViewType] = useState("table");
     const [monthFilter, setMonthFilter] = useState(""); // Month filter state
     const [yearFilter, setYearFilter] = useState("");   // Year filter state
     const [dayFilter, setDayFilter] = useState(""); // Day filter state
@@ -152,11 +152,7 @@ function Reports() {
         }
 
         try {
-            const response = await axios.delete(`${import.meta.env.VITE_MAINTENANCE_REMOVE_REPORTS}/${reportToDelete}`, {
-                data: {
-                    role: role
-                },
-            });
+            const response = await axios.put(`${import.meta.env.VITE_MAINTENANCE_REMOVE_REPORTS}/${reportToDelete}`);
 
             if (response.data.success) {
                 setReports((prevReports) => prevReports.filter((report) => report.id !== reportToDelete));
@@ -189,10 +185,10 @@ function Reports() {
     const highCount = reports.filter(r => r.priority === 'High').length;
     const urgentCount = reports.filter(r => r.priority === 'Urgent').length;
     return (
-        <div className="container">
+        <div className="container-fluid">
             <div className="row mb-2">
                 <div className="col-12">
-                    <div className="card bg-success text-white rounded-0">
+                    <div className="card bg-success text-white">
                         <div className="card-body p-4">
                             <div className="row align-items-center">
                                 <div className="col-auto">
@@ -222,8 +218,8 @@ function Reports() {
                                         onChange={(e) => setViewType(e.target.value)}
                                         className="me-2 rounded-0"
                                     >
-                                        <option value="list">List View</option>
                                         <option value="table">Table View</option>
+                                        <option value="list">List View</option>
                                     </Form.Select>
                                 </div>
                                 <div className="col-auto">
@@ -304,7 +300,6 @@ function Reports() {
                     </div>
                 </div>
             </div>
-
             <div className="row mb-2">
                 <div className="col-md-3 col-6">
                     <div
@@ -356,7 +351,7 @@ function Reports() {
 
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-white py-3">
+                <Card.Header className="bg-success text-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
                             <h5 className="mb-0">Maintenanace Reports</h5>
@@ -374,12 +369,12 @@ function Reports() {
                         </div>
                     </div>
                 </Card.Header>
-                <Card.Body>
+                <Card.Body className="p-0 mb-0">
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
                                 {currentReports.map((report) => (
-                                    <li key={report.id} className="list-group-item mb-3">
+                                    <li key={report.id} className="list-group-item rounded-0">
                                         <div className="d-flex align-items-start justify-content-between">
                                             {/* Left Side: Report Details */}
                                             <div className="w-75 me-3">
@@ -410,14 +405,14 @@ function Reports() {
                                                         }
                                                         className="ms-2 rounded-0"
                                                     > */}
-                                                          {report.priority}
+                                                    {report.priority}
                                                     {/* </Badge> */}
                                                 </p>
 
                                                 <p>
                                                     <strong>Status: </strong>
                                                     {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0"> */}
-                                                         {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                                    {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                     {/* </Badge> */}
                                                 </p>
                                                 <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
@@ -441,8 +436,8 @@ function Reports() {
                                 ))}
                             </ul>
                         ) : (
-                            <Table hover>
-                                <thead className="table-dark">
+                            <Table hover bordered className="shadow-sm mb-0">
+                                <thead className="table-success">
                                     <tr>
                                         <th>Date</th>
                                         <th>Reported By</th>
@@ -484,18 +479,18 @@ function Reports() {
                                                     }
                                                     className="ms-2 rounded-0"
                                                 > */}
-                                                    {report.priority}
+                                                {report.priority}
                                                 {/* </Badge> */}
                                             </td>
                                             <td>
                                                 {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0"> */}
-                                                    {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                                {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                 {/* </Badge> */}
                                             </td>
-                                            <td>
-                                                <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                            <td className="d-flex flex-column gap-1">
+                                                <Button variant="primary rounded-0" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
-                                                <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                <Button variant="success rounded-0" size="sm" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </td>
@@ -518,7 +513,8 @@ function Reports() {
                             <Button variant="danger" className="rounded-0" onClick={handleRemoval}>Remove</Button>
                         </Modal.Footer>
                     </Modal>
-
+                </Card.Body>
+                <Card.Footer>
                     {/* Pagination Controls */}
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
@@ -575,7 +571,7 @@ function Reports() {
                             </ul>
                         </nav>
                     </div>
-                </Card.Body>
+                </Card.Footer>
             </Card>
             {/* View Details Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">

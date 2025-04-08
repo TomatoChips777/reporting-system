@@ -7,18 +7,19 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 import MessageModal from "../Messages/components/MessageModal";
+import formatDate from "../../functions/DateFormat";
 function Reports() {
     const { role } = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [reportToDelete, setReportToDelete] = useState(null);
-    const [viewType, setViewType] = useState("list");
+    const [viewType, setViewType] = useState("table");
     const [monthFilter, setMonthFilter] = useState(""); // Month filter state
     const [yearFilter, setYearFilter] = useState("");   // Year filter state
     const [dayFilter, setDayFilter] = useState(""); // Day filter state
@@ -35,7 +36,7 @@ function Reports() {
         }
     };
     useEffect(() => {
-       
+
         fetchReports();
 
         const socket = io(`${import.meta.env.VITE_API_URL}`);
@@ -72,7 +73,7 @@ function Reports() {
         });
 
         setFilteredReports(updatedReports);
-    }, [searchTerm, monthFilter, yearFilter,dayFilter, reports]);
+    }, [searchTerm, monthFilter, yearFilter, dayFilter, reports]);
 
 
     const uniqueYears = [...new Set(reports.map(report => new Date(report.created_at).getFullYear()))].sort((a, b) => b - a);
@@ -81,9 +82,9 @@ function Reports() {
         // setExistingItem(item);
         setExistingItem({
             report_id: item.id,
-            ...item, 
+            ...item,
         });
-        
+
         console.log(item);
         setShowMessageInputModal(true);
     }
@@ -123,13 +124,13 @@ function Reports() {
             [name]: value,
         }));
     };
-    
+
     const handleUpdateStatus = async () => {
         if (!selectedReport || !selectedReport.report_type) {
             console.error("Invalid report selection or missing report type.");
             return;
         }
-    
+
         try {
             // Send full report data along with report_type
             const response = await axios.put(
@@ -150,7 +151,7 @@ function Reports() {
                 },
                 { headers: { "Content-Type": "application/json" } }
             );
-    
+
             if (response.data.success) {
                 setReports((prevReports) =>
                     prevReports.map((report) =>
@@ -166,7 +167,7 @@ function Reports() {
             alert("Failed to update report status. Please try again.");
         }
     };
-    
+
     const handleDelete = async () => {
         if (!reportToDelete) {
             console.error("Invalid report selection.");
@@ -201,17 +202,11 @@ function Reports() {
     const indexOfFirstReport = indexOfLastReport - pageSize;
     const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
 
-    // const totalReports = reports.length;
-    // const pendingCount = reports.filter(r => r.status === 'pending').length;
-    // const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
-    // const resolvedCount = reports.filter(r => r.status === 'resolved').length;
-
-
     return (
-        <div className="container">
+        <div className="container-fluid">
             <div className="row mb-2">
                 <div className="col-12">
-                    <div className="card bg-success text-white rounded-0">
+                    <div className="card bg-success text-white">
                         <div className="card-body p-4">
                             <div className="row align-items-center">
                                 <div className="col-auto">
@@ -241,8 +236,8 @@ function Reports() {
                                         onChange={(e) => setViewType(e.target.value)}
                                         className="me-2 rounded-0"
                                     >
-                                        <option value="list">List View</option>
                                         <option value="table">Table View</option>
+                                        <option value="list">List View</option>
                                     </Form.Select>
                                 </div>
                                 <div className="col-auto">
@@ -279,26 +274,19 @@ function Reports() {
             </div>
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-white py-3">
+                <Card.Header className="bg-success text-white py-3">
+                    <strong>Reports List</strong>
                 </Card.Header>
-                <Card.Body>
+                <Card.Body className="p-0">
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
                                 {currentReports.map((report) => (
-                                    <li key={report.id} className="list-group-item mb-3">
+                                    <li key={report.id} className="list-group-item rounded-0">
                                         <div className="d-flex align-items-start justify-content-between">
                                             {/* Left Side: Report Details */}
                                             <div className="w-75 me-3">
-                                                <p><strong>Date:</strong> {new Date(report.created_at).toLocaleString('en-US', {
-                                                    timeZone: 'Asia/Manila',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                })}</p>
+                                                <p><strong>Date:</strong> {formatDate(report.created_at)}</p>
                                                 <p><strong>Reported By:</strong> {report.reporter_name}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
                                                 <p><strong>Description:</strong> {report.description.length > 50
@@ -306,13 +294,13 @@ function Reports() {
                                                     : report.description}</p>
                                                 <p>
                                                     <strong>Status:</strong>
-                                                    <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0">
-                                                        {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                    </Badge>
+                                                    {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0"> */}
+                                                    {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                                    {/* </Badge> */}
                                                 </p>
-                                                <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
-                                                <Button variant="outline-warning rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <Button variant="danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
+                                                <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </div>
@@ -331,8 +319,8 @@ function Reports() {
                                 ))}
                             </ul>
                         ) : (
-                            <Table hover>
-                                <thead className="table-dark striped">
+                            <Table hover responsive bordered className="mb-0">
+                                <thead className="table-success striped">
                                     <tr>
                                         <th>Date</th>
                                         <th>Reported By</th>
@@ -362,14 +350,14 @@ function Reports() {
                                                     : report.description}
                                             </td>
                                             <td>
-                                                <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0">
-                                                    {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                </Badge>
+                                                {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0"> */}
+                                                {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                                {/* </Badge> */}
                                             </td>
-                                            <td>
-                                                <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="outline-danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
-                                                <Button variant="outline-warning rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                            <td className="d-flex flex-column gap-1">
+                                                <Button variant="primary rounded-0" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <Button variant="danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
+                                                <Button variant="success rounded-0" size="sm" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </td>
@@ -380,27 +368,18 @@ function Reports() {
 
                         )}
                     </div>
-                    <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
-                        <Modal.Header closeButton>
-                            <Modal.Title>Confirm Remove</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            Are you sure you want to remove this report? This action cannot be undone.
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                            <Button variant="danger" className="rounded-0" onClick={handleDelete}>Remove</Button>
-                        </Modal.Footer>
-                    </Modal>
-
+                </Card.Body>
+                <Card.Footer>
                     {/* Pagination Controls */}
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
                         <div className="d-flex align-items-center">
                             <Form.Select value={pageSize} onChange={handlePageSizeChange} className="me-2 rounded-0">
-                                <option value="5">5 per page</option>
                                 <option value="10">10 per page</option>
-                                <option value="15">15 per page</option>
                                 <option value="20">20 per page</option>
+                                <option value="30">30 per page</option>
+                                <option value="40">40 per page</option>
+                                <option value="50">50 per page</option>
+
                             </Form.Select>
                             <span>{filteredReports.length} records</span>
                         </div>
@@ -448,7 +427,7 @@ function Reports() {
                             </ul>
                         </nav>
                     </div>
-                </Card.Body>
+                </Card.Footer>
             </Card>
             {/* View Details Modal */}
 
@@ -460,14 +439,14 @@ function Reports() {
                 onUpdateStatus={handleUpdateStatus}
             /> */}
 
-<ViewReportModal
-    show={showModal}
-    onHide={() => setShowModal(false)}
-    report={selectedReport}
-    onUpdateType={handleReportTypeChange}
-    onUpdateStatus={handleUpdateStatus}
-    onChange={handleChange} // 🔥 Pass handleChange to update form fields
-/>
+            <ViewReportModal
+                show={showModal}
+                onHide={() => setShowModal(false)}
+                report={selectedReport}
+                onUpdateType={handleReportTypeChange}
+                onUpdateStatus={handleUpdateStatus}
+                onChange={handleChange} // 🔥 Pass handleChange to update form fields
+            />
 
 
             <MessageModal
@@ -476,6 +455,20 @@ function Reports() {
                 existingItem={existingItem}
                 fetchItems={fetchReports}
             />
+
+
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Remove</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to remove this report? This action cannot be undone.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" className="rounded-0" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+                    <Button variant="danger" className="rounded-0" onClick={handleDelete}>Remove</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

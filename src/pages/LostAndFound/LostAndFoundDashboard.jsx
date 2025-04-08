@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } fro
 import MessageModal from "../Messages/components/MessageModal";
 import LostAndFoundViewModal from "./components/LostAndFoundViewModal";
 import ClaimListModal from "./components/ClaimListModal";
+import formatDate from "../../functions/DateFormat";
 function LostAndFoundDashboard() {
     const [items, setItems] = useState([]);
     const [chartData, setChartData] = useState([]);
@@ -12,8 +13,9 @@ function LostAndFoundDashboard() {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [typeFilter, setTypeFilter] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 20;
+    const itemsPerPage = 10;
 
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
@@ -27,18 +29,25 @@ function LostAndFoundDashboard() {
         fetchItems();
     }, []);
 
-    const fetchItems = async () => {
-        try {
-            const response = await axios.get(`${import.meta.env.VITE_GET_LOST_AND_FOUND}`);
-            if (response.data.success) {
-                setItems(response.data.items);
-                processChartData(response.data.items);
-                findMatches(response.data.items);
-            }
-        } catch (error) {
-            console.error("Error fetching lost and found items", error);
-        }
+    const fetchItems = () => {
+        axios.get(`${import.meta.env.VITE_GET_LOST_AND_FOUND_CLAIMS_RECORDS}`)
+            .then((response) => {
+                if (response.data.success) {
+                    setItems(response.data.claimed); // Use claimed items for the table
+                    setChartData(
+                        response.data.chart.map(entry => ({
+                            type: entry.type.toUpperCase(),
+                            count: entry.count
+                        }))
+                    );
+                    findMatches(response.data.claimed);
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching analytics data:", error);
+            });
     };
+    
 
     const processChartData = (data) => {
         const summary = data.reduce((acc, item) => {
@@ -81,7 +90,7 @@ function LostAndFoundDashboard() {
     const filteredItems = items.filter(item =>
         (searchTerm === "" || item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (categoryFilter === "" || item.category === categoryFilter)
+        (categoryFilter === "" || item.category === categoryFilter) && (typeFilter === "" || item.type.toLowerCase() === typeFilter.toLowerCase())
     );
 
     const handleViewDetails = (item) => {
@@ -94,7 +103,7 @@ function LostAndFoundDashboard() {
     const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const handleResolveClick = async (item) => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_GET_CLAIMS_BY_ITEM_ID}/${item.id}`);
+            const res = await axios.get(`${import.meta.env.VITE_GET_CLAIM_DETAILS}`);
             setClaimData(res.data.claims); // Ensure your API returns { claims: [...] }
             // setShowClaimModal(true);
         } catch (error) {
@@ -103,11 +112,11 @@ function LostAndFoundDashboard() {
     };
 
     return (
-        <Container className="mt-1">
+        <Container fluid className="mt-1">
             {/* <h1 className="mb-4">Lost & Found Admin Dashboard</h1> */}
             <div className="row mb-2">
                 <div className="col-12">
-                    <div className="card bg-success text-white rounded-0">
+                    <div className="card bg-success text-white">
                         <div className="card-body p-4">
                             <div className="row align-items-center">
                                 <div className="col-auto">
@@ -152,62 +161,88 @@ function LostAndFoundDashboard() {
                         <option key={category} value={category}>{category.charAt(0).toUpperCase() + category.slice(1)}</option>
                     ))}
                 </Form.Select>
+
+                {/* New Filter for Lost/Found */}
+                <Form.Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                    <option value="">All Types</option>
+                    <option value="lost">Lost</option>
+                    <option value="found">Found</option>
+                </Form.Select>
             </Form>
 
             <Card>
-                <Card.Body>
-                    <Table striped hover>
-                        <thead className="table-dark">
+                <Card.Header className="bg-success text-white">
+                    <strong>Lost and Found Claimed List</strong>
+                </Card.Header>
+                <Card.Body className="p-0">
+                    <Table hover bordered className="shadow-sm">
+                        <thead className="table-success">
                             <tr>
                                 <th>#</th>
                                 <th>Item Name</th>
                                 <th>Type</th>
-                                <th>User</th>
-                                <th>Status</th>
-                                <th>Date Reported</th>
+                                <th>Reported By</th>
+                                <th>Claimed By</th>
+                                <th>Date Claimed</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedItems.map((item) => (
-                                <tr key={item.id}>
-                                    <td>{item.id}</td>
+                                <tr key={item.item_id}>
+                                    <td>{item.item_id}</td>
                                     <td>{item.item_name}</td>
                                     <td>{item.type.toUpperCase()}</td>
                                     <td>{item.user_name}</td>
-                                    <td>{item.status}</td>
-                                    <td>{new Date(item.date_reported).toLocaleString()}</td>
-                                    <td>
+                                    <td>{item.claimer_name}</td>
+                                    <td>{formatDate(item.claim_date)}</td>
+                                    <td className="d-flex flex-column gap-1">
 
-                                        <Button variant="primary rounded-0 position-relative" size="sm" className="me-2" onClick={() => handleViewDetails(item)}>View Claim Request
-                                        {item.claim_count > 0 && (
-                                            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                                {item.claim_count}
-                                            </span>
-                                        )}
+                                        <Button variant="primary rounded-0 position-relative" size="sm" onClick={() => handleViewDetails(item)}>View Details
+                                            {item.claim_count > 0 && (
+                                                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                    {item.claim_count}
+                                                </span>
+                                            )}
                                         </Button>
-                                        <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(item)}>
+                                        {/* <Button variant="success rounded-0" size="sm" onClick={() => handleMessage(item)}>
                                             Message
-                                        </Button>
+                                        </Button> */}
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </Table>
-                    <Pagination className="justify-content-center">
-                        {[...Array(totalPages)].map((_, index) => (
-                            <Pagination.Item
-                                key={index + 1}
-                                active={index + 1 === currentPage}
-                                onClick={() => setCurrentPage(index + 1)}
-                            >
-                                {index + 1}
-                            </Pagination.Item>
-                        ))}
-                    </Pagination>
-                </Card.Body>
-            </Card>
 
+                </Card.Body>
+                {filteredItems.length > itemsPerPage && (
+    <Card.Footer className="bg-light d-flex justify-content-between align-items-center">
+        <div className="ms-2 text-muted">
+            Page {currentPage} of {totalPages}
+        </div>
+        <Pagination className="mb-0">
+            <Pagination.Prev
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+            />
+            {[...Array(totalPages)].map((_, index) => (
+                <Pagination.Item
+                    key={index + 1}
+                    active={index + 1 === currentPage}
+                    onClick={() => setCurrentPage(index + 1)}
+                >
+                    {index + 1}
+                </Pagination.Item>
+            ))}
+            <Pagination.Next
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+            />
+        </Pagination>
+    </Card.Footer>
+)}
+
+            </Card>
             <MessageModal
                 show={showMessageInputModal}
                 handleClose={handleCloseMessageModal}
@@ -223,11 +258,12 @@ function LostAndFoundDashboard() {
                 claimData={claimData}
             />
 
-            <ClaimListModal
+            {/* <ClaimListModal
                 show={showClaimModal}
                 onHide={() => setShowClaimModal(false)}
                 claimData={claimData}
-            />
+            /> */}
+
 
         </Container>
     );
