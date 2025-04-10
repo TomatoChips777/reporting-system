@@ -1,14 +1,15 @@
-import { Navbar, Nav, Container, Dropdown, Badge, Modal, Button } from 'react-bootstrap';
-import { Link, useLocation } from 'react-router-dom';
+import { Navbar, Nav, Container, Dropdown, Badge, Modal, Button, } from 'react-bootstrap';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../AuthContext';
 import { useNavigation } from './SidebarContext';
 import { useSidebarState } from './SidebarStateContext';
-import { Bell, List } from 'react-bootstrap-icons';
+import { Bell, List, ChatDots } from 'react-bootstrap-icons';
 import axios from 'axios';
 import io from 'socket.io-client';
-
+import { BsPersonCircle } from 'react-icons/bs';
 function NavigationBar() {
+    const navigate = useNavigate();
     const { user, signOut, role } = useAuth();
     const { getCurrentSection, setSectionByPath, pathToSection } = useNavigation();
     const { toggleSidebar } = useSidebarState();
@@ -18,20 +19,33 @@ function NavigationBar() {
     const [notifications, setNotifications] = useState([]);
     const [selectedNotification, setSelectedNotification] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [unreadMessages, setUnreadMessages] = useState([]);
+    const [showMessagesDropdown, setShowMessagesDropdown] = useState(false);
+    const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
-    // Update section based on current path when component mounts or path changes
     useEffect(() => {
         if (location.pathname && pathToSection[location.pathname]) {
             setSectionByPath(location.pathname);
         }
+        console.log(unreadMessages);
     }, [location.pathname, setSectionByPath, pathToSection]);
+
+    const fetchUnreadMessages = async () => {
+        const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
+        if (response.data.success) {
+            const { previews, totalUnreadCount } = getUnreadMessagePreviews(response.data.messages, user.id);
+            setUnreadMessages(previews);
+            setTotalUnreadCount(totalUnreadCount); 
+        }
+    };
+
 
     const fetchNotifications = async () => {
         try {
-            const endpoint = role === "admin" 
+            const endpoint = role === "admin"
                 ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
                 : `${import.meta.env.VITE_USER_NOTIFICATION}/${user.id}`;
-            
+
             const response = await axios.get(endpoint);
             const unreadNotifications = response.data.filter(notification => notification.is_read === 0);
             setNotifications(unreadNotifications);
@@ -39,18 +53,61 @@ function NavigationBar() {
             console.error("Error fetching notifications:", error);
         }
     };
-  
+
     useEffect(() => {
         fetchNotifications();
         const socket = io(`${import.meta.env.VITE_API_URL}`);
         socket.on("update", () => {
             fetchNotifications();
         });
-
+        fetchUnreadMessages();
+        socket.on('messageCount', ({ senderId, receiverId }) => {
+            if (user.id === receiverId || user.id === senderId) {
+                fetchUnreadMessages();
+            }
+        });
+        
         return () => {
             socket.disconnect();
         };
     }, []);
+
+
+    const getUnreadMessagePreviews = (conversations, currentUserId) => {
+        let totalUnreadCount = 0;
+        const previewsMap = new Map();
+
+        conversations.forEach(convo => {
+            // Get all unread messages for the current user in the conversation
+            const unreadMessages = convo.messages.filter(msg =>
+                msg.receiverId === currentUserId && msg.status !== 'read'
+            );
+
+            if (unreadMessages.length > 0) {
+                // Update the total unread count
+                totalUnreadCount += unreadMessages.length;
+
+                // Get the latest message from the unread ones
+                const latestMsg = unreadMessages.reduce((latest, msg) =>
+                    new Date(msg.created_at) > new Date(latest.created_at) ? msg : latest
+                );
+
+                // Use a composite key of report_id + convo.id to uniquely identify each conversation
+                const key = `${convo.report_id}-${convo.id}`;
+                previewsMap.set(key, {
+                    id: convo.id,
+                    report_id: convo.report_id,
+                    user: convo.user,
+                    item_name: convo.item_name,
+                    item_type: convo.item_type,
+                    lastMessage: latestMsg.text || "(Image)",
+                    time: latestMsg.created_at,
+                    unreadCount: unreadMessages.length,
+                });
+            }
+        });
+        return { previews: Array.from(previewsMap.values()), totalUnreadCount };
+    };
 
     const handleNotificationClick = async (notif) => {
         setSelectedNotification(notif);
@@ -97,34 +154,34 @@ function NavigationBar() {
             return `${Math.floor(differenceInSeconds / 31536000)} years ago`;
         }
     };
-
+ 
     return (
         <>
-            <Navbar 
-            bg="dark" 
-            // style={{backgroundColor: '#141414'}}
-            variant="dark" expand="lg" sticky="top">
+            <Navbar
+                bg="dark"
+                // style={{backgroundColor: '#141414'}}
+                variant="dark" expand="lg" sticky="top">
                 <Container fluid>
-                    <Button 
-                        variant="outline-light" 
-                        className="me-2 d-flex align-items-center" 
+                    <Button
+                        variant="outline-light"
+                        className="me-2 d-flex align-items-center"
                         onClick={toggleSidebar}
                     >
                         <List size={24} />
                     </Button>
                     {/* <Navbar.Toggle aria-controls="navbarSupportedContent" /> */}
-                
+
                     <Navbar.Collapse id="navbarSupportedContent">
                         <Nav className="me-auto">
-                            <Nav.Link 
-                                as={Link} 
-                                to="/home" 
+                            <Nav.Link
+                                as={Link}
+                                to="/home"
                                 className={location.pathname === "/home" ? "active" : ""}
                                 onClick={() => setSectionByPath('/home')}
                             >
                                 Home
                             </Nav.Link>
-                            
+
                             {getCurrentSection().routes.map((route) => (
                                 <Nav.Link
                                     key={route.path}
@@ -136,7 +193,88 @@ function NavigationBar() {
                                     {route.name}
                                 </Nav.Link>
                             ))}
-                        </Nav> 
+                        </Nav>
+
+
+
+                        <Dropdown show={showMessagesDropdown} onToggle={setShowMessagesDropdown} className="me-3">
+                            <Dropdown.Toggle as="div" className="position-relative text-white" style={{ cursor: 'pointer' }}>
+                                <ChatDots size={24} />
+                                {totalUnreadCount > 0 && (
+                                    <Badge
+                                        bg="danger"
+                                        pill
+                                        className="position-absolute top-0 start-100 translate-middle"
+                                        style={{ fontSize: '0.65rem' }}
+                                    >
+                                        {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                                    </Badge>
+                                )}
+                            </Dropdown.Toggle>
+
+                            <Dropdown.Menu
+                                align="end"
+                                style={{ minWidth: "280px", maxHeight: "350px", overflowY: "auto" }}
+                            >
+                                <Dropdown.Header>Unread Conversations</Dropdown.Header>
+                                {unreadMessages.length > 0 ? (
+                                    unreadMessages.map((convo) => (
+                                        <Dropdown.Item
+                                            key={`${convo.report_id}-${convo.id}`}
+                                            onClick={() => {
+                                                navigate('/messages', {
+                                                    state: {
+                                                        session_id: convo.id,
+                                                        report_id: convo.report_id,
+                                                    },
+                                                });
+                                                setShowMessagesDropdown(false);
+                                            }}
+                                            className="d-flex p-2"
+                                        >
+                                            <div className="me-2">
+                                                {convo.user?.avatar ? (
+                                                    <img
+                                                        src={convo.user.avatar}
+                                                        width="40"
+                                                        height="40"
+                                                        className="rounded-circle"
+                                                        alt="User"
+                                                    />
+                                                ) : (
+                                                    <BsPersonCircle size={40} className="text-secondary" />
+                                                )}
+                                            </div>
+                                            <div className="flex-grow-1">
+                                                <div className="d-flex justify-content-between">
+                                                    <strong className="text-truncate">{convo.user?.name || "Unknown"}</strong>
+                                                    <small className="text-muted">{getTimeAgo(convo.time)}</small>
+                                                </div>
+                                                <small className="text-muted text-truncate d-block">
+                                                    [{convo.item_type.charAt(0).toUpperCase() + convo.item_type.slice(1)} - {convo.item_name}]
+                                                </small>
+                                                <div className="text-truncate">
+                                                    {convo.lastMessage.length > 35
+                                                        ? `${convo.lastMessage.substring(0, 35)}...`
+                                                        : convo.lastMessage}
+                                                </div>
+                                            </div>
+                                            {convo.unreadCount > 0 && (
+                                                <Badge bg="danger" pill className="ms-2 align-self-start">
+                                                    {convo.unreadCount > 99 ? "99+" : convo.unreadCount}
+                                                </Badge>
+                                            )}
+                                        </Dropdown.Item>
+                                    ))
+                                ) : (
+                                    <Dropdown.Item className="text-center text-muted">No unread messages</Dropdown.Item>
+                                )}
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => navigate('/messages')} className="text-center ">
+                                    View All
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
 
                         {/* Notifications Dropdown */}
                         <Dropdown show={showNotifications} onToggle={(isOpen) => setShowNotifications(isOpen)}>
