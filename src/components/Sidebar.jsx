@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { IoHome, IoDocumentText, IoPerson, IoSettings, IoSearch } from 'react-icons/io5';
+import { IoHome, IoDocumentText, IoPerson, IoSettings, IoSearch, IoChatbubbleEllipses, IoSpeedometer, IoConstruct, IoAlbums, IoWarning, IoCalendar } from 'react-icons/io5';
 import { Bell } from 'react-bootstrap-icons';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../AuthContext';
@@ -11,14 +11,16 @@ import io from 'socket.io-client';
 
 class IconManager {
     static icons = {
-        dashboard: <IoHome />,
-        reports: <IoDocumentText />,
-        maintenance: <IoSettings />,
+        dashboard: <IoSpeedometer />,
+        reports: <IoAlbums />,
+        maintenance: <IoConstruct />,
         search: <IoSearch />,
         warning: <IoDocumentText />,
         create: <IoDocumentText />,
         inventory: <IoSettings />,
         list: <IoDocumentText />,
+        incident: <IoWarning />,
+        calendar: <IoCalendar />,
         default: <IoHome />
     };
 
@@ -49,21 +51,21 @@ class NotificationManager {
 
     initializeSocket(onUpdate, fetchUnreadMessages) {
         this.socket = io(`${import.meta.env.VITE_API_URL}`);
-    
+
         this.socket.on("update", onUpdate);
-    
+
         this.socket.on('messageCount', async ({ senderId, receiverId }) => {
             if (this.userId === receiverId || this.userId === senderId) {
                 try {
-                    const unreadMessages = await fetchUnreadMessages(); 
+                    const unreadMessages = await fetchUnreadMessages();
                     onUpdate(unreadMessages);
                 } catch (error) {
                     console.error("Error updating unread messages:", error);
                 }
-            }   
+            }
         });
     }
-    
+
     // initializeSocket(onUpdate) {
     //     this.socket = io(`${import.meta.env.VITE_API_URL}`);
     //     this.socket.on("update", onUpdate);
@@ -95,11 +97,13 @@ class SidebarManager {
     getSectionLinks() {
         if (this.role === 'admin') {
             return [
-                { key: 'reports', name: 'Reports', icon: <IoDocumentText /> },
-                { key: 'maintenance', name: 'Maintenance Reporting', icon: <IoSettings /> },
+                { key: 'reports', name: 'Reports', icon: <IoAlbums /> },
+                { key: 'maintenance', name: 'Maintenance Reporting', icon: <IoConstruct /> },
                 { key: 'lostFound', name: 'Lost & Found', icon: <IoSearch /> },
-                { key: 'incidentReporting', name: 'Incident Reporting', icon: <IoDocumentText /> },
+                { key: 'incident', name: 'Incident Reporting', icon: <IoWarning /> },
                 { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> },
+                { key: 'events', name: 'Events', icon: <IoCalendar /> },
+
 
             ];
         } else if (this.role == 'report-manager') {
@@ -116,7 +120,7 @@ class SidebarManager {
         }
         else if (this.role == 'incident-report-manager') {
             return [
-                { key: 'incidentReporting', name: 'Reports', icon: <IoDocumentText /> },
+                { key: 'incidentReporting', name: 'Reports', icon: <IoWarning /> },
 
             ];
         }
@@ -124,8 +128,7 @@ class SidebarManager {
         else {
             return [
                 { path: '/list-screen', name: 'Lost And Found', icon: <IoSearch /> },
-                { path: '/reports-screen', name: 'Reports', icon: <IoDocumentText /> },
-
+                { path: '/reports-screen', name: 'Reports', icon: <IoAlbums /> },
             ];
         }
     }
@@ -210,7 +213,7 @@ class Sidebar extends Component {
         this.notificationManager = new NotificationManager(role, user.id);
         this.sidebarManager = new SidebarManager(role, props.navigation.sections);
     }
-    
+
     // constructor(props) {
     //     super(props);
     //     const { role, user } = props.auth;
@@ -231,18 +234,18 @@ class Sidebar extends Component {
     //     this.fetchUnreadMessages(); // Fetch unread messages
     //     this.notificationManager.initializeSocket(() => this.fetchNotifications());
     // }
-    
+
     componentDidMount() {
         this.fetchNotifications();
         this.fetchUnreadMessages(); // Fetch unread messages initially
-    
+
         // Pass fetchUnreadMessages as an argument
         this.notificationManager.initializeSocket(
             () => this.fetchNotifications(),
             () => this.fetchUnreadMessages()
         );
     }
-    
+
     componentWillUnmount() {
         this.notificationManager.disconnect();
     }
@@ -251,16 +254,16 @@ class Sidebar extends Component {
             const { auth } = this.props;
             const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${auth.user.id}`);
             if (response.data.success) {
-                const unreadCount = response.data.messages.reduce((count, convo) => 
+                const unreadCount = response.data.messages.reduce((count, convo) =>
                     count + convo.messages.filter(msg => msg.status !== 'read' && msg.receiverId === auth.user.id).length
-                , 0);
+                    , 0);
                 this.setState({ unreadMessages: unreadCount });
             }
         } catch (error) {
             console.error("Error fetching unread messages:", error);
         }
     }
-    
+
     async fetchNotifications() {
         const notifications = await this.notificationManager.fetchNotifications();
         this.setState({ notifications });
@@ -334,7 +337,7 @@ class Sidebar extends Component {
         const { activeSection, getCurrentSection } = navigation;
         const isHome = activeSection === 'home' || !activeSection;
         const currentSection = getCurrentSection();
-    
+
         return (
             <>
                 <SidebarLink
@@ -345,7 +348,7 @@ class Sidebar extends Component {
                 >
                     Home
                 </SidebarLink>
-    
+
                 {isHome ? (
                     <>
                         <li className="section-header">Select a Section:</li>
@@ -388,7 +391,7 @@ class Sidebar extends Component {
                         ))}
                     </>
                 )}
-    
+
                 {/* Always display "Messages" link here */}
                 {/* <SidebarLink
                     to="/messages"
@@ -404,7 +407,7 @@ class Sidebar extends Component {
                 </SidebarLink> */}
                 <SidebarLink
                     to="/messages"
-                    icon={<IoDocumentText />}
+                    icon={<IoChatbubbleEllipses />}
                     isActive={location.pathname === "/messages"}
                     onClick={() => {
                         if (window.innerWidth <= 768) {
@@ -415,15 +418,21 @@ class Sidebar extends Component {
                     Messages
                     {this.state.unreadMessages > 0 && (
                         <Badge bg="danger" className="ms-2">
-                            {this.state.unreadMessages}
+                            {this.state.unreadMessages > 99 ? "99+" : this.state.unreadMessages}
                         </Badge>
                     )}
+
+                    {/* {this.state.unreadMessages > 0 && (
+                        <Badge bg="danger" className="ms-2">
+                            {this.state.unreadMessages}
+                        </Badge>
+                    )} */}
                 </SidebarLink>
 
             </>
         );
     }
-    
+
     render() {
         const { isSidebarOpen, location, toggleSidebar } = this.props;
         return (

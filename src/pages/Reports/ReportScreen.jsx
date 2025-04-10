@@ -213,7 +213,7 @@ function Reports() {
                                     <i className="bi bi-exclamation-triangle-fill display-4"></i>
                                 </div>
                                 <div className="col">
-                                    <h5 className="mb-0">All Reports</h5>
+                                    <h5 className="mb-0">Reports</h5>
                                 </div>
                                 <div className="col-auto d-flex align-items-center ">
                                     {/* Search Bar: Make it take more space */}
@@ -354,10 +354,10 @@ function Reports() {
                                                 {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                 {/* </Badge> */}
                                             </td>
-                                            <td className="d-flex flex-column gap-1">
-                                                <Button variant="primary rounded-0" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
+                                            <td className="d-flex justify-content-center">
+                                                <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="danger rounded-0" size="sm" onClick={() => confirmDelete(report.id)}>Remove</Button>
-                                                <Button variant="success rounded-0" size="sm" onClick={() => handleMessage(report)}>
+                                                <Button variant="success rounded-0 ms-2" size="sm" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </td>

@@ -124,7 +124,7 @@ router.post('/create-lost-found', upload.single('image_path'), (req, res) => {
     const report_type = "Lost And Found";
     // Insert into tbl_reports first
     const reportQuery = `INSERT INTO tbl_reports (user_id, report_type, location, description, image_path, is_anonymous, status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.query(reportQuery, [user_id, report_type,location, description, image_path, is_anonymous, 'in_progress'], (err, reportResult) => {
+    db.query(reportQuery, [user_id, report_type, location, description, image_path, is_anonymous, 'in_progress'], (err, reportResult) => {
         if (err) {
             console.error("Error creating report:", err);
             return res.status(500).json({ success: false, message: 'Failed to submit report' });
@@ -190,7 +190,7 @@ router.get('/items', (req, res) => {
     const query = `
         SELECT 
             lf.*,
-
+            r.created_at,
             CASE 
                 WHEN lf.is_anonymous = 1 THEN 'Anonymous'
                 ELSE u.name 
@@ -374,6 +374,28 @@ router.get('/claims/:itemId', (req, res) => {
     });
 });
 
+router.get('/claimed-items/:itemId', (req, res) => {
+    const itemId = req.params.itemId;
+    const query = `
+        SELECT 
+            c.*, 
+            claimer.name AS claimer_name,
+            holder.name AS holder_name
+        FROM tbl_claims c
+        LEFT JOIN tbl_users claimer ON c.claimer_id = claimer.id
+        LEFT JOIN tbl_users holder ON c.holder_id = holder.id
+        WHERE c.item_id = ?
+    `;
+    db.query(query, [itemId], (err, results) => {
+        if (err) {
+            console.error('Error fetching claims:', err);
+            return res.status(500).json({ success: false, message: 'Server error' });
+        }
+        res.json({ success: true, claims: results });
+    });
+});
+
+
 router.get('/item/claims', (req, res) => {
     const query = `
         SELECT 
@@ -541,7 +563,7 @@ router.put('/items/:id', upload.single('image_path'), (req, res) => {
 
         // Update tbl_reports first
         const updateReportQuery = `UPDATE tbl_reports SET location = ?, description = ?, image_path = ?, is_anonymous = ? WHERE id = ?`;
-        db.query(updateReportQuery, [location, description, image_path || existingImagePath,is_anonymous, report_id], (err, reportResult) => {
+        db.query(updateReportQuery, [location, description, image_path || existingImagePath, is_anonymous, report_id], (err, reportResult) => {
             if (err) {
                 console.error('Database error updating report:', err);
                 return res.status(500).json({ success: false, message: 'Failed to update report' });
@@ -656,7 +678,7 @@ router.put('/items/:id', upload.single('image_path'), (req, res) => {
 
 // })
 
-router.post('/claim-item/:id',upload.single('image'), (req, res) => {
+router.post('/claim-item/:id', upload.single('image'), (req, res) => {
     const { id } = req.params;  // Get item ID from the URL params
     const { user_id, description, contact_info } = req.body;  // Get claim data from the request body
     const image = req.file ? req.file.filename : null;
@@ -675,20 +697,20 @@ router.post('/claim-item/:id',upload.single('image'), (req, res) => {
         }
 
 
-                const title = "Lost And Found Report";
-                const message = `A new ${type} item "${item_name}" has been reported at ${location}.`;
+        const title = "Lost And Found Report";
+        const message = `A new ${type} item "${item_name}" has been reported at ${location}.`;
 
-                const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
+        const notificationQuery = `INSERT INTO tbl_admin_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;
 
-                db.query(notificationQuery, [id, user_id, message, title], (err, notificationResult) => {
-                    if (err) {
-                        console.error("Error creating notification:", err);
-                        return res.status(500).json({ success: false, message: 'Failed to create notification' });
-                    }
-                });
+        db.query(notificationQuery, [id, user_id, message, title], (err, notificationResult) => {
+            if (err) {
+                console.error("Error creating notification:", err);
+                return res.status(500).json({ success: false, message: 'Failed to create notification' });
+            }
+        });
         // Emit the update event (if using sockets)
         req.io.emit('update');
-        
+
         // Respond with a success message
         res.json({
             success: true,
@@ -698,7 +720,7 @@ router.post('/claim-item/:id',upload.single('image'), (req, res) => {
 });
 
 
-router.post('/found-item/:id',upload.single('image'), (req, res) => {
+router.post('/found-item/:id', upload.single('image'), (req, res) => {
     const { id } = req.params;  // Get item ID from the URL params
     const { user_id, location, description } = req.body;  // Get claim data from the request body
     const image = req.file ? req.file.filename : null;
@@ -718,7 +740,7 @@ router.post('/found-item/:id',upload.single('image'), (req, res) => {
 
         // Emit the update event (if using sockets)
         req.io.emit('update');
-        
+
         // Respond with a success message
         res.json({
             success: true,
@@ -843,7 +865,7 @@ router.put('/item/accept-claim', (req, res) => {
             SET status = 'accepted' 
             WHERE item_id = ? AND holder_id = ? AND claimer_id = ?
         `;
-        
+
         db.query(updateClaimQuery, [item_id, holder_id, claimer_id], (err, result) => {
             if (err) {
                 return db.rollback(() => {
@@ -972,7 +994,7 @@ router.put('/item/accept-claim', (req, res) => {
 //                 message: 'Error inserting claim request'
 //             });
 //         }
-        
+
 //         res.json({
 //             success: true,
 //             message: 'Claim request sent successfully'
@@ -983,10 +1005,32 @@ router.put('/item/accept-claim', (req, res) => {
 
 router.get("/analytics", (req, res) => {
     const summaryQuery = `
-        SELECT type, COUNT(*) as count
-        FROM tbl_lost_found
-        WHERE archived = 0
-        GROUP BY type
+    SELECT 'lost' AS type, COUNT(*) AS count
+    FROM tbl_lost_found
+    WHERE type = 'lost' AND archived = 0
+
+    UNION ALL
+
+    SELECT 'found' AS type, COUNT(*) AS count
+    FROM tbl_lost_found
+    WHERE type = 'found' AND archived = 0
+
+    UNION ALL
+
+    SELECT 'claimed' AS type, COUNT(*) AS count
+    FROM tbl_lost_found
+    WHERE status = 'claimed' AND archived = 0
+
+    UNION ALL
+
+    SELECT 'other' AS type, COUNT(*) AS count
+    FROM tbl_lost_found
+    WHERE status != 'claimed' AND archived = 0;
+    
+-- SELECT type, COUNT(*) as count
+    -- FROM tbl_lost_found
+    -- WHERE archived = 0
+    -- GROUP BY type
     `;
 
     db.query(summaryQuery, (err, summaryRows) => {
@@ -1005,6 +1049,7 @@ router.get("/analytics", (req, res) => {
                 lf.location,
                 lf.status AS item_status,
                 lf.date_reported,
+                r.created_at,
                 CASE 
                     WHEN lf.is_anonymous = 1 THEN 'Anonymous'
                     ELSE reporter.name
@@ -1015,10 +1060,11 @@ router.get("/analytics", (req, res) => {
                 holder.name AS holder_name
             FROM tbl_claims c
             LEFT JOIN tbl_lost_found lf ON c.item_id = lf.id
+            LEFT JOIN tbl_reports r ON lf.report_id = r.id
             LEFT JOIN tbl_users reporter ON lf.user_id = reporter.id
             LEFT JOIN tbl_users claimer ON c.claimer_id = claimer.id
             LEFT JOIN tbl_users holder ON c.holder_id = holder.id
-            WHERE c.status = 'accepted' AND lf.archived = 0
+            WHERE c.status = 'accepted' AND lf.archived = 0 
             ORDER BY c.created_at DESC
         `;
 

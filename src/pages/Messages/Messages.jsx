@@ -191,13 +191,13 @@ const Messages = () => {
     return (
         <Container fluid className="messages-page p-4">
             <Row className="h-100">
-                <Col md={4} className="conversations-list">
+                <Col md={4} className="conversations-list ">
                     <Card className="h-100">
                         <Card.Header className="bg-success text-white">
                             <h5 className="mb-0">Messages</h5>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            <div className="conversation-items">
+                            <div className="conversation-items rounded" >
                                 {messages.map((conversation) => (
                                     <div
                                         key={`${conversation.report_id}-${conversation.id}`}
@@ -215,7 +215,7 @@ const Messages = () => {
                                                         height="40"
                                                         className="rounded-circle"
                                                         alt="User"
-                                                        onError={(e) => e.target.style.display = 'none'} // Hide broken image links
+                                                        onError={(e) => e.target.style.display = 'none'}
                                                     />
                                                 )}
                                             </div>
@@ -229,7 +229,6 @@ const Messages = () => {
                                                                 return `[${text.length > 15 ? text.substring(0, 15) + "..." : text}]`;
                                                             })()}
                                                         </span>
-                                                        {/* <span className="text-muted">[{conversation.item_type.charAt(0).toUpperCase() + conversation.item_type.slice(1).toLowerCase()} - {conversation.item_name}]</span> */}
                                                     </small>
                                                     <small className="text-muted">
                                                         {formatDate(conversation.created_at)}
@@ -240,8 +239,8 @@ const Messages = () => {
                                                 </p>
                                             </div>
                                             {conversation.unreadCount > 0 && (
-                                                <Badge bg="danger" pill className="ms-2">
-                                                    {conversation.unreadCount}
+                                                <Badge bg="danger" pill className="ms-2"> 
+                                                    {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
                                                 </Badge>
                                             )}
                                         </div>

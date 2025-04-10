@@ -6,8 +6,8 @@ import MessageModal from "../Messages/components/MessageModal";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
-function Reports() {
-    const { role, user } = useAuth();
+function IncidentReportDashboard() {
+    const { role } = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -195,7 +195,7 @@ function Reports() {
                                     <i className="bi bi-exclamation-triangle-fill display-4"></i>
                                 </div>
                                 <div className="col">
-                                    <h5 className="mb-0">Maintenance Reports</h5>
+                                    <h5 className="mb-0">Incident Reports</h5>
                                 </div>
                                 <div className="col-auto d-flex align-items-center ">
                                     {/* Search Bar: Make it take more space */}
@@ -262,7 +262,7 @@ function Reports() {
                         style={{ cursor: "pointer", fontSize: "0.85rem" }}
                     >
                         <FaFileAlt className="text-success mb-1" size={20} />
-                        <h6 className="mb-0">All</h6>
+                        <h6 className="mb-0">Total</h6>
                         <strong className='fs-5'>{totalReports}</strong>
                     </div>
                 </div>
@@ -354,7 +354,7 @@ function Reports() {
                 <Card.Header className="bg-success text-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
-                            <h5 className="mb-0">Maintenanace Reports</h5>
+                            <h5 className="mb-0">Incident Reports</h5>
                         </div>
                         <div className="col-auto">
                             <div className="btn-group ">
@@ -416,13 +416,13 @@ function Reports() {
                                                     {/* </Badge> */}
                                                 </p>
                                                 <div className="d-flex justify-content-end align-items-end">
-                                                    <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                    <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
-                                                    <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)} disabled={user.id === report.user_id || report.status === 'resolved'}>
-                                                        Message
-                                                    </Button>
+                                                <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
+                                                <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                    Message
+                                                </Button>
                                                 </div>
-
+                                                
                                             </div>
 
                                             {/* Right Side: Image */}
@@ -481,7 +481,7 @@ function Reports() {
                                             <td className="d-flex justify-content-center">
                                                 <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
-                                                <Button variant="success rounded-0 ms-2" size="sm" onClick={() => handleMessage(report)} disabled={user.id === report.user_id || report.status === 'resolved'}>
+                                                <Button variant="success rounded-0 ms-2" size="sm" onClick={() => handleMessage(report)}>
                                                     Message
                                                 </Button>
                                             </td>
@@ -627,4 +627,4 @@ function Reports() {
     );
 }
 
-export default Reports;
+export default IncidentReportDashboard;

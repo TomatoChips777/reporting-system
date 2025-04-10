@@ -16,7 +16,6 @@ const MessageModal = ({ show, handleClose, existingItem, fetchItems }) => {
         type: '',
         image: null,
     });
-
     useEffect(() => {
         if (show) {
             resetForm();

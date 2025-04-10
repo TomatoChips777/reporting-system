@@ -20,7 +20,9 @@ import Messages from './pages/Student/pages/Messages.jsx';
 import GuestScreen from './pages/GuestScreen.jsx';
 import Testing from './pages/Student/pages/Testing.jsx';
 import AdminMessages from './pages/Messages/Messages.jsx';
-
+import IncidentReportScreen from './pages/Incident/IncidentReportsScreen.jsx';
+import IncidentReportDashboard from './pages/Incident/IncidentReportDashboard.jsx';
+import Events from './pages/Events/Events.jsx';
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
     
@@ -44,6 +46,10 @@ function App() {
                                             <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
                                             <Route path="/lost-and-found-dashboard" element={<LostAndFoundDashboard />} />
                                             <Route path="/lost-and-found-reports" element={<AdminLostAndFound />} />
+                                            <Route path='/incident-report-dashboard' element={<IncidentReportDashboard />} />
+                                            <Route path="/incident-reports" element={<IncidentReportScreen />} />
+                                            <Route path="/events" element={<Events/>} />
+
                                             <Route path="/messages" element={<AdminMessages />} />
                                             <Route path='/notifications' element={<Notifications />} />
                                             <Route path="*" element={<Navigate to="/home" replace />} />

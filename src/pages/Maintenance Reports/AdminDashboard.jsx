@@ -73,13 +73,13 @@ const AdminDashboard = () => {
     
     
     return (
-        <div className="container-fluid mb-5">
+        <div className="container-fluid mb-1">
             {/* <h2 className="text-center mb-4 text-primary">
                 <IoPieChart className="me-2" /> Admin Dashboard Analytics
             </h2> */}
 
             {/* Card Summary Section */}
-            <div className="row text-center mb-5">
+            <div className="row text-center mb-1">
                 <div className="col-md-3 col-6 mb-2 mb-md-0">
                     <div className="card shadow-lg bg-primary text-white p-4 rounded-3">
                         <h5>
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
             </div>
 
                 {/* Line Graph - Reports Trend */}
-                <div className="col-12 mb-5">
+                <div className="col-12 mb-1">
                     <div className="card shadow-lg p-4">
                         <h5 className="text-secondary mb-3">
                             <IoCalendar className="me-2" /> Reports Trend
@@ -142,7 +142,7 @@ const AdminDashboard = () => {
             {/* Priority and Issue Type Distribution Pie Charts */}
             <div className="row mb-2">
                 {/* Priority Distribution Card */}
-                <div className="col-md-6 mb-5">
+                <div className="col-md-6 mb-1">
                     <div className="card shadow-lg p-4">
                         <h5 className="mb-3 text-secondary">
                             <IoPieChart className="me-2" /> Priority Distribution
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
             {/* Reports Per Day and Per Month */}
             {/* <div className="row mb-2"> */}
                 {/* Reports Per Day Card */}
-                <div className="col-12 mb-5">
+                <div className="col-12 mb-1">
                     <div className="card shadow-lg p-4">
                         <h5 className="text-secondary mb-3">
                             <IoCalendar className="me-2" /> Reports Per Day
@@ -221,7 +221,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Reports Per Month Card */}
-                <div className="col-12 mb-5">
+                <div className="col-12 mb-1">
                     <div className="card shadow-lg p-4">
                         <h5 className="text-secondary mb-3">
                             <IoCalendar className="me-2" /> Reports Per Month

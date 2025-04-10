@@ -47,7 +47,7 @@ function LostAndFoundDashboard() {
                 console.error("Error fetching analytics data:", error);
             });
     };
-    
+
 
     const processChartData = (data) => {
         const summary = data.reduce((acc, item) => {
@@ -103,8 +103,8 @@ function LostAndFoundDashboard() {
     const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const handleResolveClick = async (item) => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_GET_CLAIM_DETAILS}`);
-            setClaimData(res.data.claims); // Ensure your API returns { claims: [...] }
+            const res = await axios.get(`${import.meta.env.VITE_GET_CLAIM_DETAILS}/${item.item_id}`);
+            setClaimData(res.data.claims);
             // setShowClaimModal(true);
         } catch (error) {
             console.error("Failed to fetch claims:", error);
@@ -175,7 +175,7 @@ function LostAndFoundDashboard() {
                     <strong>Lost and Found Claimed List</strong>
                 </Card.Header>
                 <Card.Body className="p-0">
-                    <Table hover bordered className="shadow-sm">
+                    <Table hover bordered className="shadow-sm mb-0">
                         <thead className="table-success">
                             <tr>
                                 <th>#</th>
@@ -184,19 +184,19 @@ function LostAndFoundDashboard() {
                                 <th>Reported By</th>
                                 <th>Claimed By</th>
                                 <th>Date Claimed</th>
-                                <th>Actions</th>
+                                <th className="text-center align-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedItems.map((item) => (
-                                <tr key={item.item_id}>
+                            {paginatedItems.map((item, index) => (
+                                <tr key={index}>
                                     <td>{item.item_id}</td>
                                     <td>{item.item_name}</td>
                                     <td>{item.type.toUpperCase()}</td>
                                     <td>{item.user_name}</td>
                                     <td>{item.claimer_name}</td>
                                     <td>{formatDate(item.claim_date)}</td>
-                                    <td className="d-flex flex-column gap-1">
+                                    <td className="d-flex justify-content-center">
 
                                         <Button variant="primary rounded-0 position-relative" size="sm" onClick={() => handleViewDetails(item)}>View Details
                                             {item.claim_count > 0 && (
@@ -216,33 +216,34 @@ function LostAndFoundDashboard() {
 
                 </Card.Body>
                 {filteredItems.length > itemsPerPage && (
-    <Card.Footer className="bg-light d-flex justify-content-between align-items-center">
-        <div className="ms-2 text-muted">
-            Page {currentPage} of {totalPages}
-        </div>
-        <Pagination className="mb-0">
-            <Pagination.Prev
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-            />
-            {[...Array(totalPages)].map((_, index) => (
-                <Pagination.Item
-                    key={index + 1}
-                    active={index + 1 === currentPage}
-                    onClick={() => setCurrentPage(index + 1)}
-                >
-                    {index + 1}
-                </Pagination.Item>
-            ))}
-            <Pagination.Next
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-            />
-        </Pagination>
-    </Card.Footer>
-)}
+                    <Card.Footer className="bg-light d-flex justify-content-between align-items-center">
+                        <div className="ms-2 text-muted">
+                            Page {currentPage} of {totalPages}
+                        </div>
+                        <Pagination className="mb-0">
+                            <Pagination.Prev
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            />
+                            {[...Array(totalPages)].map((_, index) => (
+                                <Pagination.Item
+                                    key={index + 1}
+                                    active={index + 1 === currentPage}
+                                    onClick={() => setCurrentPage(index + 1)}
+                                >
+                                    {index + 1}
+                                </Pagination.Item>
+                            ))}
+                            <Pagination.Next
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            />
+                        </Pagination>
+                    </Card.Footer>
+                )}
 
             </Card>
+
             <MessageModal
                 show={showMessageInputModal}
                 handleClose={handleCloseMessageModal}

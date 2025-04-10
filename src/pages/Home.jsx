@@ -46,12 +46,12 @@ const HomeScreen = () => {
             path: '/maintenance-reports'
         },
         {
-            key: 'incidentReporting',
+            key: 'incident',
             title: 'Incident Reporting',
             icon: <IoWarning size={40} />,
             description: 'View and investigate incidents',
             color: '#e74c3c',
-            path: '/incidents'
+            path: '/incident-reports'
         },
         {
             key: 'borrowing',
@@ -138,7 +138,7 @@ const HomeScreen = () => {
 
     const incidentReportManagerSections = [
         {
-            key: 'incidentReporting',
+            key: 'incident',
             title: 'Incident Reporting',
             icon: <IoWarning size={40} />,
             description: 'View and investigate incidents',
@@ -167,7 +167,7 @@ const HomeScreen = () => {
         case 'maintenance-report-manager':
             selectedSections = maintenanceReportManagerSections;
             break;
-        case 'incident-report-manager':
+        case 'incident-manager':
             selectedSections = incidentReportManagerSections;
             break;
         case 'student':

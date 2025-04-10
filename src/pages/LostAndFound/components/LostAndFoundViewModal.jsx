@@ -8,7 +8,6 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
     useEffect(() => {
 
     }, [selectedItem, claimData]);
-    console.log(selectedItem, claimData);
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [updatedSelectedItem, setUpdatedSelectedItem] = useState(selectedItem);
 
@@ -44,8 +43,17 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
         setShowMessageInputModal(false);
     };
 
-    const handleMessage = (itemId) => {
-        const claim = claimData.find(claim => claim.item_id === itemId); // Find the claim associated with the item
+    // const handleMessage = (itemId) => {
+    //     const claim = claimData.find(claim => claim.item_id === itemId); // Find the claim associated with the item
+    //     if (claim) {
+    //         const updatedItem = { ...selectedItem, user_id: claim.claimer_id }; // Update selectedItem with claimer_id
+    //         setUpdatedSelectedItem(updatedItem); // Update the state with the modified selectedItem
+    //     }
+    //     setShowMessageInputModal(true);
+    // };
+
+    const handleMessage = (itemId, claimerId) => {
+        const claim = claimData.find(claim => claim.item_id === itemId && claim.claimer_id === claimerId);
         if (claim) {
             const updatedItem = { ...selectedItem, user_id: claim.claimer_id }; // Update selectedItem with claimer_id
             setUpdatedSelectedItem(updatedItem); // Update the state with the modified selectedItem
@@ -62,10 +70,10 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
                 <Modal.Body>
                     {selectedItem ? (
                         <>
-                            <p><strong>Date:</strong> {formatDate(selectedItem.date_reported)}</p>
+                            <p><strong>Date Reported:</strong> {formatDate(selectedItem.created_at)}</p>
                             {selectedItem.claim_date && (
                                 <>
-                                    <p><strong>Claimed At:</strong> {formatDate(selectedItem.claim_date)}</p>
+                                    <p><strong>Claimed On:</strong> {formatDate(selectedItem.claim_date)}</p>
                                 </>
                             )}
                             <p><strong>Reported By:</strong> {selectedItem.user_name}</p>
@@ -102,12 +110,12 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
                                                     {claim.description}
                                                 </td>
                                                 <td>{new Date(claim.created_at).toLocaleString()}</td>
-                                                <td className="d-flex flex-column gap-1">
+                                                <td className="d-flex justify-content-center">
                                                     {/* Show buttons only if claim status is not 'accepted' */}
                                                     {claim.status !== 'accepted' && (
                                                         <>
                                                             <button
-                                                                className="btn btn-primary btn-sm rounded-0 mb-2 mb-sm-0"
+                                                                className="btn btn-primary btn-sm rounded-0 mb-2 me-2 mb-sm-0"
                                                                 onClick={() => handleAcceptClaim(claim)}
                                                             >
                                                                 Accept
@@ -119,11 +127,18 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
                                                                 Reject
                                                             </button>
                                                             <button
-                                                                className="btn btn-info btn-sm rounded-0 mt-2 mt-sm-0"
-                                                                onClick={() => handleMessage(claim.item_id)}
+                                                                className="btn btn-success btn-sm rounded-0 mt-2 ms-2 mt-sm-0"
+                                                                onClick={() => handleMessage(claim.item_id, claim.claimer_id)}
                                                             >
                                                                 Message
                                                             </button>
+
+                                                            {/* <button
+                                                                className="btn btn-success btn-sm rounded-0 mt-2 ms-2 mt-sm-0"
+                                                                onClick={() => handleMessage(claim.item_id)}
+                                                            >
+                                                                Message
+                                                            </button> */}
                                                         </>
                                                     )}
 

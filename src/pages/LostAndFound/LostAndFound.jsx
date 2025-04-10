@@ -54,6 +54,7 @@ function AdminLostAndFound() {
     };
 
     const handleMessage = (item) => {
+        // console.log(item);
         setExistingItem(item);
         setShowMessageInputModal(true);
     };
@@ -179,7 +180,7 @@ function AdminLostAndFound() {
                                         <th>Description</th>
                                         <th>Contact</th>
                                         <th>Reported By</th>
-                                        <th>Actions</th>
+                                        <th className='text-center align-center'>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -206,11 +207,11 @@ function AdminLostAndFound() {
                                             </td>
                                             <td>{item.contact_info}</td>
                                             <td>{item.user_name}</td>
-                                            <td className="">
+                                            <td className='d-flex justify-content-center'>
                                                 <Button
                                                     variant="primary"
                                                     size="sm"
-                                                    className="rounded-0"
+                                                    className="rounded-0 me-2"
                                                     onClick={() => handleOpenModal(item)}
                                                 >
                                                     Edit
@@ -221,7 +222,7 @@ function AdminLostAndFound() {
                                                     className="rounded-0 position-relative"
                                                     onClick={() => handleViewDetails(item)}
                                                 >
-                                                    View
+                                                    View Details
                                                     {item.claim_count > 0 && (
                                                         <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                                             {item.claim_count}
@@ -231,7 +232,7 @@ function AdminLostAndFound() {
                                                 <Button
                                                     variant="success"
                                                     size="sm"
-                                                    className="rounded-0"
+                                                    className="rounded-0 ms-2"
                                                     onClick={() => handleMessage(item)}
                                                     disabled={user.id === item.user_id}
                                                 >
@@ -286,7 +287,8 @@ function AdminLostAndFound() {
             <MessageModal
                 show={showMessageInputModal}
                 handleClose={handleCloseMessageModal}
-                item={existingItem}
+                existingItem={existingItem}
+                fetchItems={fetchItems}
             />
             <LostAndFoundViewModal
                 showModal={showViewModal}

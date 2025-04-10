@@ -27,7 +27,7 @@ function ListScreen() {
 
     const fetchItems = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/lostandfound/items');
+            const response = await axios.get(`${import.meta.env.VITE_GET_LOST_AND_FOUND}`);
             if (response.data.success) {
                 setItems(response.data.items);
             }
