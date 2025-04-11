@@ -21,7 +21,7 @@ const Messages = () => {
 
     const fetchItems = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
+            const response = await axios.get(`${import.meta.env.VITE_GET_MESSAGES}/${user.id}`);
             if (response.data.success) {
                 setMessages(response.data.messages.map(convo => {
                     const unreadCount = convo.messages.filter(msg =>
@@ -40,7 +40,7 @@ const Messages = () => {
     };
 
     useEffect(() => {
-        const socket = io('http://localhost:5000');
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
 
         socket.on('updateMessage', ({ senderId, receiverId, newMsg, report_id, message_session_id }) => {
 
@@ -210,7 +210,7 @@ const Messages = () => {
                                                     <BsPersonCircle size={40} className="text-secondary" />
                                                 ) : (
                                                     <img
-                                                        src={conversation.user?.avatar}
+                                                        src={`${import.meta.env.VITE_IMAGES}/${conversation.user?.avatar}`}
                                                         width="40"
                                                         height="40"
                                                         className="rounded-circle"
@@ -312,7 +312,7 @@ const Messages = () => {
                                                     {message.image_path && (
                                                         <div className="image-container">
                                                             <img
-                                                                src={`http://localhost:5000/uploads/${message.image_path}`}
+                                                                src={`${import.meta.env.VITE_IMAGES}/${message.image_path}`}
                                                                 alt="Sent"
                                                                 className="message-image"
                                                             />

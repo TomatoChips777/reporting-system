@@ -565,7 +565,7 @@ function Reports() {
                 </Card.Footer>
             </Card>
             {/* View Details Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="xl">
                 <Modal.Header closeButton>
                     <Modal.Title>Report Details</Modal.Title>
                 </Modal.Header>

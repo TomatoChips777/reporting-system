@@ -27,11 +27,10 @@ function NavigationBar() {
         if (location.pathname && pathToSection[location.pathname]) {
             setSectionByPath(location.pathname);
         }
-        console.log(unreadMessages);
     }, [location.pathname, setSectionByPath, pathToSection]);
 
     const fetchUnreadMessages = async () => {
-        const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${user.id}`);
+        const response = await axios.get(`${import.meta.env.VITE_GET_MESSAGES}/${user.id}`);
         if (response.data.success) {
             const { previews, totalUnreadCount } = getUnreadMessagePreviews(response.data.messages, user.id);
             setUnreadMessages(previews);
@@ -126,7 +125,7 @@ function NavigationBar() {
                     }
                 }
             } catch (error) {
-                console.log("Error marking notification", error)
+                console.log("Error marking notification", error);
             }
         }
     };
@@ -154,7 +153,7 @@ function NavigationBar() {
             return `${Math.floor(differenceInSeconds / 31536000)} years ago`;
         }
     };
- 
+
     return (
         <>
             <Navbar
@@ -170,7 +169,6 @@ function NavigationBar() {
                         <List size={24} />
                     </Button>
                     {/* <Navbar.Toggle aria-controls="navbarSupportedContent" /> */}
-
                     <Navbar.Collapse id="navbarSupportedContent">
                         <Nav className="me-auto">
                             <Nav.Link
@@ -194,9 +192,6 @@ function NavigationBar() {
                                 </Nav.Link>
                             ))}
                         </Nav>
-
-
-
                         <Dropdown show={showMessagesDropdown} onToggle={setShowMessagesDropdown} className="me-3">
                             <Dropdown.Toggle as="div" className="position-relative text-white" style={{ cursor: 'pointer' }}>
                                 <ChatDots size={24} />
@@ -235,7 +230,8 @@ function NavigationBar() {
                                             <div className="me-2">
                                                 {convo.user?.avatar ? (
                                                     <img
-                                                        src={convo.user.avatar}
+                                                        src={`${import.meta.env.VITE_IMAGES}/${convo.user.avatar}`} 
+                                                        // src={convo.user.avatar}
                                                         width="40"
                                                         height="40"
                                                         className="rounded-circle"
@@ -270,8 +266,8 @@ function NavigationBar() {
                                     <Dropdown.Item className="text-center text-muted">No unread messages</Dropdown.Item>
                                 )}
                                 <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => navigate('/messages')} className="text-center ">
-                                    View All
+                                <Dropdown.Item onClick={() => navigate('/messages')} className="text-center">
+                                    View Messages
                                 </Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
@@ -313,12 +309,12 @@ function NavigationBar() {
                         {user && (
                             <Dropdown show={showUserMenu} onToggle={(isOpen) => setShowUserMenu(isOpen)}>
                                 <Dropdown.Toggle as="div" className="d-flex align-items-center" style={{ cursor: 'pointer' }}>
-                                    <img src={user.image_url} width="40" height="40" className="rounded-circle" alt="User" />
+                                    <img src={`${import.meta.env.VITE_IMAGES}/${user.image_url}`}  width="40" height="40" className="rounded-circle" alt="User" />
                                     <span className="ms-2 text-white">{user.name}</span>
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu align="end">
                                     <Dropdown.Item as={Link} to="/messages">Profile</Dropdown.Item>
-                                    <Dropdown.Item as={Link} to="/settings">Settings</Dropdown.Item>
+                                    {/* <Dropdown.Item as={Link} to="/settings">Settings</Dropdown.Item> */}
                                     <Dropdown.Divider />
                                     <Dropdown.Item onClick={signOut}>Sign out</Dropdown.Item>
                                 </Dropdown.Menu>

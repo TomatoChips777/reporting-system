@@ -13,7 +13,7 @@ const ViewReportModal = ({ show, onHide, report, onUpdateType, onUpdateStatus, o
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered size="lg">
+        <Modal show={show} onHide={onHide} centered size="xl">
             <Modal.Header closeButton>
                 <Modal.Title>Report Details</Modal.Title>
             </Modal.Header>

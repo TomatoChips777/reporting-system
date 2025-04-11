@@ -43,15 +43,6 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
         setShowMessageInputModal(false);
     };
 
-    // const handleMessage = (itemId) => {
-    //     const claim = claimData.find(claim => claim.item_id === itemId); // Find the claim associated with the item
-    //     if (claim) {
-    //         const updatedItem = { ...selectedItem, user_id: claim.claimer_id }; // Update selectedItem with claimer_id
-    //         setUpdatedSelectedItem(updatedItem); // Update the state with the modified selectedItem
-    //     }
-    //     setShowMessageInputModal(true);
-    // };
-
     const handleMessage = (itemId, claimerId) => {
         const claim = claimData.find(claim => claim.item_id === itemId && claim.claimer_id === claimerId);
         if (claim) {

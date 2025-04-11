@@ -29,6 +29,10 @@ class NavigationManager {
         return {
             home: new Section('Home', '/home', []),
 
+            users: new Section('Users', '/users', [
+                { path: '/users', name: 'Users', icon: 'users' },
+                { path: '/user-requests', name: 'User Requests', icon: 'user-requests' }
+            ]),
             reports: new Section('Reports', '/reports', [
                 // { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
                 { path: '/reports', name: 'Reports', icon: 'reports' },

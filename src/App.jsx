@@ -23,6 +23,7 @@ import AdminMessages from './pages/Messages/Messages.jsx';
 import IncidentReportScreen from './pages/Incident/IncidentReportsScreen.jsx';
 import IncidentReportDashboard from './pages/Incident/IncidentReportDashboard.jsx';
 import Events from './pages/Events/Events.jsx';
+import UserManagement from './pages/Users/UserManagement.jsx';
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
     
@@ -41,6 +42,7 @@ function App() {
                                     {role === 'admin' && (
                                         <>
                                             <Route path="/home" element={<HomeScreen />} />
+                                            <Route path="/users" element={<UserManagement />} />
                                             <Route path='/reports' element={<ReportScreen />} />
                                             <Route path="/maintenace-report-dashboard" element={<AdminDashboard />} />
                                             <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
@@ -49,7 +51,6 @@ function App() {
                                             <Route path='/incident-report-dashboard' element={<IncidentReportDashboard />} />
                                             <Route path="/incident-reports" element={<IncidentReportScreen />} />
                                             <Route path="/events" element={<Events/>} />
-
                                             <Route path="/messages" element={<AdminMessages />} />
                                             <Route path='/notifications' element={<Notifications />} />
                                             <Route path="*" element={<Navigate to="/home" replace />} />
@@ -83,15 +84,10 @@ function App() {
                                     {role === 'student' && (
                                         <>
                                            <Route path="/home" element={<HomeScreen />} />
-                                           {/* <Route path="/reports-screen" element={<ReportScreen />} /> */}
                                            <Route path="/list-screen" element={<ListScreen />} />
                                            <Route path='/notifications' element={<Notifications />} />
-                                           {/* <Route path='/messages' element={<Messages />} /> */}
                                            <Route path="/messages" element={<AdminMessages />} />
-
                                            <Route path="/reports-screen" element={<Testing />} />
-
-
                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}

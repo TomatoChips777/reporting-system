@@ -21,6 +21,7 @@ class IconManager {
         list: <IoDocumentText />,
         incident: <IoWarning />,
         calendar: <IoCalendar />,
+        users:<IoPerson />,
         default: <IoHome />
     };
 
@@ -65,7 +66,7 @@ class NotificationManager {
             }
         });
     }
-
+    
     // initializeSocket(onUpdate) {
     //     this.socket = io(`${import.meta.env.VITE_API_URL}`);
     //     this.socket.on("update", onUpdate);
@@ -97,6 +98,7 @@ class SidebarManager {
     getSectionLinks() {
         if (this.role === 'admin') {
             return [
+                {key: 'users', name: 'User Management', icon: <IoPerson />},
                 { key: 'reports', name: 'Reports', icon: <IoAlbums /> },
                 { key: 'maintenance', name: 'Maintenance Reporting', icon: <IoConstruct /> },
                 { key: 'lostFound', name: 'Lost & Found', icon: <IoSearch /> },

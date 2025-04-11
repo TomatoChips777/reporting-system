@@ -24,7 +24,6 @@ const LoginScreen = () => {
       );
     }
   };
-
   return (
     <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20vh' }}>
       <GoogleLogin

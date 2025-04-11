@@ -303,9 +303,9 @@ router.put("/admin/edit-report-type/:reportId", (req, res) => {
     const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, sender_id, location,description,is_anonymous } = req.body;
     const { reportId } = req.params;
     // Update `tbl_reports`
-    const updateReportQuery = "UPDATE tbl_reports SET report_type = ?, status = ? WHERE id = ?";
+    const updateReportQuery = "UPDATE tbl_reports SET report_type = ? WHERE id = ?";
 
-    db.query(updateReportQuery, [report_type,"in_progress", reportId], (err, result) => {
+    db.query(updateReportQuery, [report_type, reportId], (err, result) => {
         if (err) {
             console.error("Error updating report type:", err);
             return res.status(500).json({ success: false, message: "Failed to update report type" });

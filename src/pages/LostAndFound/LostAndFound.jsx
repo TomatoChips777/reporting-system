@@ -250,7 +250,7 @@ function AdminLostAndFound() {
                         )}
                     </div>
                 </Card.Body>
-                {filteredItems.length > itemsPerPage && (
+                {/* {filteredItems.length > itemsPerPage && ( */}
                     <Card.Footer className="bg-light d-flex justify-content-end">
                         <Pagination className="mb-0">
                             <Pagination.Prev
@@ -274,7 +274,7 @@ function AdminLostAndFound() {
                             />
                         </Pagination>
                     </Card.Footer>
-                )}
+                {/* )} */}
             </Card>
 
             {/* Modals */}

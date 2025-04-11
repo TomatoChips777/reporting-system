@@ -95,7 +95,7 @@ const CreateReportModal = ({ show, handleClose, fetchItems, existingItem }) => {
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size='lg'>
+        <Modal show={show} onHide={handleClose} size='xl'>
             <Modal.Header closeButton>
                 <Modal.Title>{existingItem ? 'Edit' : 'Submit'} Report</Modal.Title>
             </Modal.Header>
