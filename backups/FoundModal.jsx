@@ -2,27 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Spinner, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { BsQuestionCircle } from 'react-icons/bs'; // Help icon
 import axios from 'axios';
-import { useAuth } from '../../../../AuthContext';
+import { useAuth } from '../AuthContext';
 
-const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
+const FoundModal = ({ show, handleClose, existingItem, fetchItems }) => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         user_id: user?.id,
         item_id: existingItem?.id,
-        contact_info: '',
+        location: '',
         description: '',
-        image: null,
-        
+        image: null
     });
 
+    // Reset form data on modal close or when an item is changed
     useEffect(() => {
         if (show) {
             if (existingItem) {
                 setFormData({
                     user_id: user?.id,
                     item_id: existingItem?.id,
-                    contact_info: '',
+                    location: '',
                     description: '',
                     image: null,
                 });
@@ -35,11 +35,11 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     // Tooltip for the help icon
     const renderTooltip = (props) => (
         <Tooltip id="help-tooltip" {...props} className="bg-white">
-            To claim this item, please provide your contact information and a detailed description of the item to prove ownership.
-            If possible, upload an image of the item or proof of ownership.
+            Provide the location where you found the item, a brief description, and upload an image to help verify the item.
         </Tooltip>
     );
 
+    // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({
@@ -48,6 +48,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         }));
     };
 
+    // Handle file (image) input changes
     const handleFileChange = (e) => {
         setFormData((prev) => ({
             ...prev,
@@ -55,57 +56,54 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         }));
     };
 
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validate required fields
-        if (!formData.contact_info.trim()) {
-            alert('Please provide your contact information');
+        if (!formData.location.trim()) {
+            alert('Please provide the location where you found the item');
             return;
         }
         if (!formData.description.trim()) {
-            alert('Please provide a description to prove ownership');
+            alert('Please provide a description of how/where you found the item');
             return;
         }
 
         setLoading(true);
         try {
-            const url = `http://localhost:5000/api/lostandfound/claim-item/${existingItem.id}`;
+            const url = `http://localhost:5000/api/lostandfound/found-item/${existingItem.id}`;
             const response = await axios.post(url, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-
             if (response.data.success) {
-                alert('Claim submitted successfully! This will be notified and will contact you if your claim is verified.');
+                alert('Item successfully marked as found!');
                 fetchItems();
                 handleClose();
                 resetForm();
             } else {
-                alert(response.data.message || 'Error submitting claim');
+                alert(response.data.message || 'Error reporting the found item');
             }
         } catch (error) {
-            console.error('Error claiming the item:', error);
-            alert('Error submitting claim. Please try again.');
+            console.error('Error reporting found item:', error);
+            alert('Error reporting the found item. Please try again.');
         } finally {
             setLoading(false);
         }
     };
-
+    // Reset form fields after submission or when the modal is closed
     const resetForm = () => {
         setFormData({
             user_id: user?.id,
             item_id: existingItem?.id,
-            contact_info: '',
+            location: '',
             description: '',
             image: null,
-            claim_date: new Date().toISOString().split('T')[0]
         });
     };
 
     return (
         <Modal show={show} onHide={handleClose} centered size="lg">
             <Modal.Header closeButton>
-                <Modal.Title>Claim Found Item</Modal.Title>
+                <Modal.Title>Report Found Item</Modal.Title>
                 <OverlayTrigger placement="left" overlay={renderTooltip}>
                     <BsQuestionCircle className="ms-2 text-primary" size={20} style={{ cursor: 'pointer' }} />
                 </OverlayTrigger>
@@ -123,20 +121,16 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Contact Info <span className="text-danger">*</span></Form.Label>
+                        <Form.Label>Location <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             type="text"
-                            name="contact_info"
-                            value={formData.contact_info}
+                            name="location"
+                            value={formData.location}
                             onChange={handleInputChange}
                             required
-                            placeholder="Enter your contact information"
+                            placeholder="Enter where you found the item"
                         />
-                        <Form.Text className="text-muted">
-                            This will be shared with the item owner to contact you
-                        </Form.Text>
                     </Form.Group>
-
                     <Form.Group className="mb-3">
                         <Form.Label>Description <span className="text-danger">*</span></Form.Label>
                         <Form.Control
@@ -146,11 +140,8 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                             onChange={handleInputChange}
                             rows={3}
                             required
-                            placeholder="Describe the item in detail to prove ownership"
+                            placeholder="Describe how and where you found the item"
                         />
-                        <Form.Text className="text-muted">
-                            Include specific details about the item that only the owner would know
-                        </Form.Text>
                     </Form.Group>
                     <Form.Group className="mb-3">
                         <Form.Label>Upload Image</Form.Label>
@@ -161,7 +152,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                             Cancel
                         </Button>
                         <Button variant="primary" type="submit" disabled={loading}>
-                            {loading ? <Spinner animation="border" size="sm" /> : 'Claim Item'}
+                            {loading ? <Spinner animation="border" size="sm" /> : 'Report Found'}
                         </Button>
                     </div>
                 </Form>
@@ -170,4 +161,4 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     );
 };
 
-export default ClaimModal;
+export default FoundModal;

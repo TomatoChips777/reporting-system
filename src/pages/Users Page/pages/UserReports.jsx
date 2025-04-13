@@ -8,8 +8,9 @@ import axios from "axios";
 import { useAuth } from "../../../../AuthContext";
 import CreateReportModal from "../components/CreateReportModal";
 import formatDate from "../../../functions/DateFormat";
-function Reports() {
-    const { role, user } = useAuth();
+
+function UserReports() {
+    const {  user } = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -26,7 +27,7 @@ function Reports() {
 
     const fetchReports = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/reports/user/${user.id}`);
+            const response = await axios.get(`${import.meta.env.VITE_GET_REPORT_BY_USER}/${user.id}`);
             setReports(response.data.reports || []);
             setFilteredReports(response.data.reports);
         } catch (error) {
@@ -37,7 +38,7 @@ function Reports() {
 
         fetchReports();
 
-        const socket = io('http://localhost:5000'); // Connect to your backend server
+        const socket = io(`${import.meta.env.VITE_API_URL}`); // Connect to your backend server
         socket.on('update', () => {
             // setReports((prevReports) => [newReport, ...prevReports]);
             fetchReports();
@@ -110,37 +111,10 @@ function Reports() {
 
     }
 
-
-    // const handleRemove = async () => {
-    //     if (!reportToDelete) {
-    //         console.error("Invalid report selection.");
-    //         return;
-    //     }
-
-    //     try {
-    //         const response = await axios.delete(`http://localhost:5000/api/reports/user/report/${reportToDelete}`, {
-    //             data: {
-    //                 role: role
-    //             },
-    //         });
-
-    //         if (response.data.success) {
-    //             setReports((prevReports) => prevReports.filter((report) => report.id !== reportToDelete));
-    //             setShowDeleteModal(false);
-    //             setReportToDelete(null);
-    //         } else {
-    //             alert("Failed to delete report.");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error deleting report:", error);
-    //         alert("Failed to delete report. Please try again.");
-    //     }
-    // }
     const confirmDelete = (reportID) => {
         setReportToDelete(reportID);
         setShowDeleteModal(true);
     };
-    // Pagination Logic
     const indexOfLastReport = currentPage * pageSize;
     const indexOfFirstReport = indexOfLastReport - pageSize;
     const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
@@ -209,13 +183,6 @@ function Reports() {
                     </div>
                 </div>
             </div>
-            {/* <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2>My Reports</h2>
-                <button className="btn btn-success rounded-0" onClick={() => handleOpenCreateModal()}>
-                    <FaPlusCircle className="me-1" /> Create Report
-                </button>
-            </div> */}
-            {/* Reports Table */}
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-success text-white py-3">
                     <div className="row align-items-center">
@@ -251,10 +218,8 @@ function Reports() {
                         <div className="col-auto">
                             <div className="btn-group ">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
-                                    <Button key={status} variant="outline-dark" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
-                                        {/* {status.charAt(0).toUpperCase() + status.slice(1)} */}
+                                    <Button key={status} variant="outline-dark border-white text-white" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
                                         {status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-
                                     </Button>
                                 ))}
                             </div>
@@ -272,6 +237,7 @@ function Reports() {
                                             <div className="w-75 me-3">
                                                 <p><strong>Date:</strong> {formatDate(report.created_at)}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
+                                                <p><strong>Type:</strong> {report.report_type}</p>
                                                 <p><strong>Description:</strong> {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
                                                     : report.description}</p>
@@ -298,7 +264,7 @@ function Reports() {
                                             {/* Right Side: Image */}
                                             <div className="w-25">
                                                 <img
-                                                    src={`http://localhost:5000/uploads/${report.image_path}` || "https://via.placeholder.com/150"}
+                                                    src={`${import.meta.env.VITE_IMAGES}/${report.image_path}` || "https://via.placeholder.com/150"}
                                                     alt="No image attached"
                                                     className="img-thumbnail rounded shadow-sm"
                                                     style={{ height: '290px' }}
@@ -314,9 +280,10 @@ function Reports() {
                                     <tr>
                                         <th>Date</th>
                                         <th>Location</th>
+                                        <th>Type</th>
                                         <th>Description</th>
                                         <th>Status</th>
-                                        <th style={{ width: "16%" }}>Actions</th>
+                                        <th style={{ width: "16%" }} className="text-center align-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -324,6 +291,7 @@ function Reports() {
                                         <tr key={report.id}>
                                             <td>{formatDate(report.created_at)}</td>
                                             <td>{report.location}</td>
+                                            <td>{report.report_type}</td>
                                             <td>
                                                 {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
@@ -334,7 +302,7 @@ function Reports() {
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                 </Badge>
                                             </td>
-                                            <td>
+                                            <td className="d-flex justify-content-center">
                                                 <Button variant="outline-primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
                                                 {report.status === "pending" && (
                                                     <Button
@@ -456,7 +424,7 @@ function Reports() {
                                 <div className="mb-3 d-flex flex-column align-items-center text-center">
                                     <strong>Attached Image:</strong>
                                     <img
-                                        src={`http://localhost:5000/uploads/${selectedReport.image_path}`}
+                                        src={`${import.meta.env.VITE_IMAGES}/${selectedReport.image_path}`}
                                         alt="Report"
                                         className="img-fluid mt-2"
                                         style={{ maxHeight: "300px", borderRadius: "10px" }}
@@ -472,18 +440,13 @@ function Reports() {
                     <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
                 </Modal.Footer>
             </Modal>
-
-
             <CreateReportModal
                 show={showCreateModal}
                 handleClose={() => handleCloseModal()}
                 fetchItems={fetchReports}
                 existingItem={null}
             />
-
-
         </div>
     );
 }
-
-export default Reports;
+export default UserReports;

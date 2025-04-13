@@ -132,6 +132,54 @@ const ViewReportModal = ({ show, onHide, report, onUpdateType, onUpdateStatus, o
                             </>
                         )}
 
+                        {report.report_type === "Incident Report" && (
+                            <>
+                                <Form.Group controlId="incidentCategory">
+                                    <Form.Label><strong>Category:</strong></Form.Label>
+                                    <Form.Select name="category" value={report.category || ""} onChange={onChange} required>
+                                        <option value="">Select Category</option>
+                                        <option value="Theft">Theft</option>
+                                        <option value="Vandalism">Vandalism</option>
+                                        <option value="Harassment">Harassment</option>
+                                        <option value="Bullying">Bullying</option>
+                                        <option value="Verbal abuse">Verbal abuse</option>
+                                        <option value="Fire incident">Fire incident</option>
+                                        <option value="Medical emergency">Medical emergency</option>
+                                        <option value="Cyberbullying">Cyberbullying</option>
+                                        <option value="Property damage">Property damage</option>
+                                        <option value="Trespassing">Trespassing</option>
+                                        <option value="Accident/Injury">Accident/Injury</option>
+                                        <option value="Other">Other</option>
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group controlId="priority">
+                                    <Form.Label><strong>Priority:</strong></Form.Label>
+                                    <Form.Select name="priority" value={report.priority || ""} onChange={onChange} required>
+                                        <option value="">Select Priority</option>
+                                        <option value="Low">Low</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+
+                                    </Form.Select>
+                                </Form.Group>
+
+                                <Form.Group controlId="assignedStaff">
+                                    <Form.Label><strong>Assigned Staff:</strong></Form.Label>
+                                    <Form.Control type="text" name="assigned_staff" value={report.assigned_staff || ""} onChange={onChange} required />
+                                </Form.Group>
+
+                                <Form.Group controlId="status">
+                                    <Form.Label><strong>Status:</strong></Form.Label>
+                                    <Form.Select name="status" value={report.status || ""} onChange={onChange} required>
+                                        <option value="Pending">Pending</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Resolved">Resolved</option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </>
+                        )}
+
                         {/* Report Type Selection */}
                         <Form.Group controlId="statusSelect">
                             <Form.Label><strong>Report Type:</strong></Form.Label>

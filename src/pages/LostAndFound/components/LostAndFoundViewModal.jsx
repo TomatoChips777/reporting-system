@@ -1,25 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Table, Badge } from 'react-bootstrap';
+import { Modal, Button, Table, Badge, Form } from 'react-bootstrap';
 import axios from 'axios';
 import MessageModal from '../../Messages/components/MessageModal';
 import formatDate from '../../../functions/DateFormat';
 
 function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimData = [], fetchItems }) {
-    useEffect(() => {
-
-    }, [selectedItem, claimData]);
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [updatedSelectedItem, setUpdatedSelectedItem] = useState(selectedItem);
+    const [showConfirmReject, setShowConfirmReject] = useState(false);
+    const [claimToReject, setClaimToReject] = useState(null);
+    const [rejectMode, setRejectMode] = useState('request'); // or 'final'
+
+    useEffect(() => {
+        setUpdatedSelectedItem(selectedItem);
+    }, [selectedItem]);
 
     const handleAcceptClaim = async (claim) => {
         try {
-            // Ensure that all necessary data is being sent in the request body
             const response = await axios.put(
-                `http://localhost:5000/api/lostandfound/item/accept-claim`,
+                `${import.meta.env.VITE_ACCEPT_CLAIM_REQUEST}`,
                 {
                     item_id: claim.item_id,
                     holder_id: claim.holder_id,
                     claimer_id: claim.claimer_id,
+                    report_id: selectedItem.report_id,
+                    location: selectedItem.location,
+                    type: selectedItem.type,
+                    item_name: selectedItem.item_name
                 }
             );
 
@@ -33,39 +40,117 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
             console.error('Error accepting claim:', error.response?.data || error.message);
         }
     };
+    const handleConfirmReject = () => {
+        if (!claimToReject) return;
 
-    const handleRejectClaim = (claimId) => {
-        console.log(`Rejecting claim with id: ${claimId}`);
-        // Add reject claim logic here
+        if (rejectMode === 'request') {
+            handleRejectRequest(claimToReject);
+        } else {
+            handleRejectClaim(claimToReject);
+        }
+
+        setShowConfirmReject(false);
     };
 
-    const handleCloseMessageModal = () => {
-        setShowMessageInputModal(false);
+    const handleRejectRequest = async (claim) => {
+        try {
+            const response = await axios.put(
+                `${import.meta.env.VITE_REJECT_CLAIM_REQUEST}`,
+                {
+                    item_id: claim.item_id,
+                    holder_id: claim.holder_id,
+                    claimer_id: claim.claimer_id,
+                    report_id: selectedItem.report_id,
+                    location: selectedItem.location,
+                    type: selectedItem.type,
+                    item_name: selectedItem.item_name
+                }
+            );
+
+            if (response.data.success) {
+                console.log('Claim accepted successfully.');
+                setShowModal(false);
+            } else {
+                console.error('Failed to accept claim.');
+            }
+        } catch (error) {
+            console.error('Error accepting claim:', error.response?.data || error.message);
+        }
+    };
+    const handleRejectClaim = async (claim) => {
+        try {
+            const response = await axios.put(
+                `${import.meta.env.VITE_REJECT_CLAIM}`,
+                {
+                    item_id: claim.item_id,
+                    holder_id: claim.holder_id,
+                    claimer_id: claim.claimer_id,
+                    report_id: selectedItem.report_id,
+                    location: selectedItem.location,
+                    type: selectedItem.type,
+                    item_name: selectedItem.item_name
+                }
+            );
+
+            if (response.data.success) {
+                console.log('Claim accepted successfully.');
+                setShowModal(false);
+                fetchItems();
+            } else {
+                console.error('Failed to accept claim.');
+            }
+        } catch (error) {
+            console.error('Error accepting claim:', error.response?.data || error.message);
+        }
     };
 
     const handleMessage = (itemId, claimerId) => {
         const claim = claimData.find(claim => claim.item_id === itemId && claim.claimer_id === claimerId);
         if (claim) {
-            const updatedItem = { ...selectedItem, user_id: claim.claimer_id }; // Update selectedItem with claimer_id
-            setUpdatedSelectedItem(updatedItem); // Update the state with the modified selectedItem
+            const updatedItem = { ...selectedItem, user_id: claim.claimer_id };
+            setUpdatedSelectedItem(updatedItem);
         }
         setShowMessageInputModal(true);
+    };
+
+    const handleRemarksChange = async (remarks) => {
+        try {
+            const response = await axios.put(
+                `${import.meta.env.VITE_ADD_CLAIM_REMARKS}`,
+                {
+                    claim_id: selectedItem.claim_id,
+                    remarks: remarks,
+                    report_id: selectedItem.report_id
+                }
+            );
+
+            if (response.data.success) {
+                console.log('Remarks updated successfully');
+                setUpdatedSelectedItem(prevItem => ({
+                    ...prevItem,
+                    remarks: remarks,
+                }));
+                fetchItems();
+            } else {
+                console.error('Failed to update remarks.');
+            }
+        } catch (error) {
+            console.error('Error updating remarks:', error.response?.data || error.message);
+        }
     };
 
     return (
         <>
             <Modal show={showModal} onHide={() => setShowModal(false)} centered size="xl">
                 <Modal.Header closeButton>
-                    <Modal.Title>Item Details & Claim Requests</Modal.Title>
+                    <Modal.Title>Item Details & {selectedItem?.type == 'found' ? 'Claim' : 'Return'} Requests</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {selectedItem ? (
                         <>
                             <p><strong>Date Reported:</strong> {formatDate(selectedItem.created_at)}</p>
                             {selectedItem.claim_date && (
-                                <>
-                                    <p><strong>Claimed On:</strong> {formatDate(selectedItem.claim_date)}</p>
-                                </>
+                                <p><strong>{selectedItem?.type == 'found' ? 'Claim' : 'Return'} On:</strong> {formatDate(selectedItem.claim_date)}</p>
                             )}
                             <p><strong>Reported By:</strong> {selectedItem.user_name}</p>
                             <p><strong>Location:</strong> {selectedItem.location}</p>
@@ -80,67 +165,108 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
                                 />
                             )}
                             <hr />
-                            <h5>Claim Requests</h5>
+                            <h5>{selectedItem?.type == 'found' ? 'Claim' : 'Return'} Requests</h5>
                             {claimData.length > 0 ? (
                                 <Table bordered hover>
                                     <thead>
                                         <tr>
-                                            <th>Claimer Name</th>
+                                            <th>{selectedItem?.type == 'found' ? 'Claimer' : 'Returner'} Name</th>
                                             <th>Message</th>
-                                            <th>Claimed On</th>
-                                            <th className='text-center align-middle'>
-                                                {selectedItem.item_status === 'claimed' ? 'Remarks' : 'Actions'}
-                                            </th>
+                                            <th>{selectedItem?.type == 'found' ? 'Claim' : 'Return'} On</th>
+                                            <th className="text-center align-middle">Actions</th>
+                                            {selectedItem.item_status === 'claimed' && (
+                                                <th className="text-center align-middle">Remarks</th>
+                                            )}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {claimData.map((claim) => (
-                                            <tr key={claim.id}>
-                                                <td>{claim.claimer_name}</td>
-                                                <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: '300px' }}>
-                                                    {claim.description}
-                                                </td>
-                                                <td>{new Date(claim.created_at).toLocaleString()}</td>
-                                                <td className="d-flex justify-content-center">
-                                                    {/* Show buttons only if claim status is not 'accepted' */}
-                                                    {claim.status !== 'accepted' && (
-                                                        <>
-                                                            <button
-                                                                className="btn btn-primary btn-sm rounded-0 mb-2 me-2 mb-sm-0"
-                                                                onClick={() => handleAcceptClaim(claim)}
-                                                            >
-                                                                Accept
-                                                            </button>
-                                                            <button
-                                                                className="btn btn-danger btn-sm rounded-0"
-                                                                onClick={() => handleRejectClaim(claim.id)}
-                                                            >
-                                                                Reject
-                                                            </button>
-                                                            <button
-                                                                className="btn btn-success btn-sm rounded-0 mt-2 ms-2 mt-sm-0"
-                                                                onClick={() => handleMessage(claim.item_id, claim.claimer_id)}
-                                                            >
-                                                                Message
-                                                            </button>
+                                        {claimData
+                                            .filter(claim => selectedItem.item_status !== 'claimed' || claim.status === 'accepted')
+                                            .map((claim) => (
+                                                <tr key={claim.id}>
+                                                    <td>{claim.claimer_name}</td>
+                                                    <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: '300px' }}>
+                                                        {claim.description}
+                                                    </td>
+                                                    <td>{formatDate(claim.created_at)}</td>
+                                                    <td className="d-flex justify-content-center">
+                                                        {claim.status !== 'accepted' && selectedItem.item_status !== 'claimed' ? (
+                                                            <>
+                                                                <button
+                                                                    className="btn btn-primary btn-sm rounded-0 mb-2 me-2 mb-sm-0"
+                                                                    onClick={() => handleAcceptClaim(claim)}
+                                                                >
+                                                                    Accept
+                                                                </button>
+                                                                <button
+                                                                    className="btn btn-danger btn-sm rounded-0"
+                                                                    // onClick={() => handleRejectRequest(claim)}
+                                                                    onClick={() => {
+                                                                        setClaimToReject(claim);
+                                                                        setRejectMode('request');
+                                                                        setShowConfirmReject(true);
+                                                                    }}
 
-                                                            {/* <button
-                                                                className="btn btn-success btn-sm rounded-0 mt-2 ms-2 mt-sm-0"
-                                                                onClick={() => handleMessage(claim.item_id)}
-                                                            >
-                                                                Message
-                                                            </button> */}
-                                                        </>
+                                                                >
+                                                                    Reject
+                                                                </button>
+
+                                                                <button
+                                                                    className="btn btn-success btn-sm rounded-0 mt-2 ms-2 mt-sm-0"
+                                                                    onClick={() => handleMessage(claim.item_id, claim.claimer_id)}
+                                                                >
+                                                                    Message
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+
+                                                                {updatedSelectedItem.remarks === 'unclaimed' && (
+                                                                    <button
+                                                                        className="btn btn-success btn-sm rounded-0 me-2 mt-sm-0"
+                                                                        onClick={() => handleMessage(claim.item_id, claim.claimer_id)}
+                                                                    >
+                                                                        Message
+                                                                    </button>
+                                                                )}
+
+                                                                <button
+                                                                    className="btn btn-danger btn-sm rounded-0"
+                                                                    // onClick={() => handleRejectClaim(claim)}
+                                                                    onClick={() => {
+                                                                        setClaimToReject(claim);
+                                                                        setRejectMode('final');
+                                                                        setShowConfirmReject(true);
+                                                                    }}
+
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </td>
+                                                    {claim.status === 'accepted' && selectedItem.item_status === 'claimed' && (
+                                                        <td className='justify-content-center'>
+                                                            <>
+
+                                                                <Form.Group>
+                                                                    {/* Conditional Background Color Based on Remarks */}
+                                                                    <Form.Control
+                                                                        as="select"
+                                                                        value={updatedSelectedItem.remarks}
+                                                                        onChange={(e) => handleRemarksChange(e.target.value)}
+                                                                        className={`rounded-0 text-center text-white ${updatedSelectedItem.remarks === 'unclaimed' ? 'bg-danger' : 'bg-success'}`}
+                                                                    >
+                                                                        <option value="unclaimed">Unclaimed</option>
+                                                                        <option value="claimed">Claimed</option>
+                                                                    </Form.Control>
+                                                                </Form.Group>
+                                                            </>
+                                                        </td>
                                                     )}
 
-                                                    {claim.status === 'accepted' && (
-                                                        <Badge bg="success" className='rounded-0' text="white">
-                                                            Claimed
-                                                        </Badge>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                </tr>
+                                            ))}
                                     </tbody>
                                 </Table>
                             ) : (
@@ -155,9 +281,27 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
                     <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
                 </Modal.Footer>
             </Modal>
+
+            <Modal show={showConfirmReject} onHide={() => setShowConfirmReject(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Rejection</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to reject this request?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmReject(false)} className="rounded-0">
+                        Cancel
+                    </Button>
+                    <Button variant="danger" onClick={handleConfirmReject} className="rounded-0">
+                        Confirm Reject
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             <MessageModal
                 show={showMessageInputModal}
-                handleClose={handleCloseMessageModal}
+                handleClose={() => setShowMessageInputModal(false)}
                 existingItem={updatedSelectedItem}
                 fetchItems={fetchItems}
             />

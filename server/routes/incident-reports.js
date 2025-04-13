@@ -94,7 +94,6 @@ router.delete('/report/:id', (req, res) => {
                 console.error("Error deleting report:", err);
                 return res.status(500).json({ success: false, message: 'Failed to delete report' });
             }
-            // req.io.emit('reportDeleted', { reportId: id });
             req.io.emit('update');
             res.json({ success: true, message: 'Report deleted successfully' });
         });
@@ -132,7 +131,6 @@ router.get('/user/:userId', (req, res) => {
 router.put("/admin/edit-report-type/:reportId", (req, res) => {
     const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, sender_id, location,description, } = req.body;
     const { reportId } = req.params;
-    // Update `tbl_reports` first
     const updateReportQuery = "UPDATE tbl_reports SET report_type = ? WHERE id = ?";
 
     db.query(updateReportQuery, [report_type, reportId], (err, result) => {
@@ -187,26 +185,26 @@ router.put("/admin/edit-report-type/:reportId", (req, res) => {
 });
 
 
-// Fetching all the maintenance-reports
+// Fetching all the incident-reports
 router.get('/', (req, res) => {
     const query = `
         SELECT 
-            mr.*, 
+            r.*, 
             --u.name AS reporter_name, 
               CASE 
-                WHEN mr.is_anonymous = 1 THEN 'Anonymous'
+                WHEN r.is_anonymous = 1 THEN 'Anonymous'
                 ELSE u.name 
             END AS reporter_name,
-            tmr.report_id,
-            tmr.category AS maintenance_category, 
-            tmr.priority, 
-            tmr.assigned_staff, 
-            mr.status
-        FROM tbl_reports mr
-        JOIN tbl_users u ON mr.user_id = u.id
-        LEFT JOIN tbl_maintenance_reports tmr ON mr.id = tmr.report_id
-        WHERE mr.archived = 0  and mr.report_type = 'Maintenance Report'
-        ORDER BY mr.created_at DESC`;
+            tir.report_id,
+            tir.category AS incident_category, 
+            tir.priority, 
+            tir.assigned_staff, 
+            r.status
+        FROM tbl_reports r
+        JOIN tbl_users u ON r.user_id = u.id
+        LEFT JOIN tbl_incident_reports tir ON r.id = tir.report_id
+        WHERE r.archived = 0  and r.report_type = 'Incident Report'
+        ORDER BY r.created_at DESC`;
 
     db.query(query, (err, rows) => {
         if (err) {
@@ -222,7 +220,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
     const reportId = req.params.reportId;
     const { status } = req.body;
 
-    const getUserQuery = `SELECT r.user_id, r.location, mr.category FROM tbl_reports r LEFT JOIN tbl_maintenance_reports mr ON r.id = mr.report_id WHERE r.id = ?`;
+    const getUserQuery = `SELECT r.user_id, r.location, tir.category FROM tbl_reports r LEFT JOIN tbl_incident_reports tir ON r.id = tir.report_id WHERE r.id = ?`;
 
     db.query(getUserQuery, [reportId], (err, result) => {
         if (err) {
@@ -244,7 +242,7 @@ router.put('/admin/edit/:reportId', (req, res) => {
                 return res.status(500).json({ success: false, message: 'Failed to update status' });
             }
 
-            const title = "Maintenance Report";
+            const title = "Incident Report";
             const formattedStatus = req.body.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
             const message = `Your report about ${category} at ${location} has been marked as "${formattedStatus}".`;
             const notificationQuery = `INSERT INTO tbl_user_notifications (report_id, user_id, message, title) VALUES (?, ?, ?, ?)`;

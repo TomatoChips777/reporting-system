@@ -67,8 +67,8 @@ const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
 
         try {
             const url = existingItem
-                ? `http://localhost:5000/api/lostandfound/items/${existingItem.id}`
-                : 'http://localhost:5000/api/lostandfound/create-lost-found';
+                ? `${import.meta.env.VITE_UPDATE_ITEM}/${existingItem.id}`
+                : `${import.meta.env.VITE_CREATE_LOST_AND_FOUND}`;
 
             const method = existingItem ? 'put' : 'post';
             const response = await axios({

@@ -6,6 +6,7 @@ import MessageModal from "../Messages/components/MessageModal";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
+import formatDate from "../../functions/DateFormat";
 function Reports() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);
@@ -24,6 +25,9 @@ function Reports() {
     const [dayFilter, setDayFilter] = useState(""); // Day filter state
     const [priorityFilter, setPriorityFilter] = useState("all");
 
+    const [showConfirmChangeModal, setShowConfirmChangeModal] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState(""); // temporarily hold new status
+    
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
     const fetchReports = async () => {
@@ -113,7 +117,14 @@ function Reports() {
     };
 
     const handleStatusChange = (e) => {
-        setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
+        const newStatus = e.target.value;
+        // setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
+        if (selectedReport.status === "resolved" && newStatus !== "resolved") {
+            setPendingStatus(newStatus);
+            setShowConfirmChangeModal(true); // Show confirmation first
+        } else {
+            setSelectedReport((prev) => ({ ...prev, status: newStatus }));
+        }
     };
 
     const handleUpdateStatus = async () => {
@@ -124,7 +135,7 @@ function Reports() {
 
         try {
             const response = await axios.put(
-                `${import.meta.env.VITE_MAINTENANCE_REPORT_UPDATE_STATUS}/${selectedReport.id}`,
+                `${import.meta.env.VITE_UPDATE_MAINTENANCE_REPORT_STATUS}/${selectedReport.id}`,
                 { status: selectedReport.status },
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -152,7 +163,7 @@ function Reports() {
         }
 
         try {
-            const response = await axios.put(`${import.meta.env.VITE_MAINTENANCE_REMOVE_REPORTS}/${reportToDelete}`);
+            const response = await axios.put(`${import.meta.env.VITE_REMOVE_REPORT}/${reportToDelete}`);
 
             if (response.data.success) {
                 setReports((prevReports) => prevReports.filter((report) => report.id !== reportToDelete));
@@ -196,6 +207,7 @@ function Reports() {
                                 </div>
                                 <div className="col">
                                     <h5 className="mb-0">Maintenance Reports</h5>
+                                <p className="mb-0">Manage maintenance reports</p>
                                 </div>
                                 <div className="col-auto d-flex align-items-center ">
                                     {/* Search Bar: Make it take more space */}
@@ -354,15 +366,13 @@ function Reports() {
                 <Card.Header className="bg-success text-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
-                            <h5 className="mb-0">Maintenanace Reports</h5>
+                            <h5 className="mb-0">Maintenanace Reports Lists</h5>
                         </div>
                         <div className="col-auto">
                             <div className="btn-group ">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
-                                    <Button key={status} variant="outline-dark" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
-                                        {/* {status.charAt(0).toUpperCase() + status.slice(1)} */}
+                                    <Button key={status} variant="outline-dark border-white text-white" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
                                         {status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-
                                     </Button>
                                 ))}
                             </div>
@@ -378,15 +388,7 @@ function Reports() {
                                         <div className="d-flex align-items-start justify-content-between">
                                             {/* Left Side: Report Details */}
                                             <div className="w-75 me-3">
-                                                <p><strong>Date Reported:</strong> {new Date(report.created_at).toLocaleString('en-US', {
-                                                    timeZone: 'Asia/Manila',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                })}</p>
+                                                <p><strong>Date Reported:</strong> {formatDate(report.created_at)}</p>
                                                 <p><strong>Reported By:</strong> {report.reporter_name}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
                                                 <p><strong>Issue Type:</strong> {report.maintenance_category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</p>
@@ -396,24 +398,11 @@ function Reports() {
 
                                                 <p>
                                                     <strong>Priority: </strong>
-                                                    {/* <Badge
-                                                        bg={
-                                                            report.priority === "Low" ? "success" :
-                                                                report.priority === "Medium" ? "primary" :
-                                                                    report.priority === "High" ? "warning" :
-                                                                        report.priority === "Urgent" ? "danger" : "secondary"
-                                                        }
-                                                        className="ms-2 rounded-0"
-                                                    > */}
                                                     {report.priority}
-                                                    {/* </Badge> */}
                                                 </p>
-
                                                 <p>
                                                     <strong>Status: </strong>
-                                                    {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0"> */}
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                    {/* </Badge> */}
                                                 </p>
                                                 <div className="d-flex justify-content-end align-items-end">
                                                     <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
@@ -455,15 +444,7 @@ function Reports() {
                                 <tbody>
                                     {currentReports.map((report) => (
                                         <tr key={report.id}>
-                                            <td>{new Date(report.created_at).toLocaleString('en-US', {
-                                                timeZone: 'Asia/Manila',
-                                                month: 'long',
-                                                day: 'numeric',
-                                                year: 'numeric',
-                                                hour: 'numeric',
-                                                minute: '2-digit',
-                                                hour12: true,
-                                            })}</td>
+                                            <td>{formatDate(report.created_at)}</td>
                                             <td>{report.reporter_name}</td>
                                             <td>{report.location}</td>
                                             <td>{report.maintenance_category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</td>
@@ -494,7 +475,7 @@ function Reports() {
                     </div>
                     <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
                         <Modal.Header closeButton>
-                            <Modal.Title>Confirm Delete</Modal.Title>
+                            <Modal.Title>Confirm Removal</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
                             Are you sure you want to remove this report? This action cannot be undone.
@@ -572,15 +553,7 @@ function Reports() {
                 <Modal.Body>
                     {selectedReport ? (
                         <div>
-                            <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
-                                timeZone: 'Asia/Manila',
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true,
-                            })}</p>
+                            <p className="text-break"><strong>Date:</strong> {formatDate(selectedReport.created_at)}</p>
                             <p className="text-break"><strong>Reported By:</strong> {selectedReport.reporter_name}</p>
                             <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
                             <p className="text-break"><strong>Issue Type:</strong> {selectedReport.maintenance_category}</p>
@@ -617,6 +590,29 @@ function Reports() {
                 </Modal.Footer>
             </Modal>
 
+
+            <Modal show={showConfirmChangeModal} onHide={() => setShowConfirmChangeModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Status Change</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    This report is already marked as <strong>Resolved</strong>. Are you sure you want to change its status to <strong>{pendingStatus.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</strong>?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmChangeModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="warning"
+                        onClick={() => {
+                            setSelectedReport((prev) => ({ ...prev, status: pendingStatus }));
+                            setShowConfirmChangeModal(false);
+                        }}
+                    >
+                        Confirm Change
+                    </Button>
+                </Modal.Footer>
+            </Modal>
             <MessageModal
                 show={showMessageInputModal}
                 handleClose={handleCloseMessageModal}

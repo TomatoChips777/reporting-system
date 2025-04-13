@@ -6,6 +6,7 @@ import MessageModal from "../Messages/components/MessageModal";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
+import formatDate from "../../functions/DateFormat";
 function IncidentReportDashboard() {
     const { role } = useAuth();
     const [reports, setReports] = useState([]);
@@ -26,9 +27,13 @@ function IncidentReportDashboard() {
 
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
+
+    const [showConfirmChangeModal, setShowConfirmChangeModal] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState(""); // temporarily hold new status
+
     const fetchReports = async () => {
         try {
-            const response = await axios.get(`${import.meta.env.VITE_MAINTENANCE_REPORT}`);
+            const response = await axios.get(`${import.meta.env.VITE_INCIDENT_REPORT}`);
             setReports(response.data.reports || []);
             setFilteredReports(response.data.reports || []);
         } catch (error) {
@@ -77,14 +82,9 @@ function IncidentReportDashboard() {
                 (dayFilter === "" || reportDate.getDate() === selectedDay)
             );
         });
-
         setFilteredReports(updatedReports);
     }, [searchTerm, monthFilter, yearFilter, dayFilter, reports, statusFilter, priorityFilter]);
-
-
     const uniqueYears = [...new Set(reports.map(report => new Date(report.created_at).getFullYear()))].sort((a, b) => b - a);
-
-
     const handleMessage = (item) => {
         setExistingItem(item);
         setShowMessageInputModal(true);
@@ -113,7 +113,15 @@ function IncidentReportDashboard() {
     };
 
     const handleStatusChange = (e) => {
-        setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
+        // setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
+        const newStatus = e.target.value;
+
+        if (selectedReport.status === "resolved" && newStatus !== "resolved") {
+            setPendingStatus(newStatus);
+            setShowConfirmChangeModal(true); // Show confirmation first
+        } else {
+            setSelectedReport((prev) => ({ ...prev, status: newStatus }));
+        }
     };
 
     const handleUpdateStatus = async () => {
@@ -124,7 +132,7 @@ function IncidentReportDashboard() {
 
         try {
             const response = await axios.put(
-                `${import.meta.env.VITE_MAINTENANCE_REPORT_UPDATE_STATUS}/${selectedReport.id}`,
+                `${import.meta.env.VITE_UPDATE_INCIDENT_REPORT_STATUS}/${selectedReport.id}`,
                 { status: selectedReport.status },
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -196,6 +204,7 @@ function IncidentReportDashboard() {
                                 </div>
                                 <div className="col">
                                     <h5 className="mb-0">Incident Reports</h5>
+                                    <p className="mb-0">Manage incident reports</p>
                                 </div>
                                 <div className="col-auto d-flex align-items-center ">
                                     {/* Search Bar: Make it take more space */}
@@ -257,53 +266,7 @@ function IncidentReportDashboard() {
             <div className="row mb-2">
                 <div className="col-md-3 col-6">
                     <div
-                        className={`card p-2 text-center rounded-1 ${statusFilter === "all" ? "border border-primary bg-light" : ""}`}
-                        onClick={() => handleFilterChange("all")}
-                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
-                    >
-                        <FaFileAlt className="text-success mb-1" size={20} />
-                        <h6 className="mb-0">Total</h6>
-                        <strong className='fs-5'>{totalReports}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3 col-6">
-                    <div
-                        className={`card p-2 text-center rounded-1 ${statusFilter === "pending" ? "border border-primary bg-light" : ""}`}
-                        onClick={() => handleFilterChange("pending")}
-                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
-                    >
-                        <FaClock className="text-warning mb-1" size={20} />
-                        <h6 className="mb-0">Pending</h6>
-                        <strong className='fs-5'>{pendingCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3 col-6">
-                    <div
-                        className={`card p-2 text-center rounded-1 ${statusFilter === "in_progress" ? "border border-primary bg-light" : ""}`}
-                        onClick={() => handleFilterChange("in_progress")}
-                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
-                    >
-                        <FaTasks className="text-primary mb-1" size={20} />
-                        <h6 className="mb-0">In Progress</h6>
-                        <strong className='fs-5'>{inProgressCount}</strong>
-                    </div>
-                </div>
-                <div className="col-md-3 col-6">
-                    <div
-                        className={`card p-2 text-center rounded-1 ${statusFilter === "resolved" ? "border border-primary bg-light" : ""}`}
-                        onClick={() => handleFilterChange("resolved")}
-                        style={{ cursor: "pointer", fontSize: "0.85rem" }}
-                    >
-                        <FaCheckCircle className="text-success mb-1" size={20} />
-                        <h6 className="mb-0">Resolved</h6>
-                        <strong className='fs-5'>{resolvedCount}</strong>
-                    </div>
-                </div>
-            </div>
-            <div className="row mb-2">
-                <div className="col-md-3 col-6">
-                    <div
-                        className={`card p-2 text-center rounded-1 ${priorityFilter === "Low" ? "border border-primary bg-light" : ""}`}
+                        className={`card p-4 text-center rounded-1 ${priorityFilter === "Low" ? "border border-primary bg-light" : ""}`}
                         onClick={() => setPriorityFilter(priorityFilter === "Low" ? "all" : "Low")}
                         style={{ cursor: "pointer", fontSize: "0.9rem" }}
                     >
@@ -314,7 +277,7 @@ function IncidentReportDashboard() {
                 </div>
                 <div className="col-md-3 col-6">
                     <div
-                        className={`card p-2 text-center rounded-1 ${priorityFilter === "Medium" ? "border border-primary bg-light" : ""}`}
+                        className={`card p-4 text-center rounded-1 ${priorityFilter === "Medium" ? "border border-primary bg-light" : ""}`}
                         onClick={() => setPriorityFilter(priorityFilter === "Medium" ? "all" : "Medium")}
                         style={{ cursor: "pointer", fontSize: "0.9rem" }}
                     >
@@ -325,7 +288,7 @@ function IncidentReportDashboard() {
                 </div>
                 <div className="col-md-3 col-6">
                     <div
-                        className={`card p-2 text-center rounded-1 ${priorityFilter === "High" ? "border border-primary bg-light" : ""}`}
+                        className={`card p-4 text-center rounded-1 ${priorityFilter === "High" ? "border border-primary bg-light" : ""}`}
                         onClick={() => setPriorityFilter(priorityFilter === "High" ? "all" : "High")}
                         style={{ cursor: "pointer", fontSize: "0.9rem" }}
                     >
@@ -336,7 +299,7 @@ function IncidentReportDashboard() {
                 </div>
                 <div className="col-md-3 col-6">
                     <div
-                        className={`card p-2 text-center rounded-1 ${priorityFilter === "Urgent" ? "border border-primary bg-light" : ""}`}
+                        className={`card p-4 text-center rounded-1 ${priorityFilter === "Urgent" ? "border border-primary bg-light" : ""}`}
                         onClick={() => setPriorityFilter(priorityFilter === "Urgent" ? "all" : "Urgent")}
                         style={{ cursor: "pointer", fontSize: "0.9rem" }}
                     >
@@ -354,15 +317,14 @@ function IncidentReportDashboard() {
                 <Card.Header className="bg-success text-white py-3">
                     <div className="row align-items-center">
                         <div className="col">
-                            <h5 className="mb-0">Incident Reports</h5>
+                            <h5 className="mb-0">Incident Reports List</h5>
                         </div>
                         <div className="col-auto">
                             <div className="btn-group ">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
-                                    <Button key={status} variant="outline-dark" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
+                                    <Button key={status} variant="outline-dark border-white text-white" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
                                         {/* {status.charAt(0).toUpperCase() + status.slice(1)} */}
                                         {status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-
                                     </Button>
                                 ))}
                             </div>
@@ -376,56 +338,35 @@ function IncidentReportDashboard() {
                                 {currentReports.map((report) => (
                                     <li key={report.id} className="list-group-item rounded-0">
                                         <div className="d-flex align-items-start justify-content-between">
-                                            {/* Left Side: Report Details */}
                                             <div className="w-75 me-3">
-                                                <p><strong>Date Reported:</strong> {new Date(report.created_at).toLocaleString('en-US', {
-                                                    timeZone: 'Asia/Manila',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                })}</p>
+                                                <p><strong>Date Reported:</strong> {formatDate(report.created_at)}</p>
                                                 <p><strong>Reported By:</strong> {report.reporter_name}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
-                                                <p><strong>Issue Type:</strong> {report.maintenance_category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</p>
+                                                <p><strong>Issue Type:</strong> {report.incident_category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</p>
                                                 <p><strong>Description:</strong> {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
                                                     : report.description}</p>
 
                                                 <p>
                                                     <strong>Priority: </strong>
-                                                    {/* <Badge
-                                                        bg={
-                                                            report.priority === "Low" ? "success" :
-                                                                report.priority === "Medium" ? "primary" :
-                                                                    report.priority === "High" ? "warning" :
-                                                                        report.priority === "Urgent" ? "danger" : "secondary"
-                                                        }
-                                                        className="ms-2 rounded-0"
-                                                    > */}
+
                                                     {report.priority}
-                                                    {/* </Badge> */}
                                                 </p>
 
                                                 <p>
                                                     <strong>Status: </strong>
-                                                    {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0"> */}
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                    {/* </Badge> */}
                                                 </p>
                                                 <div className="d-flex justify-content-end align-items-end">
-                                                <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
-                                                <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
-                                                <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
-                                                    Message
-                                                </Button>
+                                                    <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                    <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
+                                                    <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
+                                                        Message
+                                                    </Button>
                                                 </div>
-                                                
+
                                             </div>
 
-                                            {/* Right Side: Image */}
                                             <div className="w-25">
                                                 <img
                                                     src={`${import.meta.env.VITE_IMAGES}/${report.image_path}` || "https://via.placeholder.com/150"}
@@ -455,18 +396,10 @@ function IncidentReportDashboard() {
                                 <tbody>
                                     {currentReports.map((report) => (
                                         <tr key={report.id}>
-                                            <td>{new Date(report.created_at).toLocaleString('en-US', {
-                                                timeZone: 'Asia/Manila',
-                                                month: 'long',
-                                                day: 'numeric',
-                                                year: 'numeric',
-                                                hour: 'numeric',
-                                                minute: '2-digit',
-                                                hour12: true,
-                                            })}</td>
+                                            <td>{formatDate(report.created_at)}</td>
                                             <td>{report.reporter_name}</td>
                                             <td>{report.location}</td>
-                                            <td>{report.maintenance_category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</td>
+                                            <td>{report.incident_category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</td>
                                             <td>
                                                 {report.description.length > 50
                                                     ? report.description.substring(0, 50) + "..."
@@ -572,18 +505,10 @@ function IncidentReportDashboard() {
                 <Modal.Body>
                     {selectedReport ? (
                         <div>
-                            <p className="text-break"><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString('en-US', {
-                                timeZone: 'Asia/Manila',
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true,
-                            })}</p>
+                            <p className="text-break"><strong>Date:</strong> {formatDate(selectedReport.created_at)}</p>
                             <p className="text-break"><strong>Reported By:</strong> {selectedReport.reporter_name}</p>
                             <p className="text-break"><strong>Location:</strong> {selectedReport.location}</p>
-                            <p className="text-break"><strong>Issue Type:</strong> {selectedReport.maintenance_category}</p>
+                            <p className="text-break"><strong>Issue Type:</strong> {selectedReport.incident_category}</p>
                             <p className="text-break"><strong>Description:</strong> {selectedReport.description}</p>
                             {/* Image Display */}
                             {selectedReport.image_path && (
@@ -614,6 +539,29 @@ function IncidentReportDashboard() {
                 <Modal.Footer>
                     <Button variant="secondary" className="rounded-0" onClick={() => setShowModal(false)}>Close</Button>
                     <Button variant="primary" className="rounded-0" onClick={handleUpdateStatus}>Update Status</Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showConfirmChangeModal} onHide={() => setShowConfirmChangeModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Status Change</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    This report is already marked as <strong>Resolved</strong>. Are you sure you want to change its status to <strong>{pendingStatus.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</strong>?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmChangeModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="warning"
+                        onClick={() => {
+                            setSelectedReport((prev) => ({ ...prev, status: pendingStatus }));
+                            setShowConfirmChangeModal(false);
+                        }}
+                    >
+                        Confirm Change
+                    </Button>
                 </Modal.Footer>
             </Modal>
 

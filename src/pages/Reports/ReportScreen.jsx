@@ -43,8 +43,6 @@ function Reports() {
         socket.on('update', () => {
             fetchReports();
         });
-
-        // Clean up the socket connection on component unmount
         return () => {
             socket.disconnect();
         };
@@ -134,7 +132,7 @@ function Reports() {
         try {
             // Send full report data along with report_type
             const response = await axios.put(
-                `${import.meta.env.VITE_UPDATE_REPORT_STATUS}/${selectedReport.id}`,
+                `${import.meta.env.VITE_UPDATE_REPORT_TYPE}/${selectedReport.id}`,
                 {
                     report_type: selectedReport.report_type,
                     type: selectedReport.type || "lost",
@@ -214,6 +212,7 @@ function Reports() {
                                 </div>
                                 <div className="col">
                                     <h5 className="mb-0">Reports</h5>
+                                    <p className="mb-0">View and manage reports</p>
                                 </div>
                                 <div className="col-auto d-flex align-items-center ">
                                     {/* Search Bar: Make it take more space */}
@@ -350,9 +349,7 @@ function Reports() {
                                                     : report.description}
                                             </td>
                                             <td>
-                                                {/* <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="rounded-0"> */}
                                                 {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                {/* </Badge> */}
                                             </td>
                                             <td className="d-flex justify-content-center">
                                                 <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
@@ -429,33 +426,21 @@ function Reports() {
                     </div>
                 </Card.Footer>
             </Card>
-            {/* View Details Modal */}
-
-            {/* <ViewReportModal
-                show={showModal}
-                onHide={() => setShowModal(false)}
-                report={selectedReport}
-                onUpdateType={handleReportTypeChange}
-                onUpdateStatus={handleUpdateStatus}
-            /> */}
-
+    
             <ViewReportModal
                 show={showModal}
                 onHide={() => setShowModal(false)}
                 report={selectedReport}
                 onUpdateType={handleReportTypeChange}
                 onUpdateStatus={handleUpdateStatus}
-                onChange={handleChange} // 🔥 Pass handleChange to update form fields
+                onChange={handleChange}
             />
-
-
             <MessageModal
                 show={showMessageInputModal}
                 handleClose={handleCloseMessageModal}
                 existingItem={existingItem}
                 fetchItems={fetchReports}
             />
-
 
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="lg">
                 <Modal.Header closeButton>

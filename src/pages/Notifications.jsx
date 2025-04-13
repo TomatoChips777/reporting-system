@@ -4,20 +4,8 @@ import { Bell, CheckCircle, Circle, Trash } from 'react-bootstrap-icons';
 import axios from 'axios';
 import { useAuth } from '../../AuthContext';
 import io from 'socket.io-client';
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const options = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        hour12: true
-    };
-    return date.toLocaleString(undefined, options);
-}
+import formatDate from '../functions/DateFormat';
+import { adminRoles } from '../functions/AdminRoles';
 
 function Notifications() {
     const { role, user } = useAuth();
@@ -30,12 +18,24 @@ function Notifications() {
     const fetchNotifications = async () => {
         try {
             setLoading(true);
-            const endpoint = role === "admin"
+            const endpoint = adminRoles.includes(role)
                 ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
                 : `${import.meta.env.VITE_USER_NOTIFICATION}/${user.id}`;
 
             const response = await axios.get(endpoint);
-            setNotifications(response.data);
+            let fetchedNotifications = response.data;
+
+            if (role === "report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Reports");
+            } else if (role === "maintenance-report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Maintenance Report");
+            } else if (role === "lost-and-found-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Lost And Found");
+            }else if (role === "incident-report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Incident Report");
+            }
+            setNotifications(fetchedNotifications);
+            // setNotifications(response.data);
         } catch (error) {
             console.error("Error fetching notifications:", error);
         } finally {
@@ -56,7 +56,7 @@ function Notifications() {
 
     const markAsRead = async (notificationId) => {
         try {
-            const endpoint = role === "admin"
+            const endpoint = adminRoles.includes(role)
                 ? `${import.meta.env.VITE_ADMIN_READ_NOTIFICATION_API}/${notificationId}`
                 : `${import.meta.env.VITE_USER_READ_NOTIFICATION_API}/${notificationId}`;
 
@@ -69,7 +69,7 @@ function Notifications() {
 
     const deleteNotification = async (notificationId) => {
         try {
-            const endpoint = role === "admin"
+            const endpoint = adminRoles.includes(role)
                 ? `${import.meta.env.VITE_ADMIN_DELETE_NOTIFICATION}/${notificationId}`
                 : `${import.meta.env.VITE_USER_DELETE_NOTIFICATION}/${notificationId}`;
             await axios.delete(endpoint);
@@ -80,7 +80,7 @@ function Notifications() {
 
     const markAllAsRead = async () => {
         try {
-            const endpoint = role === "admin"
+            const endpoint = adminRoles.includes(role)
                 ? `${import.meta.env.VITE_ADMIN_MARK_ALL_NOTIFICATION}/`
                 : `${import.meta.env.VITE_USER_MARK_ALL_NOTIFICATION}/${user.id}`;
             await axios.put(endpoint);
@@ -104,14 +104,14 @@ function Notifications() {
         switch (type?.toLowerCase()) {
             case 'maintenance report':
                 return 'primary';
-            case 'incident':
+            case 'incident report':
                 return 'danger';
             case 'lost and found':
                 return 'warning';
-            case 'borrow item':
-                return 'success';
+            case 'deleted report':
+                return 'danger';
             default:
-                return 'info';
+                return 'success';
         }
     };
 
@@ -179,7 +179,7 @@ function Notifications() {
                                         <div className="d-flex align-items-center mb-2">
                                             <Badge
                                                 bg={getNotificationColor(notification.title)}
-                                                className="me-2"
+                                                className="me-2 rounded-0"
                                             >
                                                 {notification.title || 'General'}
                                             </Badge>
@@ -195,26 +195,6 @@ function Notifications() {
                                         <Card.Title>{notification.title}</Card.Title>
                                         <Card.Text>{notification.message}</Card.Text>
                                     </Col>
-                                    {/* <Col xs="auto">
-                                        <div className="d-flex gap-2">
-                                            {notification.is_read === 0 && (
-                                                <Button
-                                                    variant="outline-primary"
-                                                    size="sm"
-                                                    onClick={() => markAsRead(notification.id)}
-                                                >
-                                                    Mark as Read
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant="outline-danger"
-                                                size="sm"
-                                                onClick={() => deleteNotification(notification.id)}
-                                            >
-                                                <Trash />
-                                            </Button>
-                                        </div>
-                                    </Col> */}
                                 </Row>
                             </Card.Body>
                         </Card>

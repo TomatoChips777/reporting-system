@@ -10,11 +10,11 @@ class Section {
     }
 
     getFilteredRoutes(role) {
-        return this.routes.filter(route => !route.adminOnly || role === 'admin' || role == 'report-manager' || role == 'maintenance-report-manager' || role == 'incident-report-manager');
+        return this.routes.filter(route => !route.adminOnly || role === 'admin' || role == 'report-manager' || role == 'maintenance-report-manager' || role == 'incident-report-manager' || role == 'lost-and-found-manager');
     }
 
     hasAccess(role) {
-        return !this.adminOnly || role === 'admin' || role == 'report-manager' || role == 'maintenance-report-manager' || role == 'incident-report-manager';
+        return !this.adminOnly || role === 'admin' || role == 'report-manager' || role == 'maintenance-report-manager' || role == 'incident-report-manager' || role == 'lost-and-found-manager';
     }
 }
 
@@ -30,11 +30,9 @@ class NavigationManager {
             home: new Section('Home', '/home', []),
 
             users: new Section('Users', '/users', [
-                { path: '/users', name: 'Users', icon: 'users' },
-                { path: '/user-requests', name: 'User Requests', icon: 'user-requests' }
+                { path: '/users', name: 'User Management', icon: 'users' },
             ]),
             reports: new Section('Reports', '/reports', [
-                // { path: '/dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
                 { path: '/reports', name: 'Reports', icon: 'reports' },
                 
             ]),
@@ -43,9 +41,6 @@ class NavigationManager {
                 { path: '/maintenance-reports', name: 'Maintenance Reports', icon: 'maintenance' }
                 
             ]),
-        //    admin_messages: new Section('Messages', '/admin-messages', [
-        //         { path: '/admin-messages', name: 'Messages', icon: 'reports', adminOnly: true },
-        //     ]),
             lostFound: new Section('Lost and Found', '/lost-and-found-dashboard', [
                 { path: '/lost-and-found-dashboard', name: 'Dashboard', icon: 'dashboard', adminOnly: true },
                 { path: '/lost-and-found-reports', name: 'Lost And Found', icon: 'search' },
@@ -61,10 +56,9 @@ class NavigationManager {
             events: new Section('Events', '/events', [
                 { path: '/events', name: 'Events', icon: 'calendar' },
             ]),
-            student: new Section('Student Page', '/list-screen', [
+            user: new Section('User Page', '/list-screen', [
                 { path: '/list-screen', name: 'Lost And Found', icon: 'search' },
                 { path: '/reports-screen', name: 'Reports', icon: 'reports' },
-                // { path: '/messages', name: 'Messages', icon: 'reports' },
 
             ])
         };

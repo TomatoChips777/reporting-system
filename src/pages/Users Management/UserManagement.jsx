@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { Table, Card, Form, Button, Modal } from "react-bootstrap";
-import { FaSearch, FaUser } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 import axios from "axios";
-import { useAuth } from "../../../AuthContext";
 import formatDate from "../../functions/DateFormat";
 
 function UserManagement() {
-    const { role } = useAuth();
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -17,15 +15,15 @@ function UserManagement() {
     const [userToDelete, setUserToDelete] = useState(null);
 
     const [showEditModal, setShowEditModal] = useState(false);
-    const [userToEdit, setUserToEdit] = useState(null);
-    const [editRole, setEditRole] = useState("");
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newUser, setNewUser] = useState({ name: "", email: "", role: "" });
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/users/get-all-users`);
+            const res = await axios.get(`${import.meta.env.VITE_FETCH_ALL_USERS}`);
             setUsers(res.data);
             setFilteredUsers(res.data);
         } catch (error) {
@@ -51,23 +49,24 @@ function UserManagement() {
 
     const handleSearch = (e) => setSearchTerm(e.target.value);
     const handleRoleFilter = (e) => setRoleFilter(e.target.value);
+
     const handlePageSizeChange = (e) => {
         setPageSize(parseInt(e.target.value));
         setCurrentPage(1);
     };
 
-    const confirmDelete = (userId) => {
-        setUserToDelete(userId);
+    const confirmActivateOrDeactivate = (userId, currentStatus) => {
+        setUserToDelete({ id: userId, status: currentStatus });
         setShowDeleteModal(true);
     };
 
     const handleCreateUser = async () => {
         try {
-            const response = await axios.post(`${import.meta.env.VITE_CREATE_USER}`, newUser);
+            const response = await axios.post(`${import.meta.env.VITE_ADD_USER}`, newUser);
             if (response.data.success) {
                 fetchUsers();
                 setShowCreateModal(false);
-                setNewUser({ name: "", email: "", password: "", role: "student" });
+                setNewUser({ name: "", email: "", password: "", role: "user" });
             } else {
                 alert("Failed to create user.");
             }
@@ -77,29 +76,41 @@ function UserManagement() {
         }
     };
 
-    const handleDelete = async () => {
+    const handleDeactivate = async () => {
+        const newStatus = userToDelete.status === 1 ? 0 : 1;
+
         try {
-            const response = await axios.delete(`${import.meta.env.VITE_DELETE_USER}/${userToDelete}`);
+            const response = await axios.put(`${import.meta.env.VITE_ACTIVATE_DEACTIVATE_USER}/${userToDelete.id}`, {
+                status: newStatus,
+            });
+
             if (response.data.success) {
-                setUsers(prev => prev.filter(u => u.id !== userToDelete));
+                setUsers(prev =>
+                    prev.map(user =>
+                        user.id === userToDelete.id ? { ...user, status: newStatus } : user
+                    )
+                );
                 setShowDeleteModal(false);
                 setUserToDelete(null);
             } else {
-                alert("Delete failed.");
+                alert("Status update failed.");
             }
         } catch (error) {
-            console.error("Delete error:", error);
-            alert("Delete error.");
+            console.error("Status update error:", error);
+            alert("Error updating user status.");
         }
     };
 
     const handleUpdateUser = async () => {
         try {
-            const response = await axios.put(`${import.meta.env.VITE_UPDATE_USER}/${userToEdit.id}`, {
-                role: editRole
+            const response = await axios.put(`${import.meta.env.VITE_UPDATE_USER}/${selectedUser.id}`, {
+                name: selectedUser.name,
+                email: selectedUser.email,
+                role: selectedUser.role
             });
+
             if (response.data.success) {
-                fetchUsers(); // Refresh the list
+                fetchUsers();
                 setShowEditModal(false);
             } else {
                 alert("Failed to update user.");
@@ -109,11 +120,13 @@ function UserManagement() {
             alert("Error updating user.");
         }
     };
-
+    const openViewModal = (user) => {
+        setSelectedUser(user);
+        setShowViewModal(true);
+    }
 
     const openEditModal = (user) => {
-        setUserToEdit(user);
-        setEditRole(user.role);
+        setSelectedUser(user);
         setShowEditModal(true);
     }
     const indexOfLast = currentPage * pageSize;
@@ -125,7 +138,7 @@ function UserManagement() {
             <div className="card bg-success text-white mb-3">
                 <div className="card-body">
                     <div className="d-flex align-items-center justify-content-between flex-wrap">
-                        <h5 className="mb-0"><FaUser className="me-2" />User Management</h5>
+                        <h5 className="mb-0"><FaUser className="me-2" size={70} />User Management</h5>
                         <div className="d-flex flex-wrap gap-2">
                             <Form.Control
                                 type="text"
@@ -136,7 +149,7 @@ function UserManagement() {
                             />
                             <Form.Select value={roleFilter} onChange={handleRoleFilter} className="rounded-0">
                                 <option value="">All Roles</option>
-                                {['admin', 'report-manager', 'maintenance-report-manager', 'incident-report-manager', 'student'].map(r => (
+                                {['admin', 'report-manager', 'maintenance-report-manager','lost-and-found-manager', 'incident-report-manager', 'user'].map(r => (
                                     <option key={r} value={r}>
                                         {r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                                     </option>
@@ -166,6 +179,7 @@ function UserManagement() {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
+                                    <th className="text-center">Status</th>
                                     <th>Date Created</th>
                                     <th className="text-center">Actions</th>
                                 </tr>
@@ -176,12 +190,17 @@ function UserManagement() {
                                         <td>{user.id}</td>
                                         <td>{user.name}</td>
                                         <td>{user.email}</td>
-                                        <td>{user.role}</td>
+                                        {/* <td>{user.role.replace(/-/g, ' ').replace(/\b\w/, c => c.toUpperCase())}</td> */}
+                                        <td className="text-center">{user.role.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</td>
+
+                                        <td className="text-center">{user.status === 1 ? 'Active' : 'Inactive'}</td>
                                         <td>{formatDate(user.created_at)}</td>
                                         <td className="d-flex justify-content-center">
-                                            <Button variant="warning" size="sm" className="rounded-0 me-2" onClick={() => openEditModal(user)}>Edit</Button>
-                                            <Button variant="danger" size="sm" className="rounded-0 me-2" onClick={() => confirmDelete(user.id)}>Delete</Button>
-                                            {/* Add View/Edit button if needed */}
+
+                                            <Button variant="info" size="sm" className="rounded-0 me-2" onClick={() => openViewModal(user)}>View</Button>
+                                            <Button variant="warning" size="sm" className="rounded-0 " onClick={() => openEditModal(user)}>Edit</Button>
+                                            <Button variant={user.status === 1 ? "danger" : "success"} size="sm" className="rounded-0 ms-2" onClick={() => confirmActivateOrDeactivate(user.id, user.status)}>{user.status === 1 ? 'Deactivate' : 'Activate'}</Button>
+
                                         </td>
                                     </tr>
                                 ))}
@@ -219,29 +238,32 @@ function UserManagement() {
             {/* Delete Confirmation Modal */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Confirm Delete</Modal.Title>
+                    <Modal.Title>Confirm {userToDelete?.status === 1 ? 'Deactivate' : 'Activate'}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Are you sure you want to delete this user?</Modal.Body>
+                {/* <Modal.Body>Are you sure you want to delete this user?</Modal.Body> */}
+                <Modal.Body>
+                    Are you sure you want to {userToDelete?.status === 1 ? 'deactivate' : 'activate'} this user?
+                </Modal.Body>
+
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                    <Button variant="danger" onClick={handleDelete}>Delete</Button>
+                    <Button variant={userToDelete?.status === 1 ? "danger" : "success"} onClick={handleDeactivate}>{userToDelete?.status === 1 ? 'Deactivate' : 'Activate'}</Button>
                 </Modal.Footer>
             </Modal>
 
-
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+            <Modal show={showViewModal} onHide={() => setShowViewModal(false)} centered>
                 <Modal.Header closeButton className="bg-success text-white">
                     <Modal.Title>User Profile</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="p-0">
-                    {userToEdit && (
+                    {selectedUser && (
                         <div className="card shadow-sm rounded-0">
                             <div className="card-body text-center">
                                 {/* <FaUser size={60} className="text-secondary mb-3" />
                                  */}
-                                {userToEdit?.image_url && userToEdit.image_url.trim() !== "" ? (
+                                {selectedUser?.image_url && selectedUser.image_url.trim() !== "" ? (
                                     <img
-                                        src={`${import.meta.env.VITE_IMAGES}/${userToEdit.image_url}`}
+                                        src={`${import.meta.env.VITE_IMAGES}/${selectedUser.image_url}`}
                                         width="60"
                                         height="60"
                                         className="rounded-circle"
@@ -251,27 +273,80 @@ function UserManagement() {
                                     // <BsPersonCircle size={60} className="text-secondary" />
                                     <FaUser size={60} className="text-secondary mb-3" />
                                 )}
-                                <h5 className="card-title mb-1">{userToEdit.name}</h5>
-                                <p className="card-text text-muted mb-2">{userToEdit.email}</p>
+                                <small className="text-sm d-block text-muted">{selectedUser.role.charAt(0).toUpperCase() + selectedUser.role.slice(1).toLowerCase()}</small>
+                                <h5 className="card-title mb-1">{selectedUser.name}</h5>
+                                <p className="card-text text-muted mb-2">{selectedUser.email}</p>
                                 <hr />
                                 <div className="text-start">
-                                    <p><strong>User ID:</strong> {userToEdit.id}</p>
-                                    <p><strong>Date Created:</strong> {formatDate(userToEdit.created_at)}</p>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label><strong>Role</strong></Form.Label>
-                                        <Form.Select
-                                            value={editRole}
-                                            onChange={(e) => setEditRole(e.target.value)}
-                                        >
-                                            {['admin', 'report-manager', 'maintenance-report-manager', 'incident-report-manager', 'student'].map(r => (
-                                                <option key={r} value={r}>
-                                                    {r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                                                </option>
-                                            ))}
-
-                                        </Form.Select>
-                                    </Form.Group>
+                                    <p><strong>User ID:</strong> {selectedUser.id}</p>
+                                    <p><strong>Role</strong> {selectedUser.role}</p>
+                                    <p><strong>Created At:</strong> {formatDate(selectedUser.created_at)}</p>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowViewModal(false)}>Close</Button>
+                    {/* <Button variant="primary" onClick={handleUpdateUser}>Save Changes</Button> */}
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+                <Modal.Header closeButton className="bg-success text-white">
+                    <Modal.Title>User Profile</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-0">
+                    {selectedUser && (
+                        <div className="card shadow-sm rounded-0">
+
+                            <div className="card-body ">
+                                <div className="text-center">
+                                    {selectedUser?.image_url && selectedUser.image_url.trim() !== "" ? (
+                                        <img
+                                            src={`${import.meta.env.VITE_IMAGES}/${selectedUser.image_url}`}
+                                            width="80"
+                                            height="80"
+                                            className="rounded-circle"
+                                            alt="User"
+                                        />
+                                    ) : (
+                                        <FaUser size={60} className="text-secondary mb-3" />
+                                    )}
+                                    <small className="text-sm d-block text-muted">{selectedUser.role.charAt(0).toUpperCase() + selectedUser.role.slice(1).toLowerCase()}</small>
+                                    <h5 className="card-title mb-1">{selectedUser.name}</h5>
+                                    <p className="card-text text-muted mb-2">{selectedUser.email}</p>
+                                    <hr />
+                                </div>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Name</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={selectedUser.name}
+                                        onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
+                                    />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Email</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        value={selectedUser.email}
+                                        onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+                                    />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Role</Form.Label>
+                                    <Form.Select
+                                        value={selectedUser.role}
+                                        onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}
+                                    >
+                                        {['admin', 'report-manager', 'maintenance-report-manager','lost-and-found-manager', 'incident-report-manager', 'user'].map(r => (
+                                            <option key={r} value={r}>
+                                                {r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
                             </div>
                         </div>
                     )}
@@ -281,7 +356,6 @@ function UserManagement() {
                     <Button variant="primary" onClick={handleUpdateUser}>Save Changes</Button>
                 </Modal.Footer>
             </Modal>
-
             <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} centered>
                 <Modal.Header closeButton className="bg-success text-white">
                     <Modal.Title>Create New User</Modal.Title>
@@ -306,23 +380,16 @@ function UserManagement() {
                                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                             />
                         </Form.Group>
-                        {/* <Form.Group className="mb-3">
-                            <Form.Label>Password</Form.Label>
-                            <Form.Control
-                                type="password"
-                                placeholder="Enter password"
-                                value={newUser.password}
-                                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                            />
-                        </Form.Group> */}
                         <Form.Group className="mb-3">
                             <Form.Label>Role</Form.Label>
                             <Form.Select
                                 value={newUser.role}
                                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                             >
-                                {['admin', 'report-manager', 'maintenance-report-manager', 'incident-report-manager', 'student'].map(role => (
-                                    <option key={role} value={role}>{role}</option>
+                                {['admin', 'report-manager', 'maintenance-report-manager','lost-and-found-manager', 'incident-report-manager', 'user'].map(r => (
+                                    <option key={r} value={r}>
+                                        {r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                    </option>
                                 ))}
                             </Form.Select>
                         </Form.Group>
@@ -333,12 +400,7 @@ function UserManagement() {
                     <Button variant="success" onClick={handleCreateUser}>Create</Button>
                 </Modal.Footer>
             </Modal>
-
-
         </div>
-
-
-
     );
 }
 

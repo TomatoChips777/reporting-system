@@ -12,9 +12,18 @@ export const SidebarStateProvider = ({ children }) => {
             document.body.classList.toggle('sidebar-open');
         }
     };
-
+    const setSidebarOpen = (isOpen) => {
+        setIsSidebarOpen(isOpen);
+        if (window.innerWidth <= 768) {
+            if (isOpen) {
+                document.body.classList.add('sidebar-open');
+            } else {
+                document.body.classList.remove('sidebar-open');
+            }
+        }
+    };
     return (
-        <SidebarStateContext.Provider value={{ isSidebarOpen, toggleSidebar }}>
+        <SidebarStateContext.Provider value={{ isSidebarOpen, toggleSidebar, setSidebarOpen  }}>
             {children}
         </SidebarStateContext.Provider>
     );

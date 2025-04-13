@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } fro
 import MessageModal from "../Messages/components/MessageModal";
 import LostAndFoundViewModal from "./components/LostAndFoundViewModal";
 import ClaimListModal from "./components/ClaimListModal";
+import { io } from 'socket.io-client';
 import formatDate from "../../functions/DateFormat";
 function LostAndFoundDashboard() {
     const [items, setItems] = useState([]);
@@ -27,6 +28,17 @@ function LostAndFoundDashboard() {
 
     useEffect(() => {
         fetchItems();
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
+
+        socket.on('update', () => {
+
+            fetchItems();
+        });
+
+        
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const fetchItems = () => {
@@ -215,7 +227,7 @@ function LostAndFoundDashboard() {
                     </Table>
 
                 </Card.Body>
-                {filteredItems.length > itemsPerPage && (
+                {/* {filteredItems.length > itemsPerPage && ( */}
                     <Card.Footer className="bg-light d-flex justify-content-between align-items-center">
                         <div className="ms-2 text-muted">
                             Page {currentPage} of {totalPages}
@@ -240,7 +252,7 @@ function LostAndFoundDashboard() {
                             />
                         </Pagination>
                     </Card.Footer>
-                )}
+                {/* )} */}
 
             </Card>
 

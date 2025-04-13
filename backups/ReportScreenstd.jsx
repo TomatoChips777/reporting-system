@@ -5,9 +5,9 @@ import { io } from 'socket.io-client';
 
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
-import { useAuth } from "../../../../AuthContext";
-import CreateModal from "../components/CreateModal";
-import UpdateModal from "../components/UpdateModal";
+import { useAuth } from "../AuthContext";
+import CreateModal from "./CreateModal";
+import UpdateModal from "./UpdateModal";
 function ReportScreen() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);

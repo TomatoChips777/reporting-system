@@ -2,26 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Spinner, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { BsQuestionCircle } from 'react-icons/bs'; // Help icon
 import axios from 'axios';
-import { useAuth } from '../../../../AuthContext';
+import { useAuth } from '../AuthContext';
 
 const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        itemId: existingItem?.id,
-        claimerId: user.id,
-        holderId: existingItem?.user_id,
+        user_id: user?.id,
+        item_id: existingItem?.id,
+        contact_info: '',
         description: '',
+        image: null,
+        
     });
 
     useEffect(() => {
         if (show) {
             if (existingItem) {
                 setFormData({
-                    itemId: existingItem?.id,
-                    claimerId: user.id,
-                    holderId: existingItem?.user_id,
+                    user_id: user?.id,
+                    item_id: existingItem?.id,
+                    contact_info: '',
                     description: '',
+                    image: null,
                 });
             } else {
                 resetForm();
@@ -54,84 +57,48 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { message, image } = formData;
 
-        if (!message.trim() && !image) return;
-
-        const messageData = new FormData();
-        messageData.append("sender_id", user.id);
-        messageData.append("receiver_id", existingItem?.user_id);
-        messageData.append("report_id", existingItem?.report_id);
-        messageData.append("message", message.trim());
-        messageData.append('item_type', existingItem?.type);
-        if (image) {
-            messageData.append("image", image);
+        // Validate required fields
+        if (!formData.contact_info.trim()) {
+            alert('Please provide your contact information');
+            return;
+        }
+        if (!formData.description.trim()) {
+            alert('Please provide a description to prove ownership');
+            return;
         }
 
         setLoading(true);
-
         try {
-            const response = await axios.post('http://localhost:5000/api/messages/send-message', messageData, {
-                headers: { "Content-Type": "multipart/form-data" }
+            const url = `http://localhost:5000/api/lostandfound/claim-item/${existingItem.id}`;
+            const response = await axios.post(url, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             if (response.data.success) {
-                resetForm();
+                alert('Claim submitted successfully! This will be notified and will contact you if your claim is verified.');
                 fetchItems();
                 handleClose();
-            } else {
-                console.error('Error sending message:', response.data.message);
-            }
-        } catch (error) {
-            console.error('Error sending message:', error);
-        } finally {
-            setLoading(false); // Reset loading state
-        }
-    };
-
-
-    const handleClaimAction = async (e) => {
-        e.preventDefault();
-        const { description } = formData;
-    
-        if (!description.trim()) return;
-    
-        const claimData = {
-            itemId: existingItem?.id,
-            claimerId: user.id,
-            holderId: existingItem?.user_id,
-            description: description.trim(),
-        };
-    
-        setLoading(true);
-        try {
-            const response = await axios.post(
-                'http://localhost:5000/api/lostandfound/item/claim-request',
-                claimData
-            );
-    
-            if (response.data.success) {
                 resetForm();
-                fetchItems();
-                handleClose();
-                alert('Claim request sent successfully');
             } else {
-                alert('Failed to send claim request');
+                alert(response.data.message || 'Error submitting claim');
             }
         } catch (error) {
-            console.error('Error sending claim request:', error);
-            alert('Error sending claim request');
+            console.error('Error claiming the item:', error);
+            alert('Error submitting claim. Please try again.');
         } finally {
             setLoading(false);
         }
     };
-    
+
     const resetForm = () => {
         setFormData({
-            itemId: existingItem?.id,
-            claimerId: user.id,
-            holderId: existingItem?.user_id,
+            user_id: user?.id,
+            item_id: existingItem?.id,
+            contact_info: '',
             description: '',
+            image: null,
+            claim_date: new Date().toISOString().split('T')[0]
         });
     };
 
@@ -144,7 +111,7 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                 </OverlayTrigger>
             </Modal.Header>
             <Modal.Body>
-                <Form onSubmit={handleClaimAction}>
+                <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
                         <Form.Label>Item Name</Form.Label>
                         <Form.Control
@@ -156,7 +123,22 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Message <span className="text-danger">*</span></Form.Label>
+                        <Form.Label>Contact Info <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                            type="text"
+                            name="contact_info"
+                            value={formData.contact_info}
+                            onChange={handleInputChange}
+                            required
+                            placeholder="Enter your contact information"
+                        />
+                        <Form.Text className="text-muted">
+                            This will be shared with the item owner to contact you
+                        </Form.Text>
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label>Description <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             as="textarea"
                             name="description"
@@ -170,12 +152,10 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                             Include specific details about the item that only the owner would know
                         </Form.Text>
                     </Form.Group>
-
                     <Form.Group className="mb-3">
                         <Form.Label>Upload Image</Form.Label>
                         <Form.Control type="file" onChange={handleFileChange} accept="image/*" />
                     </Form.Group>
-
                     <div className="d-flex justify-content-end gap-2">
                         <Button variant="secondary" onClick={handleClose}>
                             Cancel

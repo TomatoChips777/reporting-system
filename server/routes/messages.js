@@ -82,32 +82,6 @@ router.post('/send-message', upload.single("image"), (req, res) => {
                 return res.status(500).json({ success: false, message: 'Database error during message insert' });
             }
 
-            // Step 4: Check if claim exists
-            // const checkClaimQuery = `
-            //     SELECT * FROM tbl_claim_items WHERE item_id = ? AND claimer_id = ? AND holder_id = ?
-            // `;
-
-            // db.query(checkClaimQuery, [report_id, sender_id, receiver_id], (err, claimResult) => {
-            //     if (err) {
-            //         console.error('Database error during claim check:', err);
-            //         return res.status(500).json({ success: false, message: 'Database error during claim check' });
-            //     }
-
-            //     if (claimResult.length === 0) {
-            //         const claimQuery = `
-            //             INSERT INTO tbl_claim_items (item_id, claimer_id, holder_id) 
-            //             VALUES (?, ?, ?)
-            //         `;
-
-            //         db.query(claimQuery, [report_id, sender_id, receiver_id], (err) => {
-            //             if (err) {
-            //                 console.error('Database error during claim insert:', err);
-            //                 return res.status(500).json({ success: false, message: 'Database error during claim insert' });
-            //             }
-            //         });
-            //     }
-
-                // Step 5: Fetch sender & receiver details
                 const fetchUserQuery = `
                     SELECT 
                         u1.id AS sender_id, u1.name AS sender_name, u1.image_url AS sender_avatar,
@@ -159,26 +133,6 @@ router.get('/get-messages/:userId', (req, res) => {
             message: 'User ID is required'
         });
     }
-//     SELECT 
-//     ms.id AS message_session_id,
-//     m.id AS message_id,
-//     m.sender_id,
-//     m.message AS text,
-//     m.image_path,
-//     m.created_at,
-//     m.report_id,
-//     u1.id AS sender_id,
-//     u1.name AS sender_name,
-//     u1.image_url AS sender_avatar,
-//     u2.id AS receiver_id,
-//     u2.name AS receiver_name,
-//     u2.image_url AS receiver_avatar
-// FROM tbl_messages m
-// JOIN tbl_message_sessions ms ON ms.id = m.message_session_id
-// LEFT JOIN tbl_users u1 ON m.sender_id = u1.id
-// LEFT JOIN tbl_users u2 ON (ms.user1_id = u2.id OR ms.user2_id = u2.id) AND u2.id != m.sender_id
-// WHERE ms.user1_id = ? OR ms.user2_id = ?
-// ORDER BY m.created_at DESC
     const query = `SELECT 
     ms.id AS message_session_id,
     m.id AS message_id,
@@ -203,22 +157,28 @@ router.get('/get-messages/:userId', (req, res) => {
     CASE 
         WHEN r.report_type = 'Maintenance Report' THEN r.location 
         WHEN r.report_type = 'Lost And Found' THEN lf.item_name
+        WHEN r.report_type = 'Incident Report' THEN r.location 
         ELSE r.location
     END AS item_name,
     -- Set type based on report type
     CASE 
         WHEN r.report_type = 'Maintenance Report' THEN r.report_type 
         WHEN r.report_type = 'Lost And Found' THEN lf.type 
+        WHEN r.report_type = 'Incident Report' THEN r.report_type 
         ELSE "About"
     END AS type
 FROM tbl_messages m
 JOIN tbl_message_sessions ms ON ms.id = m.message_session_id
 LEFT JOIN tbl_users u1 ON m.sender_id = u1.id
-LEFT JOIN tbl_users u2 ON (ms.user1_id = u2.id OR ms.user2_id = u2.id) AND u2.id != m.sender_id
+LEFT JOIN tbl_users u2 
+  ON (
+      (ms.user1_id = u2.id OR ms.user2_id = u2.id)
+      AND (u2.id != m.sender_id OR ms.user1_id = ms.user2_id)
+  )
 LEFT JOIN tbl_reports r ON m.report_id = r.id
 LEFT JOIN tbl_maintenance_reports mr ON r.id = mr.report_id
 LEFT JOIN tbl_lost_found lf ON r.id = lf.report_id
-WHERE (ms.user1_id = ? OR ms.user2_id = ?) AND r.status != 'resolved' 
+WHERE (ms.user1_id = ? OR ms.user2_id = ?) AND r.status != 'resolved'
 ORDER BY m.created_at DESC;
 
 `;
@@ -236,7 +196,11 @@ ORDER BY m.created_at DESC;
         const anonymousAvatar = "server/uploads/1741225676129.png";
 
         results.forEach(msg => {
-            const conversationPartner = msg.sender_id == userId ? msg.receiver_id : msg.sender_id;
+            // const conversationPartner = msg.sender_id == userId ? msg.receiver_id : msg.sender_id;
+            const conversationPartner = (msg.sender_id == msg.receiver_id) 
+    ? msg.sender_id 
+    : (msg.sender_id == userId ? msg.receiver_id : msg.sender_id);
+
             const isReceiverAnonymous = msg.is_anonymous === 1 && msg.user_id == conversationPartner;
 
             const conversationKey = `${msg.report_id}-${conversationPartner}`;
@@ -251,11 +215,6 @@ ORDER BY m.created_at DESC;
                         name: isReceiverAnonymous ? "Anonymous" : (msg.sender_id == userId ? msg.receiver_name : msg.sender_name),
                         avatar: isReceiverAnonymous ? null : (msg.sender_id == userId ? msg.receiver_avatar : msg.sender_avatar)
                     },
-                    // user: {
-                    //     id: conversationPartner,
-                    //     name: isReceiverAnonymous ? "Anonymous" : (msg.sender_id == userId ? msg.receiver_name : msg.sender_name),
-                    //     avatar: isReceiverAnonymous ? anonymousAvatar : (msg.sender_id == userId ? msg.receiver_avatar : msg.sender_avatar)
-                    // },
                     report_id: msg.report_id,
                     item_name: msg.item_name,
                     item_type: msg.type,

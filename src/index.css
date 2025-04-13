@@ -19,12 +19,7 @@
 }
 
 /* Ensure active page maintains dark styling on hover/focus */
-.page-item.active .page-link:hover, 
-.page-item.active .page-link:focus {
-  background-color: rgb(33, 37, 41); /* Keep active page background dark */
-  color: #fff; /* Keep the text white */
-  border-color: #343a40; /* Keep the border dark */
-}
+
 
 body {
   background-color: rgb(227, 239, 251);

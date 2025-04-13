@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Badge, Button, Form, InputGroup } from 'react-bootstrap';
 import { BsPersonCircle, BsSend, BsCheck2All, BsCheck2, BsPaperclip, BsCheckCircle, BsXCircle } from 'react-icons/bs';
-import { useAuth } from '../../../../AuthContext';
+import { useAuth } from '../AuthContext';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 

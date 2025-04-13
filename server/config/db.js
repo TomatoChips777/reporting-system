@@ -4,7 +4,7 @@ const db = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "lc-ticketing-db",
+    database: "lc-ticketing-db-2",
 
 });
 

@@ -3,7 +3,7 @@ import { Card, Row, Col, Container, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { IoSettings, IoSearch, IoWarning, IoList, IoAddCircle } from 'react-icons/io5';
 import { useAuth } from '../../AuthContext';
-import CreateReportModal from './Student/components/CreateReportModal';
+import CreateReportModal from './Users Page/components/CreateReportModal';
 
 const HomeScreen = () => {
     const { role } = useAuth(); // Get the user's role
@@ -53,22 +53,6 @@ const HomeScreen = () => {
             color: '#e74c3c',
             path: '/incident-reports'
         },
-        {
-            key: 'borrowing',
-            title: 'Borrowing Management',
-            icon: <IoList size={40} />,
-            description: 'Manage item borrowing requests',
-            color: '#9b59b6',
-            path: '/borrow-items'
-        },
-        {
-            key: 'messages',
-            title: 'Messages',
-            icon: <IoList size={40} />,
-            description: 'View messages related to reports',
-            color: '#f39c12',
-            path: '/messages'
-        }
     ];
 
     const reportManagerSections = [
@@ -109,7 +93,26 @@ const HomeScreen = () => {
         }
     ];
 
-    const studentSections = [
+    const lostAndFoundManagerSections = [
+        {
+            key: 'lostFound',
+            title: 'Lost And Found',
+            icon: <IoSearch size={40} />,
+            description: 'View and manage lost and found reports',
+            color: '#3498db',
+            path: '/lost-and-found-dashboard'
+        },
+        {
+            key: 'messages',
+            title: 'Messages',
+            icon: <IoList size={40} />,
+            description: 'View messages related to reports',
+            color: '#f39c12',
+            path: '/messages'
+        }
+    ];
+
+    const userSections = [
         {
             key: 'lostFound',
             title: 'Lost and Found',
@@ -167,11 +170,14 @@ const HomeScreen = () => {
         case 'maintenance-report-manager':
             selectedSections = maintenanceReportManagerSections;
             break;
+        case 'lost-and-found-manager':
+            selectedSections = lostAndFoundManagerSections;
+            break;
         case 'incident-manager':
             selectedSections = incidentReportManagerSections;
             break;
-        case 'student':
-            selectedSections = studentSections;
+        case 'user':
+            selectedSections = userSections;
             break;
         default:
             selectedSections = []; // In case of an unrecognized role
@@ -187,7 +193,7 @@ const HomeScreen = () => {
         <Container fluid className="py-0">
             {/* <h2 className="mb-4 text-center">Welcome! Select a Service</h2> */}
 
-            {role === 'student' && (
+            {role === 'user' && (
                 <Row className="mb-4">
                     <Col xs={12}>
                         <Card

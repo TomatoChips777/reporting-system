@@ -8,6 +8,7 @@ import { useNavigation } from './SidebarContext';
 import { useSidebarState } from './SidebarStateContext';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { adminRoles } from '../functions/AdminRoles';
 
 class IconManager {
     static icons = {
@@ -39,11 +40,22 @@ class NotificationManager {
 
     async fetchNotifications() {
         try {
-            const endpoint = this.role === "admin"
+            const endpoint = adminRoles.includes(this.role)
                 ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
                 : `${import.meta.env.VITE_USER_NOTIFICATION}/${this.userId}`;
             const response = await axios.get(endpoint);
-            return response.data.filter(notification => !notification.is_read);
+            let fetchedNotifications = response.data;
+
+            if (this.role === "report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Reports");
+            } else if (this.role === "maintenance-report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Maintenance Report");
+            } else if (this.role === "lost-and-found-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Lost And Found");
+            }else if (this.role === "incident-report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Incident Report");
+            }
+            return fetchedNotifications.filter(notification => !notification.is_read);
         } catch (error) {
             console.error("Error fetching notifications:", error);
             return [];
@@ -66,21 +78,6 @@ class NotificationManager {
             }
         });
     }
-    
-    // initializeSocket(onUpdate) {
-    //     this.socket = io(`${import.meta.env.VITE_API_URL}`);
-    //     this.socket.on("update", onUpdate);
-    //     this.socket.on('messageCount', async ({ senderId, receiverId, message_session_id }) => {
-    //         if (this.userId === receiverId) { // If the message is for the current user
-    //             try {
-    //                 const unreadMessages = await this.fetchUnreadMessages(); // Fetch updated unread count
-    //                 onUpdate(unreadMessages); // Trigger sidebar update
-    //             } catch (error) {
-    //                 console.error("Error updating unread messages:", error);
-    //             }
-    //         }
-    //     });
-    // }
 
     disconnect() {
         if (this.socket) {
@@ -103,8 +100,8 @@ class SidebarManager {
                 { key: 'maintenance', name: 'Maintenance Reporting', icon: <IoConstruct /> },
                 { key: 'lostFound', name: 'Lost & Found', icon: <IoSearch /> },
                 { key: 'incident', name: 'Incident Reporting', icon: <IoWarning /> },
-                { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> },
-                { key: 'events', name: 'Events', icon: <IoCalendar /> },
+                // { key: 'borrowing', name: 'Borrow Items', icon: <IoSettings /> },
+                // { key: 'events', name: 'Events', icon: <IoCalendar /> },
 
 
             ];
@@ -116,7 +113,13 @@ class SidebarManager {
         }
         else if (this.role == 'maintenance-report-manager') {
             return [
-                { key: 'maintenance', name: 'Reports', icon: <IoDocumentText /> },
+                { key: 'maintenance', name: 'Maintenance Reports', icon: <IoConstruct /> },
+
+            ];
+        }
+        else if (this.role == 'lost-and-found-manager') {
+            return [
+                { key: 'lostFound', name: 'Lost & Found', icon: <IoSearch /> },
 
             ];
         }
@@ -126,7 +129,6 @@ class SidebarManager {
 
             ];
         }
-
         else {
             return [
                 { path: '/list-screen', name: 'Lost And Found', icon: <IoSearch /> },
@@ -216,27 +218,6 @@ class Sidebar extends Component {
         this.sidebarManager = new SidebarManager(role, props.navigation.sections);
     }
 
-    // constructor(props) {
-    //     super(props);
-    //     const { role, user } = props.auth;
-    //     this.state = {
-    //         notifications: []
-    //     };
-    //     this.notificationManager = new NotificationManager(role, user.id);
-    //     this.sidebarManager = new SidebarManager(role, props.navigation.sections);
-    // }
-
-    // componentDidMount() {
-    //     this.fetchNotifications();
-    //     this.notificationManager.initializeSocket(() => this.fetchNotifications());
-    // }
-
-    // componentDidMount() {
-    //     this.fetchNotifications();
-    //     this.fetchUnreadMessages(); // Fetch unread messages
-    //     this.notificationManager.initializeSocket(() => this.fetchNotifications());
-    // }
-
     componentDidMount() {
         this.fetchNotifications();
         this.fetchUnreadMessages(); // Fetch unread messages initially
@@ -254,7 +235,7 @@ class Sidebar extends Component {
     async fetchUnreadMessages() {
         try {
             const { auth } = this.props;
-            const response = await axios.get(`http://localhost:5000/api/messages/get-messages/${auth.user.id}`);
+            const response = await axios.get(`${import.meta.env.VITE_GET_MESSAGES}/${auth.user.id}`);
             if (response.data.success) {
                 const unreadCount = response.data.messages.reduce((count, convo) =>
                     count + convo.messages.filter(msg => msg.status !== 'read' && msg.receiverId === auth.user.id).length
@@ -270,69 +251,6 @@ class Sidebar extends Component {
         const notifications = await this.notificationManager.fetchNotifications();
         this.setState({ notifications });
     }
-
-    // renderSidebarContent() {
-    //     const { location, navigation, navigate, toggleSidebar } = this.props;
-    //     const { activeSection, getCurrentSection } = navigation;
-    //     const isHome = activeSection === 'home' || !activeSection;
-    //     const currentSection = getCurrentSection();
-
-    //     return (
-    //         <>
-    //             <SidebarLink
-    //                 to="/home"
-    //                 icon={<IoHome className="me-2" />}
-    //                 isActive={location.pathname === "/home"}
-    //                 onClick={() => isHome ? null : this.sidebarManager.handleSectionClick('home', navigate, toggleSidebar)}
-    //             >
-    //                 Home
-    //             </SidebarLink>
-
-    //             {isHome ? (
-    //                 <>
-    //                     <li className="section-header">Select a Section:</li>
-    //                     {this.sidebarManager.getSectionLinks().map(link => (
-    //                         <li key={link.key || link.path}>
-    //                             {link.key ? (
-    //                                 <a href="#" onClick={(e) => {
-    //                                     e.preventDefault();
-    //                                     this.sidebarManager.handleSectionClick(link.key, navigate, toggleSidebar);
-    //                                 }}>
-    //                                     {link.icon}
-    //                                     <span className="ms-2">{link.name}</span>
-    //                                 </a>
-    //                             ) : (
-    //                                 <Link to={link.path} className={location.pathname === link.path ? "active" : ""}>
-    //                                     {link.icon}
-    //                                     <span className="ms-2">{link.name}</span>
-    //                                 </Link>
-    //                             )}
-    //                         </li>
-    //                     ))}
-    //                 </>
-    //             ) : (
-    //                 <>
-    //                     <li className="section-header">{currentSection.name}</li>
-    //                     {currentSection.routes.map(route => (
-    //                         <SidebarLink
-    //                             key={route.path}
-    //                             to={route.path}
-    //                             icon={IconManager.getIcon(route.icon)}
-    //                             isActive={location.pathname === route.path}
-    //                             onClick={() => {
-    //                                 if (window.innerWidth <= 768) {
-    //                                     toggleSidebar();
-    //                                 }
-    //                             }}
-    //                         >
-    //                             {route.name}
-    //                         </SidebarLink>
-    //                     ))}
-    //                 </>
-    //             )}
-    //         </>
-    //     );
-    // }
 
     renderSidebarContent() {
         const { location, navigation, navigate, toggleSidebar } = this.props;
@@ -393,20 +311,6 @@ class Sidebar extends Component {
                         ))}
                     </>
                 )}
-
-                {/* Always display "Messages" link here */}
-                {/* <SidebarLink
-                    to="/messages"
-                    icon={<IoDocumentText />}
-                    isActive={location.pathname === "/messages"}
-                    onClick={() => {
-                        if (window.innerWidth <= 768) {
-                            toggleSidebar();
-                        }
-                    }}
-                >
-                    Messages
-                </SidebarLink> */}
                 <SidebarLink
                     to="/messages"
                     icon={<IoChatbubbleEllipses />}
@@ -423,12 +327,6 @@ class Sidebar extends Component {
                             {this.state.unreadMessages > 99 ? "99+" : this.state.unreadMessages}
                         </Badge>
                     )}
-
-                    {/* {this.state.unreadMessages > 0 && (
-                        <Badge bg="danger" className="ms-2">
-                            {this.state.unreadMessages}
-                        </Badge>
-                    )} */}
                 </SidebarLink>
 
             </>

@@ -8,6 +8,7 @@ import LostAndFoundModal from './components/LostAndFoundModal';
 import LostAndFoundViewModal from './components/LostAndFoundViewModal';
 import MessageModal from '../Messages/components/MessageModal';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
 
@@ -30,15 +31,25 @@ function AdminLostAndFound() {
     useEffect(() => {
         fetchItems();
 
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
+        socket.on('update', () => {
+            fetchItems();
+        });
+
+        
         setCurrentPage(1);
+        
+        return () => {
+            socket.disconnect();
+        };
     }, [searchTerm, filter, filterCategory]);
 
     const fetchItems = async () => {
         try {
             const response = await axios.get(`${import.meta.env.VITE_GET_LOST_AND_FOUND}`);
             if (response.data.success) {
-                setItems(response.data.items);
-            }
+            setItems(response.data.items);
+                         }
         } catch (error) {
             console.error('Error fetching items:', error);
         }
@@ -186,14 +197,6 @@ function AdminLostAndFound() {
                                 <tbody>
                                     {currentItems.map((item) => (
                                         <tr key={item.id}>
-                                           {/* <td style={{ width: '150px', height: '100px', padding: 0 }}>
-                                                <img
-                                                    src={item.image_path ? `${import.meta.env.VITE_IMAGES}/${item.image_path}` : dummyImage}
-                                                    alt="No image Attached"
-                                                    className="w-100 h-90"
-                                                    style={{ objectFit: 'cover', display: 'block' }}
-                                                />
-                                            </td> */}
                                             <td>{item.id}</td>
                                             <td>{item.item_name}</td>
                                             <td>{item.type.toUpperCase()}</td>
@@ -297,12 +300,6 @@ function AdminLostAndFound() {
                 fetchItems={fetchItems}
                 claimData={claimData}
             />
-            {/* <LostAndFoundViewModal
-                show={showViewModal}
-                handleClose={() => setShowViewModal(false)}
-                item={selectedItem}
-                claimData={claimData}
-            /> */}
         </div>
     );
 }

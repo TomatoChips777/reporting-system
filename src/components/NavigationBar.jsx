@@ -8,6 +8,7 @@ import { Bell, List, ChatDots } from 'react-bootstrap-icons';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { BsPersonCircle } from 'react-icons/bs';
+import { adminRoles } from '../functions/AdminRoles';
 function NavigationBar() {
     const navigate = useNavigate();
     const { user, signOut, role } = useAuth();
@@ -41,12 +42,25 @@ function NavigationBar() {
 
     const fetchNotifications = async () => {
         try {
-            const endpoint = role === "admin"
+            const endpoint = adminRoles.includes(role)
                 ? `${import.meta.env.VITE_ADMIN_NOTIFICATION}`
                 : `${import.meta.env.VITE_USER_NOTIFICATION}/${user.id}`;
 
             const response = await axios.get(endpoint);
-            const unreadNotifications = response.data.filter(notification => notification.is_read === 0);
+            let fetchedNotifications = response.data;
+
+            if (role === "report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Reports");
+            } else if (role === "maintenance-report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Maintenance Report");
+            } else if (role === "lost-and-found-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Lost And Found");
+            }else if (role === "incident-report-manager") {
+                fetchedNotifications = fetchedNotifications.filter(n => n.title === "Incident Report");
+            }
+
+
+            const unreadNotifications = fetchedNotifications.filter(notification => notification.is_read === 0);
             setNotifications(unreadNotifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
@@ -113,7 +127,7 @@ function NavigationBar() {
         setShowModal(true);
         if (!notif.is_read) {
             try {
-                if (role === "admin") {
+                if (adminRoles.includes(role)) {
                     const response = await axios.put(`${import.meta.env.VITE_ADMIN_READ_NOTIFICATION_API}/${notif.id}`);
                     if (response.success) {
                         fetchNotifications();
@@ -135,24 +149,46 @@ function NavigationBar() {
     };
 
     const getTimeAgo = (timestamp) => {
-        const createdAt = new Date(timestamp);
-        const now = new Date();
-        const differenceInSeconds = Math.floor((now - createdAt) / 1000);
-
-        if (differenceInSeconds < 60) {
-            return `${differenceInSeconds} sec ago`;
-        } else if (differenceInSeconds < 3600) {
-            return `${Math.floor(differenceInSeconds / 60)} min ago`;
-        } else if (differenceInSeconds < 86400) {
-            return `${Math.floor(differenceInSeconds / 3600)} hrs ago`;
-        } else if (differenceInSeconds < 2592000) {
-            return `${Math.floor(differenceInSeconds / 86400)} days ago`;
-        } else if (differenceInSeconds < 31536000) {
-            return `${Math.floor(differenceInSeconds / 2592000)} months ago`;
-        } else {
-            return `${Math.floor(differenceInSeconds / 31536000)} years ago`;
+        const units = [
+            { name: 'year', seconds: 31536000 },
+            { name: 'month', seconds: 2592000 },
+            { name: 'day', seconds: 86400 },
+            { name: 'hr', seconds: 3600 },
+            { name: 'min', seconds: 60 },
+            { name: 'sec', seconds: 1 },
+        ];
+    
+        const diff = Math.floor((Date.now() - new Date(timestamp)) / 1000);
+    
+        for (let unit of units) {
+            const value = Math.floor(diff / unit.seconds);
+            if (value > 0) {
+                return `${value} ${unit.name}${value > 1 ? 's' : ''} ago`;
+            }
         }
+    
+        return 'just now';
     };
+    
+    // const getTimeAgo = (timestamp) => {
+    //     const createdAt = new Date(timestamp);
+    //     const now = new Date();
+    //     const differenceInSeconds = Math.floor((now - createdAt) / 1000);
+
+    //     if (differenceInSeconds < 60) {
+    //         return `${differenceInSeconds} sec ago`;
+    //     } else if (differenceInSeconds < 3600) {
+    //         return `${Math.floor(differenceInSeconds / 60)} min ago`;
+    //     } else if (differenceInSeconds < 86400) {
+    //         return `${Math.floor(differenceInSeconds / 3600)} hrs ago`;
+    //     } else if (differenceInSeconds < 2592000) {
+    //         return `${Math.floor(differenceInSeconds / 86400)} day/s ago`;
+    //     } else if (differenceInSeconds < 31536000) {
+    //         return `${Math.floor(differenceInSeconds / 2592000)} months ago`;
+    //     } else {
+    //         return `${Math.floor(differenceInSeconds / 31536000)} years ago`;
+    //     }
+    // };
 
     return (
         <>
@@ -282,7 +318,7 @@ function NavigationBar() {
                                     </Badge>
                                 )}
                             </Dropdown.Toggle>
-                            <Dropdown.Menu align="end" className="dropdown-menu-end" style={{ minWidth: "250px" }}>
+                            <Dropdown.Menu align="end" className="dropdown-menu-end" style={{ minWidth: "250px", maxHeight: "350px", overflowY: "auto" }}>
                                 <Dropdown.Header>Notifications</Dropdown.Header>
                                 {notifications.length > 0 ? (
                                     notifications.map((notif) => (
@@ -302,7 +338,12 @@ function NavigationBar() {
                                 ) : (
                                     <Dropdown.Item className="text-center text-muted">No notifications</Dropdown.Item>
                                 )}
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => navigate('/notifications')} className="text-center">
+                                    View Notifications
+                                </Dropdown.Item>
                             </Dropdown.Menu>
+                            
                         </Dropdown>
 
                         {/* User Profile Dropdown */}

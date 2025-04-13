@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Spinner, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { BsQuestionCircle } from 'react-icons/bs'; // Help icon
 import axios from 'axios';
-import { useAuth } from '../../../../AuthContext';
+import { useAuth } from '../AuthContext';
 
 const CreateModal = ({ show, handleClose, existingReport }) => {
     const { user } = useAuth();

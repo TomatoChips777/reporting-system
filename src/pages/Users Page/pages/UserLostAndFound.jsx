@@ -6,23 +6,37 @@ import axios from 'axios';
 import { useAuth } from '../../../../AuthContext';
 import LostAndFoundModal from '../components/LostAndFoundModal';
 import ClaimModal from '../components/ClaimModal';
-import FoundModal from '../components/FoundModal';
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
 import { useNavigate } from 'react-router-dom';
-function ListScreen() {
+import { io } from 'socket.io-client';
+import { useSidebarState } from '../../../components/SidebarStateContext';
+
+function UserLostAndFound() {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { setSidebarOpen } = useSidebarState();
     const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState('all');
     const [filterCategory, setFilterCategory] = useState('all');
     const [showModal, setShowModal] = useState(false);
     const [showClaimModal, setShowClaimModal] = useState(false);
-    const [showFoundModal, setShowFoundModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
 
     useEffect(() => {
+        setSidebarOpen(false);
         fetchItems();
+        const socket = io(`${import.meta.env.VITE_API_URL}`);
+
+        socket.on('update', () => {
+
+            fetchItems();
+        });
+
+        
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const fetchItems = async () => {
@@ -44,18 +58,12 @@ function ListScreen() {
         setExistingItem(item);
         setShowClaimModal(true);
     }
-    const handleFoundModal = (item) => {
-        setExistingItem(item);
-        setShowFoundModal(true);
-    }
+
     const handleCloseModal = () => {
         setShowModal(false);
     };
     const handleCloseClaimModal = () => {
         setShowClaimModal(false);
-    }
-    const handleCloseFoundModal = () => {
-        setShowFoundModal(false);
     }
     const filteredItems = items.filter(item => {
         const matchesSearch = item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -148,7 +156,7 @@ function ListScreen() {
                             <Card className="shadow-sm border-0 rounded h-100">
                                 <Card.Img
                                     variant="top"
-                                    src={item.image_path ? `http://localhost:5000/uploads/${item.image_path}` : dummyImage}
+                                    src={item.image_path ? `${import.meta.env.VITE_IMAGES}/${item.image_path}` : dummyImage}
                                     alt="No image uploaded"
                                     style={{ height: '200px', objectFit: 'cover' }}
                                     className="rounded-top"
@@ -188,7 +196,7 @@ function ListScreen() {
                                                     overlay={<Tooltip>Click if you found this lost item</Tooltip>}
                                                 >
                                                     <Button variant="info" className="rounded-0 text-white w-100" onClick={() => handleClaimModal(item)}>
-                                                        Found
+                                                        Return Item
                                                     </Button>
                                                 </OverlayTrigger>
                                             )}
@@ -227,13 +235,7 @@ function ListScreen() {
                 existingItem={existingItem}
                 fetchItems={fetchItems}
             />
-            <FoundModal
-                show={showFoundModal}
-                handleClose={handleCloseFoundModal}
-                existingItem={existingItem}
-                fetchItems={fetchItems}
-            />
         </div>
     );
 }
-export default ListScreen;
+export default UserLostAndFound;

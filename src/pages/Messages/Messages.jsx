@@ -5,6 +5,7 @@ import { useAuth } from '../../../AuthContext';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import formatDate from '../../functions/DateFormat';
+import { useLocation } from 'react-router-dom';
 
 const Messages = () => {
     const [messages, setMessages] = useState([]);
@@ -18,8 +19,7 @@ const Messages = () => {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-
-    const fetchItems = async () => {
+    const fetchMessages = async () => {
         try {
             const response = await axios.get(`${import.meta.env.VITE_GET_MESSAGES}/${user.id}`);
             if (response.data.success) {
@@ -30,7 +30,7 @@ const Messages = () => {
                     return {
                         ...convo,
                         lastMessage: convo.messages.length > 0 ? convo.messages[convo.messages.length - 1].text : '',
-                        unreadCount  // Store unread count
+                        unreadCount 
                     };
                 }));
             }
@@ -38,10 +38,8 @@ const Messages = () => {
             console.error('Error fetching messages:', error);
         }
     };
-
     useEffect(() => {
         const socket = io(`${import.meta.env.VITE_API_URL}`);
-
         socket.on('updateMessage', ({ senderId, receiverId, newMsg, report_id, message_session_id }) => {
 
             if (user.id === senderId || user.id === receiverId) {
@@ -49,7 +47,6 @@ const Messages = () => {
                     let updated = false;
 
                     const updatedMessages = prevMessages.map(convo => {
-                        // if (convo.senderId === senderId || convo.receiverId === receiverId) {
                         if (convo.message_session_id === message_session_id) {
 
                             updated = true;
@@ -77,13 +74,9 @@ const Messages = () => {
                         action: newMsg.action,
                         unread: 1,
                         messages: [newMsg]
-                        // messages: newMsg.message_session_id === message_session_id
-                        // ? [...prev.messages] 
-                        // : [...prev.messages, newMsg] 
-
                     }];
                 });
-                // console.log(selectedConversation);
+
                 // Update selected conversation if it's the active chat
                 if (selectedConversation && (selectedConversation.message_session_id === message_session_id)) {
                     // console.log(selectedConversation);
@@ -96,21 +89,29 @@ const Messages = () => {
 
                     }));
                 } else {
-                    fetchItems();
+                    fetchMessages();
                 }
             }
 
         });
-
         scrollToBottom();
-
-        fetchItems();
+        fetchMessages().then(() => {
+            setMessages(prevMessages => {
+              const found = prevMessages.find(m =>
+                m.report_id === selectedConversation?.report_id &&
+                m.message_session_id === selectedConversation?.message_session_id
+              );
+              if (!found) {
+                setSelectedConversation(null);
+              }
+              return prevMessages;
+            });
+          });
 
         return () => {
             socket.disconnect();
         };
     }, [user.id, selectedConversation, selectedConversation?.message]);
-
     const formatTime = (created_at) => {
         return new Date(created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
@@ -119,29 +120,25 @@ const Messages = () => {
             setSelectedImage(e.target.files[0]);
         }
     };
-
     const handleFileButtonClick = () => {
         fileInputRef.current.click();
     };
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() && !selectedImage) return;
-
         try {
             // Mark unread messages as read first
-            await axios.post('http://localhost:5000/api/messages/mark-as-read', {
+            await axios.post(`${import.meta.env.VITE_MARK_AS_READ_MESSAGES}`, {
                 senderId: selectedConversation.id, // The person who sent the unread messages
                 receiverId: user.id, // Current user
                 message_session_id: selectedConversation.message_session_id
             });
-
             // Reset unread count in UI
             setMessages(prevMessages => prevMessages.map(convo =>
                 convo.message_session_id === selectedConversation.message_session_id
                     ? { ...convo, unreadCount: 0 }
                     : convo
             ));
-
             // Proceed with sending the new message
             const formData = new FormData();
             formData.append("sender_id", user.id);
@@ -152,7 +149,7 @@ const Messages = () => {
                 formData.append("image", selectedImage);
             }
 
-            const response = await axios.post('http://localhost:5000/api/messages/send-message', formData, {
+            const response = await axios.post(`${import.meta.env.VITE_SEND_MESSAGE}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
@@ -164,14 +161,12 @@ const Messages = () => {
             console.error('Error sending message or marking as read:', error);
         }
     };
-
     const handleSelectConversation = async (conversation) => {
         setSelectedConversation(conversation);
-
         // If there are unread messages, mark them as read
         if (conversation.unreadCount > 0) {
             try {
-                await axios.post('http://localhost:5000/api/messages/mark-as-read', {
+                await axios.post(`${import.meta.env.VITE_MARK_AS_READ_MESSAGES}`, {
                     senderId: conversation.id,  // User who sent the messages
                     receiverId: user.id,  // Current user (who is reading)
                     message_session_id: conversation.message_session_id // Ensure only this conversation is updated
@@ -187,7 +182,6 @@ const Messages = () => {
             }
         }
     };
-
     return (
         <Container fluid className="messages-page p-4">
             <Row className="h-100">
@@ -247,7 +241,6 @@ const Messages = () => {
                                     </div>
                                 ))}
                             </div>
-
                         </Card.Body>
                     </Card>
                 </Col>
@@ -258,7 +251,7 @@ const Messages = () => {
                                 <Card.Header className="bg-light">
                                     <div className="d-flex align-items-center">
                                         {selectedConversation.user?.avatar ? (
-                                            <img src={selectedConversation.user.avatar} width="40" height="40" className="rounded-circle" alt="User" />
+                                            <img src={`${import.meta.env.VITE_IMAGES}/${selectedConversation.user?.avatar}`} width="40" height="40" className="rounded-circle" alt="User" />
                                         ) : (
                                             <BsPersonCircle size={40} className="text-secondary" />
                                         )}
@@ -296,19 +289,6 @@ const Messages = () => {
                                                             </div>
                                                         </div>
                                                     )}
-                                                    {message.action === 'claim' && message.claimStatus && (
-                                                        <div className={`claim-status mt-2 text-${message.claimStatus === 'accepted' ? 'success' : 'danger'}`}>
-                                                            <small>
-                                                                {message.claimStatus === 'accepted' ? (
-                                                                    <><BsCheckCircle className="me-1" /> Claim Accepted</>
-                                                                ) : (
-                                                                    <><BsXCircle className="me-1" /> Claim Rejected</>
-                                                                )}
-                                                            </small>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Display Image (if available) below the text */}
                                                     {message.image_path && (
                                                         <div className="image-container">
                                                             <img
@@ -343,7 +323,6 @@ const Messages = () => {
 
                                         </InputGroup>
                                     </Form>
-
                                 </Card.Footer>
                             </>
                         ) : (

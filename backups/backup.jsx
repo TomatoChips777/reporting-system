@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Table, Card, Form, Button, Badge, Modal } from "react-bootstrap";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
-import { useAuth } from "../../../AuthContext";
+import { useAuth } from "../AuthContext";
 function Reports() {
     const { role } = useAuth();
     const [reports, setReports] = useState([]);
