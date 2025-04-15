@@ -7,6 +7,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 import formatDate from "../../functions/DateFormat";
+import CreateReport from "./components/CreateReport";
 function Reports() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);
@@ -27,7 +28,8 @@ function Reports() {
 
     const [showConfirmChangeModal, setShowConfirmChangeModal] = useState(false);
     const [pendingStatus, setPendingStatus] = useState(""); // temporarily hold new status
-    
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
     const fetchReports = async () => {
@@ -110,6 +112,13 @@ function Reports() {
         setCurrentPage(1);
     };
 
+    const handleOpenCreateModal = () => {
+        setShowCreateModal(true);
+    }
+
+    const handCloseCreateModal = () => {
+        setShowCreateModal(false);
+    }
 
     const handleViewDetails = (report) => {
         setSelectedReport({ ...report });
@@ -207,7 +216,7 @@ function Reports() {
                                 </div>
                                 <div className="col">
                                     <h5 className="mb-0">Maintenance Reports</h5>
-                                <p className="mb-0">Manage maintenance reports</p>
+                                    <p className="mb-0">Manage maintenance reports</p>
                                 </div>
                                 <div className="col-auto d-flex align-items-center ">
                                     {/* Search Bar: Make it take more space */}
@@ -261,12 +270,13 @@ function Reports() {
                                         ))}
                                     </Form.Select>
                                 </div>
+
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="row mb-2">
+            {/* <div className="row mb-2">
                 <div className="col-md-3 col-6">
                     <div
                         className={`card p-2 text-center rounded-1 ${statusFilter === "all" ? "border border-primary bg-light" : ""}`}
@@ -311,7 +321,7 @@ function Reports() {
                         <strong className='fs-5'>{resolvedCount}</strong>
                     </div>
                 </div>
-            </div>
+            </div> */}
             <div className="row mb-2">
                 <div className="col-md-3 col-6">
                     <div
@@ -377,6 +387,11 @@ function Reports() {
                                 ))}
                             </div>
                         </div>
+                        <div className="col-auto">
+                            <Button className="btn btn-light btn-m rounded-0 " onClick={() => handleOpenCreateModal()}>
+                                <i className="bi bi-plus-lg me-2"></i>Create Report
+                            </Button>
+                        </div>
                     </div>
                 </Card.Header>
                 <Card.Body className="p-0 mb-0">
@@ -405,11 +420,35 @@ function Reports() {
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                 </p>
                                                 <div className="d-flex justify-content-end align-items-end">
-                                                    <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                    <OverlayTrigger placement="top" overlay={<Tooltip>View</Tooltip>}>
+                                                        <Button variant="primary rounded" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>
+                                                            <i className="bi bi-eye"></i>
+                                                        </Button>
+                                                    </OverlayTrigger>
+
+                                                    <OverlayTrigger placement="top" overlay={<Tooltip>Remove</Tooltip>}>
+                                                        <Button variant="danger rounded" size="sm" onClick={() => confirmRemoval(report.id)}>
+                                                            <i className="bi bi-trash"></i>
+                                                        </Button>
+                                                    </OverlayTrigger>
+
+                                                    <OverlayTrigger placement="top" overlay={<Tooltip>Message</Tooltip>}>
+                                                        <Button
+                                                            variant="success rounded"
+                                                            size="sm"
+                                                            className="ms-2"
+                                                            onClick={() => handleMessage(report)}
+                                                            disabled={user.id === report.user_id || report.status === 'resolved'}
+                                                        >
+                                                            <i className="bi bi-chat-dots"></i>
+                                                        </Button>
+                                                    </OverlayTrigger>
+
+                                                    {/* <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
                                                     <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
                                                     <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)} disabled={user.id === report.user_id || report.status === 'resolved'}>
                                                         Message
-                                                    </Button>
+                                                    </Button> */}
                                                 </div>
 
                                             </div>
@@ -460,11 +499,35 @@ function Reports() {
                                                 {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                             </td>
                                             <td className="d-flex justify-content-center">
-                                                <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <OverlayTrigger placement="top" overlay={<Tooltip>View</Tooltip>}>
+                                                    <Button variant="primary rounded" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>
+                                                        <i className="bi bi-eye"></i>
+                                                    </Button>
+                                                </OverlayTrigger>
+
+                                                <OverlayTrigger placement="top" overlay={<Tooltip>Remove</Tooltip>}>
+                                                    <Button variant="danger rounded" size="sm" onClick={() => confirmRemoval(report.id)}>
+                                                        <i className="bi bi-trash"></i>
+                                                    </Button>
+                                                </OverlayTrigger>
+
+                                                <OverlayTrigger placement="top" overlay={<Tooltip>Message</Tooltip>}>
+                                                    <Button
+                                                        variant="success rounded"
+                                                        size="sm"
+                                                        className="ms-2"
+                                                        onClick={() => handleMessage(report)}
+                                                        disabled={user.id === report.user_id || report.status === 'resolved'}
+                                                    >
+                                                        <i className="bi bi-chat-dots"></i>
+                                                    </Button>
+                                                </OverlayTrigger>
+
+                                                {/* <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
                                                 <Button variant="success rounded-0 ms-2" size="sm" onClick={() => handleMessage(report)} disabled={user.id === report.user_id || report.status === 'resolved'}>
                                                     Message
-                                                </Button>
+                                                </Button> */}
                                             </td>
                                         </tr>
                                     ))}
@@ -618,6 +681,11 @@ function Reports() {
                 handleClose={handleCloseMessageModal}
                 existingItem={existingItem}
                 fetchItems={fetchReports}
+            />
+
+            <CreateReport
+                show={showCreateModal}
+                handleClose={handCloseCreateModal}
             />
         </div>
     );

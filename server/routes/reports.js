@@ -97,7 +97,7 @@ router.get('/get-user-reports/:userId', (req, res) => {
 
 
 router.put("/admin/edit-report-type/:reportId", (req, res) => {
-    const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, sender_id, location, description, is_anonymous } = req.body;
+    const { report_type, category, priority, assigned_staff, status, type, item_name, contact_info, user_id, location, description, is_anonymous } = req.body;
     const { reportId } = req.params;
     const updateReportQuery = "UPDATE tbl_reports SET report_type = ? WHERE id = ?";
 
@@ -263,5 +263,99 @@ router.put('/report/archive-report/:id', (req, res) => {
         }
     });
 });
+
+
+
+
+router.post("/create", upload.single('image_path'), (req, res) => {
+    const {
+        report_type,
+        category,
+        priority,
+        assigned_staff,
+        status,
+        type,
+        item_name,
+        contact_info,
+        sender_id,
+        location,
+        description,
+        is_anonymous,
+        user_id
+    } = req.body;
+    const image_path = req.file ? req.file.filename : null;
+    const insertReportQuery = `
+        INSERT INTO tbl_reports (user_id, report_type, status, location, description, image_path)
+        VALUES (?, ?, ?, ?, ?, ?)`;
+
+    db.query(insertReportQuery, [user_id, report_type, status || 'Pending', location, description, image_path], (err, result) => {
+        if (err) {
+            console.error("Error inserting into tbl_reports:", err);
+            return res.status(500).json({ success: false, message: "Failed to create base report" });
+        }
+
+        const reportId = result.insertId;
+
+        // Step 2: Insert into related table based on report_type
+        if (report_type === "Maintenance Report") {
+            const maintenanceQuery = `
+                INSERT INTO tbl_maintenance_reports (report_id, category, priority, assigned_staff) 
+                VALUES (?, ?, ?, ?)`;
+
+            db.query(maintenanceQuery, [reportId, category, priority, assigned_staff], (err) => {
+                if (err) {
+                    console.error("Error inserting into maintenance report:", err);
+                    return res.status(500).json({ success: false, message: "Failed to create maintenance report" });
+                }
+
+                req.io.emit('update');
+                res.json({ success: true, message: "Maintenance report created successfully" });
+            });
+
+        } else if (report_type === "Lost And Found") {
+            const lostFoundQuery = `
+                INSERT INTO tbl_lost_found 
+                (user_id, report_id, type, category, location, description, item_name, contact_info, is_anonymous) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+            db.query(
+                lostFoundQuery,
+                [user_id, reportId, type, category, location, description, item_name, contact_info, is_anonymous ? 1 : 0],
+                (err) => {
+                    if (err) {
+                        console.error("Error inserting into lost and found:", err);
+                        return res.status(500).json({ success: false, message: "Failed to create lost and found report" });
+                    }
+
+                    req.io.emit('update');
+                    res.json({ success: true, message: "Lost & Found report created successfully" });
+                }
+            );
+
+        } else if (report_type === "Incident Report") {
+            const incidentQuery = `
+                INSERT INTO tbl_incident_reports (report_id, category, priority, assigned_staff) 
+                VALUES (?, ?, ?, ?)`;
+
+            db.query(incidentQuery, [reportId, category, priority, assigned_staff], (err) => {
+                if (err) {
+                    console.error("Error inserting into incident report:", err);
+                    return res.status(500).json({ success: false, message: "Failed to create incident report" });
+                }
+
+                req.io.emit('update');
+                res.json({ success: true, message: "Incident report created successfully" });
+            });
+
+        } else {
+            // If it's not one of the known types
+            res.json({ success: true, message: "Report created, but no specific report type handled." });
+        }
+    });
+});
+
+
+
+
 
 module.exports = router;

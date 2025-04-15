@@ -25,6 +25,41 @@ router.get('/maintenance-analytics', async (req, res) => {
                 GROUP BY tmr.category 
                 ORDER BY count DESC;`,
             latestReports: `SELECT r.id, r.location, tmr.category,tmr.priority, r.status, r.created_at FROM tbl_reports r LEFT JOIN tbl_maintenance_reports tmr ON r.id = tmr.report_id WHERE r.report_type ='Maintenance Report'  ORDER BY r.created_at DESC LIMIT 5;`
+            ,
+            
+            resolvedPerDay: `
+    SELECT DATE(updated_at) as date, COUNT(*) as count 
+    FROM tbl_reports 
+    WHERE report_type = 'Maintenance Report' AND status = 'resolved' 
+    GROUP BY DATE(updated_at)
+    ORDER BY DATE(updated_at)
+`,
+
+            resolvedPerWeek: `
+    SELECT YEAR(updated_at) as year, WEEK(updated_at) as week, COUNT(*) as count 
+    FROM tbl_reports 
+    WHERE report_type = 'Maintenance Report' AND status = 'resolved' 
+    GROUP BY YEAR(updated_at), WEEK(updated_at)
+    ORDER BY year, week
+`,
+
+            resolvedPerMonth: `
+    SELECT DATE_FORMAT(updated_at, '%Y-%m') as month, COUNT(*) as count 
+    FROM tbl_reports 
+    WHERE report_type = 'Maintenance Report' AND status = 'resolved' 
+    GROUP BY DATE_FORMAT(updated_at, '%Y-%m')
+    ORDER BY month
+`,
+
+            resolvedPerYear: `
+    SELECT YEAR(updated_at) as year, COUNT(*) as count 
+    FROM tbl_reports 
+    WHERE report_type = 'Maintenance Report' AND status = 'resolved' 
+    GROUP BY YEAR(updated_at)
+    ORDER BY year
+`,
+
+
         };
 
         let results = {};

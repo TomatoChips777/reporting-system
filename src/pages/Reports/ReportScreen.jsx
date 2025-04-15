@@ -8,6 +8,7 @@ import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 import MessageModal from "../Messages/components/MessageModal";
 import formatDate from "../../functions/DateFormat";
+import CreateReport from "./Components/CreateReport";
 function Reports() {
     const { role } = useAuth();
     const [reports, setReports] = useState([]);
@@ -26,6 +27,15 @@ function Reports() {
 
     const [showMessageInputModal, setShowMessageInputModal] = useState(false);
     const [existingItem, setExistingItem] = useState(null);
+    const [showCreateModal, setCreateShowModal] = useState(false);
+
+
+    const handleOpenModal = () => {
+        setCreateShowModal(true);
+    };
+    const handleClose = () => {
+        setCreateShowModal(false);
+    }
     const fetchReports = async () => {
         try {
             const response = await axios.get(`${import.meta.env.VITE_GET_REPORTS}`);
@@ -266,6 +276,7 @@ function Reports() {
                                         ))}
                                     </Form.Select>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -273,8 +284,11 @@ function Reports() {
             </div>
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-success text-white py-3">
+                <Card.Header className="bg-success text-white py-3 d-flex justify-content-between align-items-center">
                     <strong>Reports List</strong>
+                    <Button className="btn btn-light btn-m rounded-0" onClick={() => handleOpenModal()}>
+                        <i className="bi bi-plus-lg me-2"></i>Create Report
+                    </Button>
                 </Card.Header>
                 <Card.Body className="p-0">
                     <div className="table-responsive">
@@ -426,7 +440,7 @@ function Reports() {
                     </div>
                 </Card.Footer>
             </Card>
-    
+
             <ViewReportModal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -454,6 +468,12 @@ function Reports() {
                     <Button variant="danger" className="rounded-0" onClick={handleDelete}>Remove</Button>
                 </Modal.Footer>
             </Modal>
+
+
+            <CreateReport
+                show={showCreateModal}
+                handleClose={handleClose}
+            />
         </div>
     );
 }

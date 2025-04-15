@@ -7,8 +7,9 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 import formatDate from "../../functions/DateFormat";
+import CreateReport from "./components/CreateReport";
 function IncidentReportDashboard() {
-    const { role } = useAuth();
+    const { role, user} = useAuth();
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -30,6 +31,8 @@ function IncidentReportDashboard() {
 
     const [showConfirmChangeModal, setShowConfirmChangeModal] = useState(false);
     const [pendingStatus, setPendingStatus] = useState(""); // temporarily hold new status
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const fetchReports = async () => {
         try {
@@ -112,6 +115,12 @@ function IncidentReportDashboard() {
         setShowModal(true);
     };
 
+    const handleOpenCreateModal = () =>{
+        setShowCreateModal(true);
+    }
+    const handleCloseCreateModal =()=>{
+        setShowCreateModal(false);
+    }
     const handleStatusChange = (e) => {
         // setSelectedReport((prev) => ({ ...prev, status: e.target.value }));
         const newStatus = e.target.value;
@@ -329,6 +338,11 @@ function IncidentReportDashboard() {
                                 ))}
                             </div>
                         </div>
+                        <div className="col-auto">
+                            <Button className="btn btn-light btn-m rounded-0 " onClick={() => handleOpenCreateModal()}>
+                                <i className="bi bi-plus-lg me-2"></i>Create Report
+                            </Button>
+                        </div>
                     </div>
                 </Card.Header>
                 <Card.Body className="p-0 mb-0">
@@ -358,11 +372,35 @@ function IncidentReportDashboard() {
                                                     {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                                 </p>
                                                 <div className="d-flex justify-content-end align-items-end">
-                                                    <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
+                                                <OverlayTrigger placement="top" overlay={<Tooltip>View</Tooltip>}>
+                                                <Button variant="primary rounded" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>
+                                                    <i className="bi bi-eye"></i>
+                                                </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>Remove</Tooltip>}>
+                                                <Button variant="danger rounded" size="sm" onClick={() => confirmRemoval(report.id)}>
+                                                    <i className="bi bi-trash"></i>
+                                                </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>Message</Tooltip>}>
+                                                <Button
+                                                    variant="success rounded"
+                                                    size="sm"
+                                                    className="ms-2"
+                                                    onClick={() => handleMessage(report)}
+                                                    disabled={user.id === report.user_id || report.status === 'resolved'}
+                                                >
+                                                    <i className="bi bi-chat-dots"></i>
+                                                </Button>
+                                            </OverlayTrigger>
+
+                                                    {/* <Button variant="primary rounded-0" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>View</Button>
                                                     <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
                                                     <Button variant="success rounded-0" size="sm" className="ms-2" onClick={() => handleMessage(report)}>
                                                         Message
-                                                    </Button>
+                                                    </Button> */}
                                                 </div>
 
                                             </div>
@@ -412,11 +450,34 @@ function IncidentReportDashboard() {
                                                 {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                             </td>
                                             <td className="d-flex justify-content-center">
-                                                <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>View</Tooltip>}>
+                                                <Button variant="primary rounded" size="sm" className="me-2" onClick={() => handleViewDetails(report)}>
+                                                    <i className="bi bi-eye"></i>
+                                                </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>Remove</Tooltip>}>
+                                                <Button variant="danger rounded" size="sm" onClick={() => confirmRemoval(report.id)}>
+                                                    <i className="bi bi-trash"></i>
+                                                </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>Message</Tooltip>}>
+                                                <Button
+                                                    variant="success rounded"
+                                                    size="sm"
+                                                    className="ms-2"
+                                                    onClick={() => handleMessage(report)}
+                                                    disabled={user.id === report.user_id || report.status === 'resolved'}
+                                                >
+                                                    <i className="bi bi-chat-dots"></i>
+                                                </Button>
+                                                </OverlayTrigger>
+                                                {/* <Button variant="primary rounded-0 me-2" size="sm" onClick={() => handleViewDetails(report)}>View</Button>
                                                 <Button variant="danger rounded-0" size="sm" onClick={() => confirmRemoval(report.id)}>Remove</Button>
                                                 <Button variant="success rounded-0 ms-2" size="sm" onClick={() => handleMessage(report)}>
                                                     Message
-                                                </Button>
+                                                </Button> */}
                                             </td>
                                         </tr>
                                     ))}
@@ -570,6 +631,11 @@ function IncidentReportDashboard() {
                 handleClose={handleCloseMessageModal}
                 existingItem={existingItem}
                 fetchItems={fetchReports}
+            />
+
+            <CreateReport
+            show={showCreateModal}
+            handleClose={handleCloseCreateModal}
             />
         </div>
     );

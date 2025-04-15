@@ -34,10 +34,11 @@ function App() {
             {isAuthenticated ? (
                 <NavigationProvider>
                     <SidebarStateProvider>
-                        <NavigationBar />
-                        <div className="d-flex vh-100">
-                            <Sidebar />
-                            <div className="main-content">
+                    <div className="d-flex">
+                        <Sidebar />
+                        <div className="main-content ">
+                            <NavigationBar />
+                            <div className="page-content">
                                 <Routes>
                                     {role === 'admin' && (
                                         <>
@@ -106,6 +107,7 @@ function App() {
                                     )}
                                 </Routes>
                             </div>
+                        </div>
                         </div>
                     </SidebarStateProvider>
                 </NavigationProvider>

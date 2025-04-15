@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, CartesianGrid, XAxis, YAxis, LineChart, Line, BarChart, Bar, ResponsiveContainer } from "recharts";
-import { IoPieChart, IoCalendar, IoDocumentText, IoTime, IoPeople, IoLocation } from "react-icons/io5";
-import { Badge } from "react-bootstrap";
-
-import "bootstrap/dist/css/bootstrap.min.css";
+import { Line, Bar, Pie } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend } from 'chart.js';
+import { IoPieChart, IoCalendar, IoDocumentText, IoTime } from "react-icons/io5";
+import { Badge,Form } from "react-bootstrap";
 import axios from "axios";
-import { io } from 'socket.io-client';
-import formatDate from "../../functions/DateFormat";
+import { io } from "socket.io-client";
+import "bootstrap/dist/css/bootstrap.min.css";
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend);
 
 const AdminDashboard = () => {
-
     const [analytics, setAnalytics] = useState(null);
+    const [resolvedView, setResolvedView] = useState("day");
     useEffect(() => {
         const socket = io(`${import.meta.env.VITE_API_URL}`);
 
@@ -24,293 +25,266 @@ const AdminDashboard = () => {
         };
 
         fetchAnalytics();
-
-        socket.on("update", () => {
-            fetchAnalytics();
-        });
-
-        return () => {
-            socket.disconnect();
-        };
+        socket.on("update", fetchAnalytics);
+        return () => socket.disconnect();
     }, []);
 
     if (!analytics) return <p className="text-center mt-5">Loading analytics...</p>;
-
-    const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff5733", "#28a745"];
-    const formattedIssueDistribution = analytics.issueDistribution.map((entry) => ({
-        ...entry,
-        category: entry.category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    }));
-
-    const priorityDistribution = [
-        { name: "Low", count: analytics.latestReports.filter(report => report.priority === "Low").length },
-        { name: "Medium", count: analytics.latestReports.filter(report => report.priority === "Medium").length },
-        { name: "High", count: analytics.latestReports.filter(report => report.priority === "High").length },
-        { name: "Urgent", count: analytics.latestReports.filter(report => report.priority === "Urgent").length },
-    ];
-    const transformTrendData = (data) => {
-        const groupedData = {};
-
-        data.forEach(({ date, category, count }) => {
-            const formattedDate = new Date(date).toISOString().split("T")[0]; // Format YYYY-MM-DD
-
-            if (!groupedData[formattedDate]) {
-                groupedData[formattedDate] = { date: formattedDate }; // Initialize
-            }
-            groupedData[formattedDate][category] = count; // Assign category count
-        });
-
-        // Get all possible categories
-        const allCategories = Array.from(new Set(data.map((d) => d.category)));
-
-        return Object.values(groupedData).map((entry) => {
-            // Fill missing categories with 0
-            allCategories.forEach((category) => {
-                if (!entry[category]) entry[category] = 0;
-            });
-            return entry;
-        });
+    const resolvedChart = {
+        day: {
+            labels: analytics.resolvedPerDay.map(r => new Date(r.date).toLocaleDateString()),
+            datasets: [{
+                label: 'Resolved per Day',
+                data: analytics.resolvedPerDay.map(r => r.count),
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                fill: true,
+            }]
+        },
+        week: {
+            labels: analytics.resolvedPerWeek.map(r => r.week),
+            datasets: [{
+                label: 'Resolved per Week',
+                data: analytics.resolvedPerWeek.map(r => r.count),
+                backgroundColor: '#17a2b8'
+            }]
+        },
+        month: {
+            labels: analytics.resolvedPerMonth.map(r => r.month),
+            datasets: [{
+                label: 'Resolved per Month',
+                data: analytics.resolvedPerMonth.map(r => r.count),
+                backgroundColor: '#ffc107'
+            }]
+        },
+        year: {
+            labels: analytics.resolvedPerYear.map(r => r.year),
+            datasets: [{
+                label: 'Resolved per Year',
+                data: analytics.resolvedPerYear.map(r => r.count),
+                backgroundColor: '#6f42c1'
+            }]
+        }
     };
+    
+    // Priority Pie Chart Data
+    const priorityChart = {
+        labels: ["Low", "Medium", "High", "Urgent"],
+        datasets: [{
+            label: 'Priority',
+            data: [
+                analytics.latestReports.filter(r => r.priority === "Low").length,
+                analytics.latestReports.filter(r => r.priority === "Medium").length,
+                analytics.latestReports.filter(r => r.priority === "High").length,
+                analytics.latestReports.filter(r => r.priority === "Urgent").length,
+            ],
+            backgroundColor: ['#28a745', '#007bff', '#ffc107', '#dc3545']
+        }]
+    };
+
+    // Issue Type Pie Chart Data
+    const issueChart = {
+        labels: analytics.issueDistribution.map(i => i.category.replace(/_/g, " ")),
+        datasets: [{
+            label: 'Issues',
+            data: analytics.issueDistribution.map(i => i.count),
+            backgroundColor: ['#8884d8', '#82ca9d', '#ffc658', '#ff5733', '#28a745']
+        }]
+    };
+
+    // Daily Reports Line Chart
+    const dailyChart = {
+        labels: analytics.reportsPerDay.map(d => new Date(d.date).toLocaleDateString()),
+        datasets: [{
+            label: 'Reports per Day',
+            data: analytics.reportsPerDay.map(d => d.count),
+            borderColor: '#8884d8',
+            backgroundColor: 'rgba(136,132,216,0.2)',
+            fill: true,
+        }]
+    };
+
+    // Monthly Reports Bar Chart
+    const monthlyChart = {
+        labels: analytics.reportsPerMonth.map(d => d.month),
+        datasets: [{
+            label: 'Reports per Month',
+            data: analytics.reportsPerMonth.map(d => d.count),
+            backgroundColor: '#82ca9d'
+        }]
+    };
+
+    // Reports Trend Line Chart
+    const trendChart = (() => {
+        const grouped = {};
+        analytics.reportsTrend.forEach(({ date, category, count }) => {
+            const d = new Date(date).toISOString().split("T")[0];
+            if (!grouped[d]) grouped[d] = {};
+            grouped[d][category] = count;
+        });
+
+        const dates = Object.keys(grouped).sort();
+        const categories = Array.from(new Set(analytics.reportsTrend.map(d => d.category)));
+
+        return {
+            labels: dates,
+            datasets: categories.map((cat, i) => ({
+                label: cat,
+                data: dates.map(date => grouped[date][cat] || 0),
+                borderColor: `hsl(${i * 60}, 70%, 50%)`,
+                backgroundColor: `hsla(${i * 60}, 70%, 50%, 0.2)`,
+                fill: true,
+                tension: 0.4
+            }))
+        };
+    })();
 
 
     return (
-        <div className="container-fluid mb-1">
+        <div className="container-fluid">
             <h2 className="mb-4 text-success">
                 <IoPieChart className="me-2" /> Report Dashboard Analytics
             </h2>
 
-            {/* Card Summary Section */}
-            <div className="row text-center mb-1">
-                <div className="col-md-3 col-6 mb-2 mb-md-0">
-                    <div className="card shadow-lg bg-primary text-white p-4 rounded-0">
-                        <h5>
-                            <IoDocumentText className="me-2" size={100} /> Total Reports
-                        </h5>
-                        <h2 className="fw-bold">{analytics.totalReports || 0}</h2>
+            {/* Summary Cards */}
+            <div className="row text-center mb-3">
+                {[
+                    { label: "Total Reports", icon: IoDocumentText, color: "primary", value: analytics.totalReports ?? 0 },
+                    { label: "Pending", icon: IoTime, color: "warning", value: analytics.statusCount?.pending ?? 0 },
+                    { label: "In Progress", icon: IoTime, color: "info", value: analytics.statusCount?.in_progress ?? 0 },
+                    { label: "Resolved", icon: IoTime, color: "success", value: analytics.statusCount?.resolved ?? 0 }
+                ].map(({ label, icon: Icon, color, value }, i) => (
+                    <div className="col-md-3 col-6 mb-3" key={i}>
+                        <div className={`card shadow bg-${color} text-white p-2 shadow-sm`}>
+                            <h5><Icon className="me-2" size={20} /> {label}</h5>
+                            {/* <h6>{label}</h6> */}
+                            <h2 className="fw-bold">{value}</h2>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="card p-3 shadow-sm mb-3">
+    <div className="d-flex justify-content-between align-items-center mb-2">
+        <h6 className="text-secondary mb-0">
+            <IoCalendar className="me-2" /> Resolved Reports
+        </h6>
+        <Form.Select value={resolvedView} onChange={(e) => setResolvedView(e.target.value)} style={{ maxWidth: 200 }}>
+            <option value="day">Daily</option>
+            <option value="week">Weekly</option>
+            <option value="month">Monthly</option>
+            <option value="year">Yearly</option>
+        </Form.Select>
+    </div>
+    <div style={{ height: 250 }} className="w-100">
+        {resolvedView === "day" ? (
+            <Line data={resolvedChart.day} options={{ responsive: true, maintainAspectRatio: false }} />
+        ) : (
+            <Bar data={resolvedChart[resolvedView]} options={{ responsive: true, maintainAspectRatio: false }} />
+        )}
+    </div>
+</div>
+
+            {/* Reports Trend Graph */}
+            <div className="card p-3 shadow-sm mb-3">
+                <h6 className="text-secondary"><IoCalendar className="me-2" /> Reports Trend</h6>
+                <div style={{ height: 250 }} className="w-100">
+                    <Line data={trendChart} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }} />
+                </div>
+            </div>
+
+
+            {/* Graphs */}
+            <div className="row mb-3">
+                <div className="col-md-6 mb-3">
+                    <div className="card p-3 shadow-sm">
+                        <div className="row align-items-center">
+                            <div className="col-5 d-flex justify-content-center">
+                                <div style={{ maxWidth: 180 }}>
+                                    <Pie data={priorityChart} options={{ maintainAspectRatio: false, plugins: { legend: { position: "bottom" }} }} height={180} />
+                                </div>
+                            </div>
+                            <div className="col-7">
+                                <h6 className="text-secondary mb-2">Priority Distribution</h6>
+                                <p className="text-muted small mb-0">
+                                    Shows how reports are distributed by priority: Low, Medium, High, and Urgent. Helps understand urgency trends.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="col-md-3 col-6 mb-2 mb-md-0">
-                    <div className="card shadow-lg bg-warning text-white p-4 rounded-0">
-                        <h5>
-                            <IoTime className="me-2" size={100} /> Pending Reports
-                        </h5>
-                        <h2 className="fw-bold">{analytics.statusCount?.pending || 0}</h2>
-                    </div>
-                </div>
-                <div className="col-md-3 col-6 mb-2 mb-md-0">
-                    <div className="card shadow-lg bg-info text-white p-4 rounded-0">
-                        <h5>
-                            <IoTime className="me-2" size={100} /> In Progress
-                        </h5>
-                        <h2 className="fw-bold">{analytics.statusCount?.in_progress || 0}</h2>
-                    </div>
-                </div>
-                <div className="col-md-3 col-6">
-                    <div className="card shadow-lg bg-success text-white p-4 rounded-0">
-                        <h5>
-                            <IoTime className="me-2" size={100} /> Resolved Reports
-                        </h5>
-                        <h2 className="fw-bold">{analytics.statusCount?.resolved || 0}</h2>
+                <div className="col-md-6 mb-3">
+                    <div className="card p-3 shadow-sm">
+                        <div className="row align-items-center">
+                            <div className="col-5 d-flex justify-content-center">
+                                <div style={{ maxWidth: 180 }}>
+                                    <Pie data={issueChart} options={{ maintainAspectRatio: false, plugins: { legend: { position: "bottom" }} }} height={180} />
+                                </div>
+                            </div>
+                            <div className="col-7">
+                                <h6 className="text-secondary mb-2">Issue Type Distribution</h6>
+                                <p className="text-muted small mb-0">
+                                    Visualizes report counts based on issue categories. Useful for identifying common problems.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Line Graph - Reports Trend */}
-            <div className="col-12 mb-1">
-                <div className="card shadow-lg p-4">
-                    <h5 className="text-secondary mb-3">
-                        <IoCalendar className="me-2" /> Reports Trend
-                    </h5>
-                    {analytics.reportsTrend?.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={transformTrendData(analytics.reportsTrend)}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="date" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                {Array.from(new Set(analytics.reportsTrend.map(d => d.category))).map((category, index) => (
-                                    <Line key={`line-${category}`} type="monotone" dataKey={category} stroke={COLORS[index % COLORS.length]} strokeWidth={2} />
-                                ))}
-                            </LineChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <p>No trend data available</p>
-                    )}
-                </div>
-            </div>
 
-            {/* Priority and Issue Type Distribution Pie Charts */}
-            <div className="row mb-2">
-                {/* Priority Distribution Card */}
-                <div className="col-md-6 mb-1">
-                    <div className="card shadow-lg p-4">
-                        <h5 className="mb-3 text-secondary">
-                            <IoPieChart className="me-2" /> Priority Distribution
-                        </h5>
-                        {priorityDistribution.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={400}>
-                                <PieChart>
-                                    <Pie data={priorityDistribution} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={180}>
-                                        {priorityDistribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <p>No priority data available</p>
-                        )}
+
+            <div className="row mb-3">
+                <div className="col-md-6 mb-3">
+                    <div className="card p-3 shadow-sm">
+                        <h6 className="text-secondary">Reports Per Day</h6>
+                        <Line data={dailyChart} />
                     </div>
                 </div>
-
-                {/* Issue Type Distribution Card */}
-                <div className="col-md-6 mb-2">
-                    <div className="card shadow-lg p-4">
-                        <h5 className="mb-3 text-secondary">
-                            <IoPieChart className="me-2" /> Issue Type Distribution
-                        </h5>
-                        {analytics.issueDistribution?.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={400}>
-                                <PieChart>
-                                    <Pie data={formattedIssueDistribution} dataKey="count" nameKey="category" cx="50%" cy="50%" outerRadius={180}>
-                                        {analytics.issueDistribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <p>No issue data available</p>
-                        )}
+                <div className="col-md-6 mb-3">
+                    <div className="card p-3 shadow-sm">
+                        <h6 className="text-secondary">Reports Per Month</h6>
+                        <Bar data={monthlyChart} />
                     </div>
                 </div>
             </div>
 
-            {/* Reports Per Day and Per Month */}
-            {/* <div className="row mb-2"> */}
-            {/* Reports Per Day Card */}
-            <div className="col-12 mb-1">
-                <div className="card shadow-lg p-4">
-                    <h5 className="text-secondary mb-3">
-                        <IoCalendar className="me-2" /> Reports Per Day
-                    </h5>
-                    {analytics.reportsPerDay?.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={analytics.reportsPerDay}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', {
-                                        weekday: 'short', month: 'long', day: 'numeric'
-                                    })}
-                                />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={3} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <p>No data available</p>
-                    )}
+            {/* Latest Reports Table */}
+            <div className="card shadow">
+                <div className="card-header bg-success text-white">
+                    <h5><IoDocumentText className="me-2" /> Latest Reports</h5>
                 </div>
-            </div>
-
-            {/* Reports Per Month Card */}
-            <div className="col-12 mb-1">
-                <div className="card shadow-lg p-4">
-                    <h5 className="text-secondary mb-3">
-                        <IoCalendar className="me-2" /> Reports Per Month
-                    </h5>
-                    {analytics.reportsPerMonth?.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={analytics.reportsPerMonth}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="count" fill="#82ca9d" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <p>No data available</p>
-                    )}
-                </div>
-            </div>
-            <div className="mb-2">
-                <div className="card shadow-lg p-0">
-                    <div className="card-header bg-success text-white">
-                        <h5>
-                            <IoDocumentText className="me-2" /> Latest Reports
-                        </h5>
-                    </div>
-                    <div className="table-responsive">
-                        <table className="table table-bordered mb-0">
-                            <thead className="table-success">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Location</th>
-                                    <th>Issue Type</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th className="text-center">Reported At</th>
+                <div className="table-responsive">
+                    <table className="table table-bordered mb-0">
+                        <thead className="table-success">
+                            <tr>
+                                <th>ID</th>
+                                <th>Location</th>
+                                <th>Issue Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th className="text-center">Reported At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {analytics.latestReports?.map((r, i) => (
+                                <tr key={i}>
+                                    <td>{r.id}</td>
+                                    <td>{r.location}</td>
+                                    <td>{r.category}</td>
+                                    <td><Badge bg={r.priority === "Low" ? "success" : r.priority === "Medium" ? "primary" : r.priority === "High" ? "warning" : "danger"}>{r.priority}</Badge></td>
+                                    <td><Badge bg={r.status === "pending" ? "warning" : r.status === "in_progress" ? "primary" : "success"}>{r.status.replace("_", " ")}</Badge></td>
+                                    <td className="text-center">{new Date(r.created_at).toLocaleString()}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {analytics.latestReports?.length > 0 ? (
-                                    analytics.latestReports.map((report, index) => (
-                                        <tr key={index}>
-                                            <td>{report.id}</td>
-                                            <td>{report.location}</td>
-                                            <td>{report.category}</td>
-                                            <td>
-                                                <Badge
-                                                    bg={
-                                                        report.priority === "Low" ? "success" :
-                                                            report.priority === "Medium" ? "primary" :
-                                                                report.priority === "High" ? "warning" :
-                                                                    report.priority === "Urgent" ? "danger" : "secondary"
-                                                    }
-                                                    className="ms-2 rounded-0"
-                                                >
-                                                    {report.priority}
-                                                </Badge>
-                                            </td>
-                                            <td>
-                                                <Badge bg={report.status === "pending" ? "warning" : report.status === "in_progress" ? "primary" : "success"} className="ms-2 rounded-0">
-                                                    {report.status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                </Badge>
-                                            </td>
-                                            <td className="text-center">
-                                                {new Date(report.created_at).toLocaleString('en-US', {
-                                                    timeZone: 'Asia/Manila',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                })}
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
+                            )) || (
                                     <tr>
                                         <td colSpan="6" className="text-center">No reports available</td>
                                     </tr>
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
         </div>
     );
 };
