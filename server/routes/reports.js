@@ -356,6 +356,42 @@ router.post("/create", upload.single('image_path'), (req, res) => {
 
 
 
+router.get('/incident-analytics', (req, res) => {
+    const query = `
+        SELECT r.id,r.user_id,r.location, r.description,r.image_path,r.status,r.is_anonymous,r.created_at,r.updated_at,r.archived ,ir.*,
+         CASE 
+                WHEN r.is_anonymous = 1 THEN 'Anonymous'
+                ELSE u.name 
+            END AS reporter_name
 
+        FROM tbl_reports r 
+        LEFT  JOIN tbl_users u ON r.user_id = u.id LEFT JOIN tbl_incident_reports ir ON r.id = ir.report_id WHERE report_type ='Incident Report' AND r.archived = 0;`;
+    db.query(query, (err, rows) => {
+        if (err) {
+            console.error("Error fetching all reports:", err);
+            return res.status(500).json([]);
+        }
+        res.json(rows);
+    });
+});
+
+router.get('/maintenance-analytics', (req, res) => {
+    const query = `
+        SELECT r.id,r.user_id,r.location, r.description,r.image_path,r.status,r.is_anonymous,r.created_at,r.updated_at,r.archived ,mr.*,
+                CASE 
+                WHEN r.is_anonymous = 1 THEN 'Anonymous'
+                ELSE u.name 
+            END AS reporter_name
+        FROM tbl_reports r 
+        LEFT  JOIN tbl_users u ON r.user_id = u.id
+        LEFT  JOIN tbl_maintenance_reports mr ON r.id = mr.report_id  WHERE report_type ='Maintenance Report' AND r.archived = 0;`;
+    db.query(query, (err, rows) => {
+        if (err) {
+            console.error("Error fetching all reports:", err);
+            return res.status(500).json([]);
+        }
+        res.json(rows);
+    });
+});
 
 module.exports = router;

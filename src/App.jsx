@@ -22,24 +22,30 @@ import IncidentReportScreen from './pages/Incident/IncidentReportsScreen.jsx';
 import IncidentReportDashboard from './pages/Incident/IncidentReportDashboard.jsx';
 import Events from './pages/Events/Events.jsx';
 import UserManagement from './pages/Users Management/UserManagement.jsx';
+import FloatingChat from './components/FloatingChat.jsx';
+import { adminRoles } from './functions/AdminRoles.jsx';
 
 
 function App() {
     const { isAuthenticated, isLoading, role } = useAuth();
-    
+
     if (isLoading) return <div>Loading...</div>;
 
     return (
         <Router>
+            {/* Check if the user is authenticated */}
             {isAuthenticated ? (
+                // If authenticated, render the app
                 <NavigationProvider>
                     <SidebarStateProvider>
-                    <div className="d-flex">
-                        <Sidebar />
-                        <div className="main-content ">
-                            <NavigationBar />
-                            <div className="page-content">
+                        <div className="d-flex">
+                            <Sidebar />
+                            <div className="main-content">
+                                <NavigationBar />
+                                {/* <FloatingChat/> */}
+                                {adminRoles.includes(role) && <FloatingChat />}
                                 <Routes>
+                                    {/* Check if the user is an admin */}
                                     {role === 'admin' && (
                                         <>
                                             <Route path="/home" element={<HomeScreen />} />
@@ -51,7 +57,7 @@ function App() {
                                             <Route path="/lost-and-found-reports" element={<AdminLostAndFound />} />
                                             <Route path='/incident-report-dashboard' element={<IncidentReportDashboard />} />
                                             <Route path="/incident-reports" element={<IncidentReportScreen />} />
-                                            <Route path="/events" element={<Events/>} />
+                                            <Route path="/events" element={<Events />} />
                                             <Route path="/messages" element={<AdminMessages />} />
                                             <Route path='/notifications' element={<Notifications />} />
                                             <Route path="*" element={<Navigate to="/home" replace />} />
@@ -59,55 +65,54 @@ function App() {
                                     )}
                                     {role === 'report-manager' && (
                                         <>
-                                         <Route path="/home" element={<HomeScreen />} />
-                                         <Route path='/reports' element={<ReportScreen />} />
-                                         <Route path="/messages" element={<AdminMessages />} />
-                                         <Route path='/notifications' element={<Notifications />} />
-                                         <Route path="*" element={<Navigate to="/home" replace />} />
+                                            <Route path="/home" element={<HomeScreen />} />
+                                            <Route path='/reports' element={<ReportScreen />} />
+                                            <Route path="/messages" element={<AdminMessages />} />
+                                            <Route path='/notifications' element={<Notifications />} />
+                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}
-                                     {role === 'maintenance-report-manager' && (
+                                    {role === 'maintenance-report-manager' && (
                                         <>
-                                         <Route path="/home" element={<HomeScreen />} />
-                                         <Route path="/maintenace-report-dashboard" element={<AdminDashboard />} />
-                                         <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
-                                         <Route path="/messages" element={<AdminMessages />} />
-                                         <Route path='/notifications' element={<Notifications />} />
-                                         <Route path="*" element={<Navigate to="/home" replace />} />
+                                            <Route path="/home" element={<HomeScreen />} />
+                                            <Route path="/maintenace-report-dashboard" element={<AdminDashboard />} />
+                                            <Route path="/maintenance-reports" element={<MaintenanaceReports />} />
+                                            <Route path="/messages" element={<AdminMessages />} />
+                                            <Route path='/notifications' element={<Notifications />} />
+                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}
-                                     {role === 'lost-and-found-manager' && (
+                                    {role === 'lost-and-found-manager' && (
                                         <>
-                                         <Route path="/home" element={<HomeScreen />} />
-                                         <Route path="/lost-and-found-dashboard" element={<LostAndFoundDashboard />} />
-                                         <Route path="/lost-and-found-reports" element={<AdminLostAndFound />} />
-                                         <Route path="/messages" element={<AdminMessages />} />
-                                         <Route path='/notifications' element={<Notifications />} />
-                                         <Route path="*" element={<Navigate to="/home" replace />} />
+                                            <Route path="/home" element={<HomeScreen />} />
+                                            <Route path="/lost-and-found-dashboard" element={<LostAndFoundDashboard />} />
+                                            <Route path="/lost-and-found-reports" element={<AdminLostAndFound />} />
+                                            <Route path="/messages" element={<AdminMessages />} />
+                                            <Route path='/notifications' element={<Notifications />} />
+                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}
-                                     {role === 'incident-report-manager' && (
+                                    {role === 'incident-report-manager' && (
                                         <>
-                                         <Route path="/home" element={<HomeScreen />} />
-                                         <Route path='/reports' element={<ReportScreen />} />
-                                         <Route path="/messages" element={<AdminMessages />} />
-                                         <Route path='/notifications' element={<Notifications />} />
-                                         <Route path="*" element={<Navigate to="/home" replace />} />
+                                            <Route path="/home" element={<HomeScreen />} />
+                                            <Route path='/reports' element={<ReportScreen />} />
+                                            <Route path="/messages" element={<AdminMessages />} />
+                                            <Route path='/notifications' element={<Notifications />} />
+                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}
                                     {role === 'user' && (
                                         <>
-                                           <Route path="/home" element={<HomeScreen />} />
-                                           <Route path="/list-screen" element={<UserLostAndFound />} />
-                                           <Route path='/notifications' element={<Notifications />} />
-                                           <Route path="/messages" element={<AdminMessages />} />
-                                           <Route path="/reports-screen" element={<UserReports />} />
-                                           <Route path="*" element={<Navigate to="/home" replace />} />
+                                            <Route path="/home" element={<HomeScreen />} />
+                                            <Route path="/list-screen" element={<UserLostAndFound />} />
+                                            <Route path='/notifications' element={<Notifications />} />
+                                            <Route path="/messages" element={<AdminMessages />} />
+                                            <Route path="/reports-screen" element={<UserReports />} />
+                                            <Route path="*" element={<Navigate to="/home" replace />} />
                                         </>
                                     )}
                                 </Routes>
                             </div>
-                        </div>
                         </div>
                     </SidebarStateProvider>
                 </NavigationProvider>

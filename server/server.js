@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
-
+const llmAnalyze = require('./routes/chatbot');
 const reportsRoutes = require('./routes/reports');
 const usersRoutes = require('./routes/users');
 const analytics = require('./routes/analytics');
@@ -44,6 +44,8 @@ app.use('/api/analytics', analytics);
 app.use('/api/messages', messages);
 app.use('/api/maintenance-reports', maintenanceReports);
 app.use('/api/incident-reports', incidentReports);
+
+app.use('/api/llm-analyze', llmAnalyze);
 const port = 5000;
 server.listen(port, () => {
     console.log(`Server is listening on http://localhost:${port}`);
