@@ -66,7 +66,6 @@ const CreateReport = ({ show, handleClose }) => {
             });
 
             if (response.data.success) {
-                alert('Maintenance report submitted successfully!');
                 handleClose();
                 resetForm();
             }

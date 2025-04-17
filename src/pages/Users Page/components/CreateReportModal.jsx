@@ -53,13 +53,11 @@ const CreateReportModal = ({ show, handleClose, fetchItems }) => {
             );
 
             if (response.data.success) {
-                alert('Report submitted successfully!');
                 handleClose();
                 fetchItems?.();
                 resetForm();
             }
         } catch (error) {
-            console.error('Error submitting report:', error);
             alert('Error submitting report');
         }
     };

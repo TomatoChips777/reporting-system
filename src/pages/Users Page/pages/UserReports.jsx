@@ -106,7 +106,6 @@ function UserReports() {
         if (response.data.success) {
             setShowDeleteModal(false);
             setReportToDelete(null);
-            alert("Report deleted successfully.");
         }
 
     }

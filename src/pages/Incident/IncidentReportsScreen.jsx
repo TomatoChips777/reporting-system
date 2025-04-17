@@ -8,6 +8,7 @@ import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 import formatDate from "../../functions/DateFormat";
 import CreateReport from "./components/CreateReport";
+import FloatingChat from "../../components/FloatingChat";
 function IncidentReportDashboard() {
     const { role, user} = useAuth();
     const [reports, setReports] = useState([]);
@@ -203,6 +204,7 @@ function IncidentReportDashboard() {
     const urgentCount = reports.filter(r => r.priority === 'Urgent').length;
     return (
         <div className="container-fluid">
+            <FloatingChat reportType="incident-analytics"/>
             <div className="row mb-2">
                 <div className="col-12">
                     <div className="card bg-success text-white">

@@ -31,10 +31,8 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
             );
 
             if (response.data.success) {
-                console.log('Claim accepted successfully.');
                 setShowModal(false);
             } else {
-                console.error('Failed to accept claim.');
             }
         } catch (error) {
             console.error('Error accepting claim:', error.response?.data || error.message);
@@ -68,10 +66,8 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
             );
 
             if (response.data.success) {
-                console.log('Claim accepted successfully.');
                 setShowModal(false);
             } else {
-                console.error('Failed to accept claim.');
             }
         } catch (error) {
             console.error('Error accepting claim:', error.response?.data || error.message);
@@ -93,11 +89,9 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
             );
 
             if (response.data.success) {
-                console.log('Claim accepted successfully.');
                 setShowModal(false);
                 fetchItems();
             } else {
-                console.error('Failed to accept claim.');
             }
         } catch (error) {
             console.error('Error accepting claim:', error.response?.data || error.message);
@@ -125,14 +119,12 @@ function LostAndFoundViewModal({ showModal, setShowModal, selectedItem, claimDat
             );
 
             if (response.data.success) {
-                console.log('Remarks updated successfully');
                 setUpdatedSelectedItem(prevItem => ({
                     ...prevItem,
                     remarks: remarks,
                 }));
                 fetchItems();
             } else {
-                console.error('Failed to update remarks.');
             }
         } catch (error) {
             console.error('Error updating remarks:', error.response?.data || error.message);

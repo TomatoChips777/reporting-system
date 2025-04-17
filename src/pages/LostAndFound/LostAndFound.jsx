@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { Card, Badge, Button, Form, Pagination } from 'react-bootstrap';
+import { Card, Badge, Button, Form, Pagination, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import axios from 'axios';
 import { useAuth } from '../../../AuthContext';
 import LostAndFoundModal from './components/LostAndFoundModal';
@@ -9,6 +9,7 @@ import LostAndFoundViewModal from './components/LostAndFoundViewModal';
 import MessageModal from '../Messages/components/MessageModal';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import FloatingChat from '../../components/FloatingChat';
 
 const dummyImage = 'https://via.placeholder.com/200?text=No+Image';
 
@@ -93,7 +94,7 @@ function AdminLostAndFound() {
         const matchesSearch =
             item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.reporter_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.category.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesFilter = filter === 'all' || item.type === filter;
@@ -109,6 +110,7 @@ function AdminLostAndFound() {
 
     return (
         <div className="container-fluid">
+            <FloatingChat reportType='lost-and-found-analytics'/>
             {/* Header */}
             <div className="row mb-2">
                 <div className="col-12">
@@ -209,9 +211,9 @@ function AdminLostAndFound() {
                                                     : "No description"}
                                             </td>
                                             <td>{item.contact_info}</td>
-                                            <td>{item.user_name}</td>
+                                            <td>{item.reporter_name}</td>
                                             <td className='d-flex justify-content-center'>
-                                                <Button
+                                                {/* <Button
                                                     variant="primary"
                                                     size="sm"
                                                     className="rounded-0 me-2"
@@ -240,7 +242,30 @@ function AdminLostAndFound() {
                                                     disabled={user.id === item.user_id}
                                                 >
                                                     Message
+                                                </Button> */}
+                                                <OverlayTrigger placement="top" overlay={<Tooltip>Edit</Tooltip>}>
+                                                <Button variant="primary rounded" size="sm" className="me-2" onClick={() => handleOpenModal(item)}>
+                                                    <i className="bi bi-pencil"></i>
                                                 </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>View Details</Tooltip>}>
+                                                <Button variant="danger rounded" size="sm"  onClick={() => handleViewDetails(item)}>
+                                                    <i className="bi bi-eye"></i>
+                                                </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>Message</Tooltip>}>
+                                                <Button
+                                                    variant="success rounded"
+                                                    size="sm"
+                                                    className="ms-2"
+                                                    onClick={() => handleMessage(item)}
+                                                    disabled={user.id === item.user_id || item.status === 'resolved'}
+                                                >
+                                                    <i className="bi bi-chat-dots"></i>
+                                                </Button>
+                                                </OverlayTrigger>
                                             </td>
                                         </tr>
                                     ))}

@@ -75,7 +75,6 @@ const LostAndFoundModal = ({ show, handleClose, fetchItems, existingItem }) => {
             });
 
             if (response.data.success) {
-                alert(`Item ${existingItem ? 'updated' : 'posted'} successfully!`);
                 handleClose();
                 fetchItems();
                 resetForm();

@@ -287,4 +287,26 @@ router.post('/mark-as-read', async (req, res) => {
     }
 });
 
+
+// GET chat history for a user
+router.get('/chatbot-conversation/:userId', (req, res) => {
+    const { userId } = req.params;
+    const { category } = req.query;
+    const query = `
+      SELECT m.sender, m.text, m.timestamp 
+      FROM chatbot_messages m
+      JOIN chatbot_conversations c ON m.conversation_id = c.id
+      WHERE c.user_id = ? AND c.category = ?
+      ORDER BY m.timestamp ASC
+    `;
+  
+    db.query(query, [userId, category], (err, results) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: "Database error", error: err.message });
+      }
+  
+      res.json({ success: true, messages: results });
+    });
+  });
+  
 module.exports = router;

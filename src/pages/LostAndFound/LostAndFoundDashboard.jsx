@@ -7,6 +7,7 @@ import LostAndFoundViewModal from "./components/LostAndFoundViewModal";
 import ClaimListModal from "./components/ClaimListModal";
 import { io } from 'socket.io-client';
 import formatDate from "../../functions/DateFormat";
+import FloatingChat from "../../components/FloatingChat";
 function LostAndFoundDashboard() {
     const [items, setItems] = useState([]);
     const [chartData, setChartData] = useState([]);
@@ -117,7 +118,6 @@ function LostAndFoundDashboard() {
         try {
             const res = await axios.get(`${import.meta.env.VITE_GET_CLAIM_DETAILS}/${item.item_id}`);
             setClaimData(res.data.claims);
-            // setShowClaimModal(true);
         } catch (error) {
             console.error("Failed to fetch claims:", error);
         }
@@ -125,6 +125,7 @@ function LostAndFoundDashboard() {
 
     return (
         <Container fluid className="mt-1">
+            <FloatingChat reportType="lost-and-found-analytics"/>
             {/* <h1 className="mb-4">Lost & Found Admin Dashboard</h1> */}
             <div className="row mb-2">
                 <div className="col-12">
@@ -205,7 +206,7 @@ function LostAndFoundDashboard() {
                                     <td>{item.item_id}</td>
                                     <td>{item.item_name}</td>
                                     <td>{item.type.toUpperCase()}</td>
-                                    <td>{item.user_name}</td>
+                                    <td>{item.reporter_name}</td>
                                     <td>{item.claimer_name}</td>
                                     <td>{formatDate(item.claim_date)}</td>
                                     <td className="d-flex justify-content-center">

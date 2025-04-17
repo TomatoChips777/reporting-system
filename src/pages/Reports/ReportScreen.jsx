@@ -9,6 +9,7 @@ import { useAuth } from "../../../AuthContext";
 import MessageModal from "../Messages/components/MessageModal";
 import formatDate from "../../functions/DateFormat";
 import CreateReport from "./Components/CreateReport";
+import FloatingChat from "../../components/FloatingChat";
 function Reports() {
     const { role } = useAuth();
     const [reports, setReports] = useState([]);
@@ -212,6 +213,7 @@ function Reports() {
 
     return (
         <div className="container-fluid">
+            <FloatingChat reportType="reports-analytics"/>
             <div className="row mb-2">
                 <div className="col-12">
                     <div className="card bg-success text-white">

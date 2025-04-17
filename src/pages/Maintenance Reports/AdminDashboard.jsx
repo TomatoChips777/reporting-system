@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Line, Bar, Pie } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend } from 'chart.js';
 import { IoPieChart, IoCalendar, IoDocumentText, IoTime } from "react-icons/io5";
-import { Badge,Form } from "react-bootstrap";
+import { Badge, Form } from "react-bootstrap";
 import axios from "axios";
 import { io } from "socket.io-client";
 import "bootstrap/dist/css/bootstrap.min.css";
+import FloatingChat from "../../components/FloatingChat";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend);
 
@@ -66,7 +67,7 @@ const AdminDashboard = () => {
             }]
         }
     };
-    
+
     // Priority Pie Chart Data
     const priorityChart = {
         labels: ["Low", "Medium", "High", "Urgent"],
@@ -142,6 +143,7 @@ const AdminDashboard = () => {
 
     return (
         <div className="container-fluid">
+            <FloatingChat reportType="maintenance-analytics"/>
             <h2 className="mb-4 text-success">
                 <IoPieChart className="me-2" /> Report Dashboard Analytics
             </h2>
@@ -165,25 +167,25 @@ const AdminDashboard = () => {
             </div>
 
             <div className="card p-3 shadow-sm mb-3">
-    <div className="d-flex justify-content-between align-items-center mb-2">
-        <h6 className="text-secondary mb-0">
-            <IoCalendar className="me-2" /> Resolved Reports
-        </h6>
-        <Form.Select value={resolvedView} onChange={(e) => setResolvedView(e.target.value)} style={{ maxWidth: 200 }}>
-            <option value="day">Daily</option>
-            <option value="week">Weekly</option>
-            <option value="month">Monthly</option>
-            <option value="year">Yearly</option>
-        </Form.Select>
-    </div>
-    <div style={{ height: 250 }} className="w-100">
-        {resolvedView === "day" ? (
-            <Line data={resolvedChart.day} options={{ responsive: true, maintainAspectRatio: false }} />
-        ) : (
-            <Bar data={resolvedChart[resolvedView]} options={{ responsive: true, maintainAspectRatio: false }} />
-        )}
-    </div>
-</div>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h6 className="text-secondary mb-0">
+                        <IoCalendar className="me-2" /> Resolved Reports
+                    </h6>
+                    <Form.Select value={resolvedView} onChange={(e) => setResolvedView(e.target.value)} style={{ maxWidth: 200 }}>
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
+                    </Form.Select>
+                </div>
+                <div style={{ height: 250 }} className="w-100">
+                    {resolvedView === "day" ? (
+                        <Line data={resolvedChart.day} options={{ responsive: true, maintainAspectRatio: false }} />
+                    ) : (
+                        <Bar data={resolvedChart[resolvedView]} options={{ responsive: true, maintainAspectRatio: false }} />
+                    )}
+                </div>
+            </div>
 
             {/* Reports Trend Graph */}
             <div className="card p-3 shadow-sm mb-3">
@@ -201,7 +203,7 @@ const AdminDashboard = () => {
                         <div className="row align-items-center">
                             <div className="col-5 d-flex justify-content-center">
                                 <div style={{ maxWidth: 180 }}>
-                                    <Pie data={priorityChart} options={{ maintainAspectRatio: false, plugins: { legend: { position: "bottom" }} }} height={180} />
+                                    <Pie data={priorityChart} options={{ maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }} height={180} />
                                 </div>
                             </div>
                             <div className="col-7">
@@ -218,7 +220,7 @@ const AdminDashboard = () => {
                         <div className="row align-items-center">
                             <div className="col-5 d-flex justify-content-center">
                                 <div style={{ maxWidth: 180 }}>
-                                    <Pie data={issueChart} options={{ maintainAspectRatio: false, plugins: { legend: { position: "bottom" }} }} height={180} />
+                                    <Pie data={issueChart} options={{ maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }} height={180} />
                                 </div>
                             </div>
                             <div className="col-7">

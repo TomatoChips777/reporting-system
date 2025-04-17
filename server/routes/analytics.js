@@ -23,7 +23,7 @@ router.get('/maintenance-analytics', async (req, res) => {
            
             issueDistribution: `SELECT tmr.category, COUNT(*) as count 
                 FROM tbl_maintenance_reports tmr 
-                LEFT JOIN tbl_reports r ON r.id = tmr.report_id  AND r.archived = 0
+                LEFT JOIN tbl_reports r ON r.id = tmr.report_id  WHERE r.archived = 0
                 GROUP BY tmr.category 
                 ORDER BY count DESC;`,
             latestReports: `SELECT r.id, r.location, tmr.category,tmr.priority, r.status, r.created_at FROM tbl_reports r LEFT JOIN tbl_maintenance_reports tmr ON r.id = tmr.report_id WHERE r.report_type ='Maintenance Report' AND r.archived = 0 ORDER BY r.created_at DESC LIMIT 5;`
@@ -100,25 +100,25 @@ router.get('/maintenance-analytics', async (req, res) => {
 router.get('/incident-analytics', async (req, res) => {
     try {
         const queries = {
-            totalReports: `SELECT COUNT(*) AS total FROM tbl_reports WHERE report_type ='Incident Report' `,
-            statusCount: `SELECT status, COUNT(*) as count FROM tbl_reports WHERE report_type ='Incident Report' GROUP BY status`,
+            totalReports: `SELECT COUNT(*) AS total FROM tbl_reports WHERE report_type ='Incident Report' AND archived = 0; `,
+            statusCount: `SELECT status, COUNT(*) as count FROM tbl_reports WHERE report_type ='Incident Report' GROUP BY status AND archived = 0;`,
 
             reportsTrend: `SELECT DATE(created_at) as date, tir.category, COUNT(*) as count 
             FROM tbl_reports r
             LEFT JOIN tbl_incident_reports tir ON r.id = tir.report_id
-            WHERE r.report_type = 'Incident Report'
+            WHERE r.report_type = 'Incident Report' AND r.archived = 0
             GROUP BY DATE(created_at), tir.category
             ORDER BY DATE(created_at) ASC;
             `,
 
-            reportsPerDay: `SELECT DATE(created_at) as date, COUNT(*) as count FROM tbl_reports WHERE report_type ='Incident Report' GROUP BY DATE(created_at)`,
-            reportsPerMonth: `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count FROM tbl_reports WHERE report_type ='Incident Report' GROUP BY DATE_FORMAT(created_at, '%Y-%m')`,
+            reportsPerDay: `SELECT DATE(created_at) as date, COUNT(*) as count FROM tbl_reports WHERE report_type ='Incident Report' AND archived = 0 GROUP BY DATE(created_at)`,
+            reportsPerMonth: `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count FROM tbl_reports WHERE report_type ='Incident Report' AND archived = 0 GROUP BY DATE_FORMAT(created_at, '%Y-%m')`,
             issueDistribution: `SELECT tir.category, COUNT(*) as count 
                 FROM tbl_incident_reports tir 
-                LEFT JOIN tbl_reports r ON r.id = tir.report_id 
+                LEFT JOIN tbl_reports r ON r.id = tir.report_id  WHERE r.archived = 0
                 GROUP BY tir.category 
                 ORDER BY count DESC;`,
-            latestReports: `SELECT r.id, r.location, tir.category,tir.priority, r.status, r.created_at FROM tbl_reports r LEFT JOIN tbl_incident_reports tir ON r.id = tir.report_id WHERE r.report_type ='Incident Report'  ORDER BY r.created_at DESC LIMIT 5;`
+            latestReports: `SELECT r.id, r.location, tir.category,tir.priority, r.status, r.created_at FROM tbl_reports r LEFT JOIN tbl_incident_reports tir ON r.id = tir.report_id WHERE r.report_type ='Incident Report' AND r.archived = 0 ORDER BY r.created_at DESC LIMIT 5;`
         };
 
         let results = {};

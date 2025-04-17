@@ -6,6 +6,7 @@ import { Badge } from "react-bootstrap";
 import axios from "axios";
 import { io } from "socket.io-client";
 import "bootstrap/dist/css/bootstrap.min.css";
+import FloatingChat from "../../components/FloatingChat";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Title);
 
@@ -98,6 +99,7 @@ const IncidentReportDashboard = () => {
 
     return (
         <div className="container-fluid p-2">
+            <FloatingChat reportType="incident-analytics"/>
             <h4 className="mb-3 text-success">
                 <IoPieChart className="me-2" /> Report Analytics
             </h4>

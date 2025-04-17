@@ -90,7 +90,6 @@ const CreateReport = ({ show, handleClose }) => {
             });
 
             if (response.data.success) {
-                alert('Report submitted successfully!');
                 handleClose();
                 resetForm();
             }

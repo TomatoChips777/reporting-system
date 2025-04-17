@@ -8,6 +8,7 @@ import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 import formatDate from "../../functions/DateFormat";
 import CreateReport from "./components/CreateReport";
+import FloatingChat from "../../components/FloatingChat";
 function Reports() {
     const { role, user } = useAuth();
     const [reports, setReports] = useState([]);
@@ -206,6 +207,7 @@ function Reports() {
     const urgentCount = reports.filter(r => r.priority === 'Urgent').length;
     return (
         <div className="container-fluid">
+            <FloatingChat reportType="maintenance-analytics"/>
             <div className="row mb-2">
                 <div className="col-12">
                     <div className="card bg-success text-white">
@@ -373,7 +375,7 @@ function Reports() {
 
             {/* Reports Table */}
             <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-success text-white py-3">
+                <Card.Header className="bg-ligth  py-3">
                     <div className="row align-items-center">
                         <div className="col">
                             <h5 className="mb-0">Maintenanace Reports Lists</h5>
@@ -381,14 +383,14 @@ function Reports() {
                         <div className="col-auto">
                             <div className="btn-group ">
                                 {["all", "pending", "in_progress", "resolved"].map((status) => (
-                                    <Button key={status} variant="outline-dark border-white text-white" className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
+                                    <Button key={status} variant="outline-dark " className={statusFilter === status ? "active rounded-0" : "rounded-0"} onClick={() => handleFilterChange(status)}>
                                         {status.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                                     </Button>
                                 ))}
                             </div>
                         </div>
                         <div className="col-auto">
-                            <Button className="btn btn-light btn-m rounded-0 " onClick={() => handleOpenCreateModal()}>
+                            <Button className="btn btn-primary btn-m rounded-0 " onClick={() => handleOpenCreateModal()}>
                                 <i className="bi bi-plus-lg me-2"></i>Create Report
                             </Button>
                         </div>
@@ -398,11 +400,12 @@ function Reports() {
                     <div className="table-responsive">
                         {viewType === "list" ? (
                             <ul className="list-group">
-                                {currentReports.map((report) => (
+                                {currentReports.map((report, index) => (
                                     <li key={report.id} className="list-group-item rounded-0">
                                         <div className="d-flex align-items-start justify-content-between">
                                             {/* Left Side: Report Details */}
-                                            <div className="w-75 me-3">
+                                            <div className="w-75 me-3"> 
+                                                <p><strong>ID:</strong> {index + 1}</p>
                                                 <p><strong>Date Reported:</strong> {formatDate(report.created_at)}</p>
                                                 <p><strong>Reported By:</strong> {report.reporter_name}</p>
                                                 <p><strong>Location:</strong> {report.location}</p>
@@ -470,6 +473,7 @@ function Reports() {
                             <Table hover bordered className="shadow-sm mb-0">
                                 <thead className="table-success">
                                     <tr>
+                                        <th>#</th>
                                         <th>Date Reported</th>
                                         <th>Reported By</th>
                                         <th>Location</th>
@@ -481,8 +485,9 @@ function Reports() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentReports.map((report) => (
+                                    {currentReports.map((report,index) => (
                                         <tr key={report.id}>
+                                            <td>{index + 1}</td>
                                             <td>{formatDate(report.created_at)}</td>
                                             <td>{report.reporter_name}</td>
                                             <td>{report.location}</td>

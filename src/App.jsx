@@ -43,7 +43,7 @@ function App() {
                             <div className="main-content">
                                 <NavigationBar />
                                 {/* <FloatingChat/> */}
-                                {adminRoles.includes(role) && <FloatingChat />}
+                                {/* {adminRoles.includes(role) && <FloatingChat />} */}
                                 <Routes>
                                     {/* Check if the user is an admin */}
                                     {role === 'admin' && (

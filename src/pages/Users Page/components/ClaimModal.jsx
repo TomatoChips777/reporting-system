@@ -126,7 +126,6 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
                 resetForm();
                 fetchItems();
                 handleClose();
-                alert('Claim request sent successfully');
             } else {
                 alert('Failed to send claim request');
             }
