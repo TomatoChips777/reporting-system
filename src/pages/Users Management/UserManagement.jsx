@@ -19,7 +19,7 @@ function UserManagement() {
     const [showViewModal, setShowViewModal] = useState(false);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newUser, setNewUser] = useState({ name: "", email: "", role: "" });
+    const [newUser, setNewUser] = useState({ name: "", email: "", role: "", password: "" });
 
     const fetchUsers = async () => {
         try {
@@ -378,6 +378,15 @@ function UserManagement() {
                                 placeholder="Enter email"
                                 value={newUser.email}
                                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Password</Form.Label>
+                            <Form.Control
+                                type="password"
+                                placeholder="Enter password"
+                                value={newUser.password}
+                                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">

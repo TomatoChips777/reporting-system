@@ -4,7 +4,7 @@ const db = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "lc-ticketing-db-2",
+    database: "lc-report-db",
 
 });
 
@@ -13,4 +13,13 @@ db.connect((err) => {
     else console.log("Connected to MySQL");
 });
 
+
+db.queryAsync = (query, params) => {
+    return new Promise((resolve, reject) => {
+        db.query(query, params, (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
+        });
+    });
+};
 module.exports = db;

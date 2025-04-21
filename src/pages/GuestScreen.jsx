@@ -20,7 +20,7 @@ const GuestScreen = () => {
         setMessage('');
         
         try {
-            const response = await axios.post('http://localhost:5000/api/guest-report', formData);
+            const response = await axios.post(`${import.meta.env.VITE_CREATE_GUEST_REPORT}`, formData);
             if (response.status === 200) {
                 setMessage('Report submitted successfully!');
                 setFormData({ name: '', email: '', report: '' }); // Reset form

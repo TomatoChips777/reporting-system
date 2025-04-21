@@ -351,7 +351,7 @@ function NavigationBar() {
                             <Dropdown show={showUserMenu} onToggle={(isOpen) => setShowUserMenu(isOpen)}>
                                 <Dropdown.Toggle as="div" className="d-flex align-items-center" style={{ cursor: 'pointer' }}>
                                     <img src={`${import.meta.env.VITE_IMAGES}/${user.image_url}`}  width="40" height="40" className="rounded-circle" alt="User" />
-                                    <span className="ms-2 text-white">{user.name}</span>
+                                    <span className="ms-2 text-white">{user.name || user.email || "Unknown"}</span>
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu align="end">
                                     <Dropdown.Item as={Link} to="/messages">Profile</Dropdown.Item>
