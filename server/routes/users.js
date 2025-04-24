@@ -428,4 +428,27 @@ router.put('/update-user/:userId', async (req, res) => {
     }
 });
 
+
+router.put('/activate-deactivate-user/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (status !== 0 && status !== 1) {
+        return res.status(400).json({ success: false, message: 'Invalid status value. Use 1 or 0.' });
+    }
+
+    try {
+        const result = await db.queryAsync('UPDATE tbl_users SET status = ? WHERE id = ?', [status, userId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        req.io.emit("updateUser");
+        res.json({ success: true, message: `User status updated to ${status === 1 ? 'active' : 'inactive'}` });
+    } catch (err) {
+        console.error('Activate/Deactivate error:', err);
+        res.status(500).json({ success: false, message: 'Database error' });
+    }
+});
+
 module.exports = router;
