@@ -17,6 +17,8 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         item_name: existingItem?.item_name,
         location: existingItem?.location
     });
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showDuplicateRequestModal, setShowDuplicateRequestModal] = useState(false);
 
     useEffect(() => {
         if (show) {
@@ -37,7 +39,6 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         }
     }, [show, existingItem]);
 
-    // Tooltip for the help icon
     const renderTooltip = (props) => (
         <Tooltip id="help-tooltip" {...props} className="bg-white">
             To claim this item, please provide your contact information and a detailed description of the item to prove ownership.
@@ -60,44 +61,6 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const { message, image } = formData;
-
-        if (!message.trim() && !image) return;
-
-        const messageData = new FormData();
-        messageData.append("sender_id", user.id);
-        messageData.append("receiver_id", existingItem?.user_id);
-        messageData.append("report_id", existingItem?.report_id);
-        messageData.append("message", message.trim());
-        messageData.append('item_type', existingItem?.type);
-        if (image) {
-            messageData.append("image", image);
-        }
-
-        setLoading(true);
-
-        try {
-            const response = await axios.post(`${import.meta.env.VITE_SEND_MESSAGE}`, messageData, {
-                headers: { "Content-Type": "multipart/form-data" }
-            });
-
-            if (response.data.success) {
-                resetForm();
-                fetchItems();
-                handleClose();
-            } else {
-                console.error('Error sending message:', response.data.message);
-            }
-        } catch (error) {
-            console.error('Error sending message:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
     const handleClaimAction = async (e) => {
         e.preventDefault();
         const { description } = formData;
@@ -116,22 +79,30 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
         };
 
         setLoading(true);
+
         try {
+            // Send the claim request to the API
             const response = await axios.post(
-                `${import.meta.env.VITE_ADD_REQUEST}`,
+                `${import.meta.env.VITE_ADD_REQUEST}`, // Your backend API endpoint
                 claimData
             );
 
             if (response.data.success) {
+                setShowSuccessModal(true);  // Show the success modal
                 resetForm();
                 fetchItems();
                 handleClose();
             } else {
-                alert('Failed to send claim request');
+                alert(response.data.message || 'An error occurred while processing your claim request');
             }
         } catch (error) {
-            console.error('Error sending claim request:', error);
-            alert('Error sending claim request');
+            if (error.response && error.response.status === 400) {
+                // Handle duplicate claim error
+                setShowDuplicateRequestModal(true);
+            } else {
+                console.error('Error sending claim request:', error);
+                alert('An error occurred while processing your claim request');
+            }
         } finally {
             setLoading(false);
         }
@@ -151,57 +122,86 @@ const ClaimModal = ({ show, handleClose, existingItem, fetchItems }) => {
     };
 
     return (
-        <Modal show={show} onHide={handleClose} centered size="lg">
-            <Modal.Header closeButton>
-                <Modal.Title>Claim Found Item</Modal.Title>
-                <OverlayTrigger placement="left" overlay={renderTooltip}>
-                    <BsQuestionCircle className="ms-2 text-primary" size={20} style={{ cursor: 'pointer' }} />
-                </OverlayTrigger>
-            </Modal.Header>
-            <Modal.Body>
-                <Form onSubmit={handleClaimAction}>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Item Name</Form.Label>
-                        <Form.Control
-                            type="text"
-                            name="item_name"
-                            value={existingItem ? existingItem.item_name : ''}
-                            disabled
-                        />
-                    </Form.Group>
+        <>
+            {/* Claim Modal */}
+            <Modal show={show} onHide={handleClose} centered size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Claim Found Item</Modal.Title>
+                    <OverlayTrigger placement="left" overlay={renderTooltip}>
+                        <BsQuestionCircle className="ms-2 text-primary" size={20} style={{ cursor: 'pointer' }} />
+                    </OverlayTrigger>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleClaimAction}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Item Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="item_name"
+                                value={existingItem ? existingItem.item_name : ''}
+                                disabled
+                            />
+                        </Form.Group>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>Message <span className="text-danger">*</span></Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            rows={3}
-                            required
-                            placeholder="Describe the item in detail to prove ownership"
-                        />
-                        <Form.Text className="text-muted">
-                            Include specific details about the item that only the owner would know
-                        </Form.Text>
-                    </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Message <span className="text-danger">*</span></Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleInputChange}
+                                rows={3}
+                                required
+                                placeholder="Describe the item in detail to prove ownership"
+                            />
+                            <Form.Text className="text-muted">
+                                Include specific details about the item that only the owner would know
+                            </Form.Text>
+                        </Form.Group>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>Upload Image</Form.Label>
-                        <Form.Control type="file" onChange={handleFileChange} accept="image/*" />
-                    </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Upload Image</Form.Label>
+                            <Form.Control type="file" onChange={handleFileChange} accept="image/*" />
+                        </Form.Group>
 
-                    <div className="d-flex justify-content-end gap-2">
-                        <Button variant="secondary" onClick={handleClose}>
-                            Cancel
-                        </Button>
-                        <Button variant="primary" type="submit" disabled={loading}>
-                            {loading ? <Spinner animation="border" size="sm" /> : 'Claim Item'}
-                        </Button>
-                    </div>
-                </Form>
-            </Modal.Body>
-        </Modal>
+                        <div className="d-flex justify-content-end gap-2">
+                            <Button variant="secondary" onClick={handleClose}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" type="submit" disabled={loading}>
+                                {loading ? <Spinner animation="border" size="sm" /> : 'Claim Item'}
+                            </Button>
+                        </div>
+                    </Form>
+                </Modal.Body>
+            </Modal>
+
+            {/* Success Modal */}
+            <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Claim Request Submitted</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>Your claim request has been successfully submitted. The item owner will review your request shortly.</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowSuccessModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Duplicate Request Modal */}
+            <Modal show={showDuplicateRequestModal} onHide={() => setShowDuplicateRequestModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Request Already Sent</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>You have already submitted a claim request for this item. Please wait for the owner to respond.</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowDuplicateRequestModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+        </>
     );
 };
 

@@ -154,16 +154,11 @@ function UserManagement() {
                                         {r.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                                     </option>
                                 ))}
-
                             </Form.Select>
-                            {/* <Button variant="primary" className="rounded-0" onClick={() => setShowCreateModal(true)}>
-                                + Create New User
-                            </Button> */}
                         </div>
                     </div>
                 </div>
             </div>
-
             <Card className="shadow-sm">
                 <Card.Header className="bg-success text-white py-3 d-flex justify-content-between">
                     <strong>User List</strong>
@@ -234,7 +229,6 @@ function UserManagement() {
                     </nav>
                 </Card.Footer>
             </Card>
-
             {/* Delete Confirmation Modal */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
